@@ -21,6 +21,10 @@ def sb_headers():
 
 @app.route("/")
 def index():
+    return render_template("landing.html")
+
+@app.route("/log")
+def log():
     return render_template("index.html", today=date.today().isoformat())
 
 @app.route("/submit", methods=["POST"])
@@ -97,64 +101,3 @@ def submit_batch():
     )
 
     if resp.status_code in (200, 201, 204):
-        return jsonify({"ok": True, "saved": len(rows)})
-    return jsonify({"ok": False, "errors": [resp.text]}), 500
-
-@app.route("/unit-progress/<position>")
-def unit_progress(position):
-    """Return latest recorded % per trade for a given unit."""
-    resp = requests.get(
-        f"{SUPABASE_URL}/rest/v1/{TABLE}"
-        f"?select=area_phase,progress_pct&position=eq.{position}"
-        f"&order=created_at.desc&limit=500",
-        headers=sb_headers()
-    )
-    latest = {}
-    for r in resp.json():
-        phase = r.get("area_phase", "")
-        if phase and phase not in latest and r.get("progress_pct") is not None:
-            latest[phase] = r["progress_pct"]
-    return jsonify(latest)
-
-@app.route("/export.csv")
-def export_csv():
-    resp = requests.get(
-        f"{SUPABASE_URL}/rest/v1/{TABLE}?select=date,period,position,area_phase,progress_pct,crew,notes&order=date.desc,period.asc",
-        headers=sb_headers()
-    )
-    rows = resp.json()
-
-    output = io.StringIO()
-    writer = csv.DictWriter(output, fieldnames=["date","period","position","area_phase","progress_pct","crew","notes"])
-    writer.writeheader()
-    for r in rows:
-        writer.writerow({
-            "date": r.get("date",""),
-            "period": r.get("period",""),
-            "position": r.get("position",""),
-            "area_phase": r.get("area_phase",""),
-            "progress_pct": r.get("progress_pct",""),
-            "crew": r.get("crew",""),
-            "notes": r.get("notes","")
-        })
-
-    return Response(
-        output.getvalue(),
-        mimetype="text/csv",
-        headers={"Content-Disposition": "attachment; filename=daily_log.csv"}
-    )
-
-@app.route("/recent")
-def recent():
-    resp = requests.get(
-        f"{SUPABASE_URL}/rest/v1/{TABLE}?select=*&order=created_at.desc&limit=50",
-        headers=sb_headers()
-    )
-    return jsonify(resp.json())
-
-@app.route("/health")
-def health():
-    return jsonify({"status": "ok"})
-
-if __name__ == "__main__":
-    app.run(debug=False, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))

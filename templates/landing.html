@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TDG Operations — MBR Texas</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #0f1117;
+    color: #e2e8f0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Header ── */
+  header {
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-bottom: 1px solid #1e2533;
+  }
+  .logo-badge {
+    width: 42px; height: 42px;
+    background: linear-gradient(135deg, #1a6bc4, #4f8ef7);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 13px; color: #fff; letter-spacing: .5px;
+    flex-shrink: 0;
+  }
+  .header-text h1 { font-size: 17px; font-weight: 700; }
+  .header-text p { font-size: 12px; color: #64748b; margin-top: 1px; }
+
+  /* ── Main ── */
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+  }
+
+  .hero { text-align: center; margin-bottom: 48px; }
+  .hero h2 { font-size: 28px; font-weight: 700; letter-spacing: -.3px; }
+  .hero p { color: #64748b; margin-top: 8px; font-size: 15px; }
+
+  /* ── Cards ── */
+  .cards {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 780px;
+    width: 100%;
+  }
+
+  .card {
+    flex: 1 1 300px;
+    max-width: 340px;
+    background: #1a1d27;
+    border: 1px solid #2a2d3e;
+    border-radius: 16px;
+    padding: 28px 24px 24px;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    transition: border-color .15s, transform .12s, box-shadow .15s;
+    cursor: pointer;
+  }
+  .card:hover {
+    border-color: #4f8ef7;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(79, 142, 247, .15);
+  }
+
+  .card-icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .icon-log { background: rgba(34, 197, 94, .12); }
+  .icon-dash { background: rgba(79, 142, 247, .12); }
+
+  .card-body h3 { font-size: 17px; font-weight: 700; }
+  .card-body p { font-size: 13px; color: #64748b; margin-top: 5px; line-height: 1.5; }
+
+  .card-footer {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 14px;
+    border-top: 1px solid #2a2d3e;
+  }
+  .card-footer .tag {
+    font-size: 11px; font-weight: 600;
+    padding: 3px 10px; border-radius: 20px;
+    text-transform: uppercase; letter-spacing: .5px;
+  }
+  .tag-crew { background: rgba(34,197,94,.12); color: #22c55e; }
+  .tag-mgmt { background: rgba(79,142,247,.12); color: #4f8ef7; }
+  .card-arrow { color: #4f8ef7; font-size: 18px; }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center;
+    padding: 20px;
+    color: #334155;
+    font-size: 12px;
+    border-top: 1px solid #1e2533;
+  }
+
+  @media (max-width: 480px) {
+    .hero h2 { font-size: 22px; }
+    .cards { gap: 14px; }
+    .card { padding: 22px 18px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-badge">MBR</div>
+  <div class="header-text">
+    <h1>MBR Texas — TDG Operations</h1>
+    <p>Data Center Project Tracking System</p>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <h2>Where do you want to go?</h2>
+    <p>Select a module below to continue.</p>
+  </div>
+
+  <div class="cards">
+
+    <!-- Daily Log -->
+    <a class="card" href="/log">
+      <div class="card-icon icon-log">📋</div>
+      <div class="card-body">
+        <h3>Daily Field Log</h3>
+        <p>Submit today's progress report — unit, shift, trade, crew, and completion percentage.</p>
+      </div>
+      <div class="card-footer">
+        <span class="tag tag-crew">Field Crew</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <!-- Dashboard -->
+    <a class="card" href="/dashboard">
+      <div class="card-icon icon-dash">📊</div>
+      <div class="card-body">
+        <h3>Operations Dashboard</h3>
+        <p>Live progress by unit and trade, attendance log, day-by-day history, and unit × trade matrix.</p>
+      </div>
+      <div class="card-footer">
+        <span class="tag tag-mgmt">Management</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+  </div>
+</main>
+
+<footer>
+  MBR Texas · TDG Data Center Projects · All data live from Supabase
+</footer>
+
+</body>
+</html>
