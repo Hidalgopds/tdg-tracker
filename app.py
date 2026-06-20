@@ -76,18 +76,18 @@ def submit_batch():
             except (ValueError, TypeError):
                 pass
 
-        responsible = (entry.get("responsible") or "").strip()
-        contractor  = (entry.get("contractor") or "").strip()
-        crew = f"{responsible} ({contractor})" if responsible and contractor else responsible or contractor
-
         rows.append({
             "date":         entry["date"],
             "period":       entry["period"],
             "position":     entry["position"],
             "area_phase":   entry.get("trade", ""),
             "progress_pct": progress,
-            "crew":         crew,
-            "notes":        entry.get("notes", "")
+            "crew":         (entry.get("responsible") or "").strip(),
+            "notes":        entry.get("notes", ""),
+            "tdg_number":   entry.get("tdg_number", ""),
+            "mbr_number":   entry.get("mbr_number", ""),
+            "skid_by":      entry.get("skid_by", ""),
+            "skid_ref":     entry.get("skid_ref", ""),
         })
 
     resp = requests.post(

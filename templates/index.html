@@ -6,190 +6,181 @@
 <title>TDG — Daily Update</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
 html, body { height: 100%; overflow: hidden; }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: #0f1923;
-  color: #e8edf2;
-  display: flex;
-  flex-direction: column;
+  background: #0f1923; color: #e8edf2;
+  display: flex; flex-direction: column;
 }
 
 /* ── Top bar ── */
 .top-bar {
   background: #162030;
   border-bottom: 2px solid #1e2d3d;
-  padding: 10px 14px;
+  padding: 8px 12px;
   flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
 }
 
 .logo {
-  width: 34px; height: 34px;
-  background: #1a6bc4; border-radius: 7px;
+  width: 32px; height: 32px; background: #1a6bc4; border-radius: 7px;
   display: flex; align-items: center; justify-content: center;
   font-weight: 800; font-size: 11px; color: white; flex-shrink: 0;
 }
 
-.ctrl-group { display: flex; align-items: center; gap: 6px; }
+.ctrl-group { display: flex; align-items: center; gap: 5px; }
 
 .ctrl-label {
-  font-size: 10px; font-weight: 600; color: #6b7f94;
+  font-size: 9px; font-weight: 700; color: #6b7f94;
   text-transform: uppercase; letter-spacing: 0.6px; white-space: nowrap;
 }
 
 select.ctrl, input.ctrl {
   background: #0f1923; border: 1px solid #2a3d52;
   border-radius: 6px; color: #e8edf2;
-  font-size: 14px; padding: 6px 10px;
-  outline: none; -webkit-appearance: none; height: 34px;
+  font-size: 13px; padding: 5px 8px;
+  outline: none; -webkit-appearance: none; height: 32px;
 }
 select.ctrl:focus, input.ctrl:focus { border-color: #1a6bc4; }
 
-.period-row { display: flex; gap: 4px; }
+.period-row { display: flex; gap: 3px; }
 .period-btn {
-  height: 34px; padding: 0 14px;
+  height: 32px; padding: 0 12px;
   border: 1px solid #2a3d52; border-radius: 6px;
   background: #0f1923; color: #6b7f94;
-  font-size: 13px; font-weight: 700; cursor: pointer;
+  font-size: 12px; font-weight: 700; cursor: pointer;
 }
 .period-btn.active { background: #1a3a5c; border-color: #1a6bc4; color: #4da3ff; }
 
+/* Skid checkbox group */
+.skid-group {
+  display: flex; align-items: center; gap: 6px;
+  background: #0f1923; border: 1px solid #2a3d52;
+  border-radius: 6px; padding: 4px 10px; height: 32px;
+}
+.skid-group label { font-size: 12px; color: #8fa3b5; cursor: pointer; white-space: nowrap; }
+.skid-group input[type="checkbox"] { width: 14px; height: 14px; cursor: pointer; accent-color: #1a6bc4; }
+#skidRefWrap { display: none; }
+#skidRef {
+  background: #0f1923; border: 1px solid #1a6bc4;
+  border-radius: 5px; color: #4da3ff;
+  font-size: 12px; padding: 3px 8px; outline: none;
+  width: 80px; height: 28px;
+}
+
+.divider { width: 1px; height: 24px; background: #1e2d3d; flex-shrink: 0; }
+
 .submit-btn {
-  margin-left: auto; height: 34px; padding: 0 20px;
+  margin-left: auto; height: 32px; padding: 0 18px;
   background: #1a6bc4; border: none; border-radius: 7px;
-  color: white; font-size: 14px; font-weight: 700;
+  color: white; font-size: 13px; font-weight: 700;
   cursor: pointer; white-space: nowrap;
 }
 .submit-btn:active { background: #1558a0; }
 .submit-btn:disabled { background: #1e2d3d; color: #4a5568; cursor: not-allowed; }
 
-/* ── Scrollable table container ── */
+/* ── Table ── */
 .table-wrap {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: auto;
+  flex: 1; overflow-y: auto; overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  position: relative;
 }
 
 table {
-  width: 100%;
-  min-width: 540px;
-  border-collapse: collapse;
-  table-layout: fixed;
+  width: 100%; min-width: 600px;
+  border-collapse: collapse; table-layout: fixed;
 }
 
-col.c-trade { width: 210px; }
-col.c-pct   { width: 78px; }
-col.c-resp  { width: 140px; }
-col.c-notes { min-width: 180px; }
+col.c-trade { width: 200px; }
+col.c-prev  { width: 68px; }
+col.c-pct   { width: 72px; }
+col.c-resp  { width: 130px; }
+col.c-notes { min-width: 160px; }
 
-/* Frozen header — sticky at top of scroll container */
+/* Frozen header */
 thead th {
-  background: #0d1520;
-  color: #4a6380;
+  background: #0d1520; color: #4a6380;
   font-size: 10px; font-weight: 700;
   text-transform: uppercase; letter-spacing: 0.8px;
-  padding: 9px 8px;
-  border-bottom: 2px solid #1e2d3d;
+  padding: 8px 7px; border-bottom: 2px solid #1e2d3d;
   white-space: nowrap; text-align: left;
   position: sticky; top: 0; z-index: 20;
 }
-thead th:first-child {
-  position: sticky; left: 0; top: 0; z-index: 30;
-  background: #0d1520;
-}
+thead th:first-child { position: sticky; left: 0; top: 0; z-index: 30; background: #0d1520; }
+
+/* Prev % column header — distinct color */
+th.h-prev { background: #0a1e30; color: #2a6a9a; text-align: center; }
 
 /* Category rows */
 tr.cat-row td {
   background: #111d2b; color: #1a6bc4;
   font-size: 10px; font-weight: 800;
   text-transform: uppercase; letter-spacing: 1px;
-  padding: 7px 10px;
-  border-top: 2px solid #1e2d3d;
-  border-bottom: 1px solid #1e2d3d;
+  padding: 6px 10px;
+  border-top: 2px solid #1e2d3d; border-bottom: 1px solid #1e2d3d;
 }
-tr.cat-row td:first-child {
-  position: sticky; left: 0; z-index: 5;
-  background: #111d2b;
-}
+tr.cat-row td:first-child { position: sticky; left: 0; z-index: 5; background: #111d2b; }
 
 /* Trade rows */
 tr.trade-row td {
-  padding: 3px 6px;
-  border-bottom: 1px solid #131f2d;
-  vertical-align: middle;
-  background: #0f1923;
+  padding: 3px 5px; border-bottom: 1px solid #131f2d;
+  vertical-align: middle; background: #0f1923;
 }
 tr.trade-row:hover td { background: #132030; }
-
 tr.trade-row td:first-child {
-  position: sticky; left: 0; z-index: 4;
-  background: #0f1923;
+  position: sticky; left: 0; z-index: 4; background: #0f1923;
   font-size: 12px; color: #8fa3b5;
-  padding-left: 18px;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  padding-left: 18px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
 }
 tr.trade-row:hover td:first-child { background: #132030; }
-
 tr.trade-row.has-data td             { background: #0e1d2e; }
 tr.trade-row.has-data td:first-child { background: #0e1d2e; color: #e8edf2; }
 
+/* Prev % cell — always distinct background */
+td.prev-cell {
+  background: #091520 !important;
+  text-align: center;
+  font-size: 13px; font-weight: 600;
+  color: #2e6a9a;
+  border-left: 2px solid #0d2235;
+  border-right: 2px solid #0d2235;
+}
+td.prev-cell.has-val { color: #4da3ff; }
+
 /* Inputs */
 input.t-pct {
-  width: 60px;
-  background: #0a1420; border: 1px solid #1e2d3d;
+  width: 58px; background: #0a1420; border: 1px solid #1e2d3d;
   border-radius: 5px; color: #e8edf2;
   font-size: 13px; font-weight: 600;
-  padding: 4px 6px; text-align: center; outline: none;
+  padding: 4px 5px; text-align: center; outline: none;
 }
 input.t-pct:focus { border-color: #1a6bc4; }
-input.t-pct.prefilled { color: #6baed6; border-color: #1e3a52; }
 
 input.t-text {
-  width: 100%;
-  background: #0a1420; border: 1px solid #1e2d3d;
+  width: 100%; background: #0a1420; border: 1px solid #1e2d3d;
   border-radius: 5px; color: #e8edf2;
   font-size: 12px; padding: 4px 7px;
   outline: none; height: 28px;
 }
 input.t-text:focus { border-color: #1a6bc4; }
 
-/* Status bar */
+/* Status */
 .status-bar {
-  flex-shrink: 0;
-  text-align: center; padding: 8px 16px;
+  flex-shrink: 0; text-align: center; padding: 7px 16px;
   font-size: 11px; color: #3d5470;
-  border-top: 1px solid #131f2d;
-  background: #0f1923;
+  border-top: 1px solid #131f2d; background: #0f1923;
 }
-
-/* Loading overlay */
-.loading {
-  display: none;
-  position: absolute; inset: 0;
-  background: rgba(15,25,35,0.6);
-  align-items: center; justify-content: center;
-  font-size: 13px; color: #4da3ff;
-  z-index: 50;
-}
-.loading.show { display: flex; }
 
 /* Toast */
 .toast {
-  display: none;
-  position: fixed; top: 70px; left: 50%;
+  display: none; position: fixed; top: 68px; left: 50%;
   transform: translateX(-50%);
   background: #16a34a; color: white;
-  padding: 11px 24px; border-radius: 100px;
-  font-size: 13px; font-weight: 700;
-  z-index: 999; white-space: nowrap;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  padding: 10px 22px; border-radius: 100px;
+  font-size: 13px; font-weight: 700; z-index: 999;
+  white-space: nowrap; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
 }
 .toast.error { background: #dc2626; }
 </style>
@@ -201,7 +192,7 @@ input.t-text:focus { border-color: #1a6bc4; }
 
   <div class="ctrl-group">
     <span class="ctrl-label">Unit</span>
-    <select class="ctrl" id="unit" style="width:82px" onchange="loadPrevious()">
+    <select class="ctrl" id="unit" style="width:76px" onchange="loadPrevious()">
       <option value="">—</option>
       <optgroup label="A Series">
         <option>01A</option><option>02A</option><option>03A</option>
@@ -225,7 +216,7 @@ input.t-text:focus { border-color: #1a6bc4; }
 
   <div class="ctrl-group">
     <span class="ctrl-label">Date</span>
-    <input type="date" class="ctrl" id="date" value="{{ today }}" style="width:142px">
+    <input type="date" class="ctrl" id="date" value="{{ today }}" style="width:136px">
   </div>
 
   <div class="ctrl-group">
@@ -236,14 +227,34 @@ input.t-text:focus { border-color: #1a6bc4; }
     </div>
   </div>
 
+  <div class="divider"></div>
+
+  <div class="ctrl-group">
+    <span class="ctrl-label">TDG No</span>
+    <input type="text" class="ctrl" id="tdgNumber" placeholder="e.g. 14949-52-TX" style="width:130px">
+  </div>
+
+  <div class="ctrl-group">
+    <span class="ctrl-label">MBR No</span>
+    <input type="number" class="ctrl" id="mbrNumber" placeholder="#" style="width:60px" min="1">
+  </div>
+
+  <div class="skid-group">
+    <input type="checkbox" id="mbrSkid" onchange="toggleSkid(this)">
+    <label for="mbrSkid">MBR Skid</label>
+    <span id="skidRefWrap">
+      <input type="text" id="skidRef" placeholder="Skid #">
+    </span>
+  </div>
+
   <button class="submit-btn" id="submitBtn" onclick="submitAll()">Submit Update</button>
 </div>
 
-<div class="table-wrap" id="tableWrap">
-  <div class="loading" id="loading">Loading previous data…</div>
+<div class="table-wrap">
   <table>
     <colgroup>
       <col class="c-trade">
+      <col class="c-prev">
       <col class="c-pct">
       <col class="c-resp">
       <col class="c-notes">
@@ -251,6 +262,7 @@ input.t-text:focus { border-color: #1a6bc4; }
     <thead>
       <tr>
         <th>Trade / Activity</th>
+        <th class="h-prev" style="text-align:center">Prev %</th>
         <th style="text-align:center">% Done</th>
         <th>Responsible</th>
         <th>Notes / Flags</th>
@@ -266,28 +278,21 @@ input.t-text:focus { border-color: #1a6bc4; }
 <script>
 const TRADES = [
   { cat: '1. Structure', subs: [
-    'C Channel / Holes Templates',
-    'Weld 4 I beams (10" I beams)',
-    'C Channels 12" weld to enclose frame',
-    'Square the frame',
-    'Inside C Channels/Square',
-    'Nuts inside C Channel',
-    'Floor plate (Pull, Cut, Weld)',
-    'Square tube Halo (Pull, Cut, Grind, Weld)',
-    'I beam on halo stand up Posts',
-    'Square halo and weld to post',
-    'Square tubes for doors',
-    'Ground plates',
-    'Weld floor plates together'
+    'C Channel / Holes Templates','Weld 4 I beams (10" I beams)',
+    'C Channels 12" weld to enclose frame','Square the frame',
+    'Inside C Channels/Square','Nuts inside C Channel',
+    'Floor plate (Pull, Cut, Weld)','Square tube Halo (Pull, Cut, Grind, Weld)',
+    'I beam on halo stand up Posts','Square halo and weld to post',
+    'Square tubes for doors','Ground plates','Weld floor plates together'
   ]},
   { cat: '2. Structure Paint', subs: [] },
   { cat: '3. Envelope',        subs: [] },
   { cat: '4. Unit Paint',      subs: [] },
   { cat: '5. Internal Systems Rough-In', subs: [] },
   { cat: 'ELECTRICAL', subs: [
-    'Ground Bar', 'Wall/Ceiling Boxes & Conduit',
-    'H2 Control Box & Conduit', 'HVAC Control Box & Conduit',
-    'Exhaust Fan Control Box & Conduit', 'PLC & Conduit', 'Wall/Ceiling Conduit'
+    'Ground Bar','Wall/Ceiling Boxes & Conduit','H2 Control Box & Conduit',
+    'HVAC Control Box & Conduit','Exhaust Fan Control Box & Conduit',
+    'PLC & Conduit','Wall/Ceiling Conduit'
   ]},
   { cat: 'BATTERY CABINETS', subs: [
     'Unload from truck','Unpack units','Unpalletize units',
@@ -331,13 +336,17 @@ function setPeriod(btn) {
   selectedPeriod = btn.dataset.val;
 }
 
+function toggleSkid(cb) {
+  document.getElementById('skidRefWrap').style.display = cb.checked ? 'inline' : 'none';
+}
+
 function buildTable() {
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = '';
   TRADES.forEach(group => {
     const catTr = document.createElement('tr');
     catTr.className = 'cat-row';
-    catTr.innerHTML = `<td colspan="4">${group.cat}</td>`;
+    catTr.innerHTML = `<td colspan="5">${group.cat}</td>`;
     tbody.appendChild(catTr);
 
     const catOnly = group.subs.length === 0;
@@ -350,6 +359,7 @@ function buildTable() {
       tr.dataset.trade = tradeKey;
       tr.innerHTML = `
         <td title="${sub}">${sub}</td>
+        <td class="prev-cell" data-prev="—">—</td>
         <td style="text-align:center">
           <input class="t-pct" type="number" min="0" max="100"
                  placeholder="—" data-field="pct" oninput="markRow(this)">
@@ -373,54 +383,58 @@ function markRow(el) {
 async function loadPrevious() {
   const unit = document.getElementById('unit').value;
 
-  // Clear all inputs first
-  document.querySelectorAll('tr.trade-row input').forEach(el => {
-    el.value = '';
-    el.classList.remove('prefilled');
-  });
+  // Reset all
+  document.querySelectorAll('tr.trade-row input').forEach(el => { el.value = ''; });
   document.querySelectorAll('tr.trade-row').forEach(tr => tr.classList.remove('has-data'));
-  document.getElementById('statusBar').textContent = 'Loading previous data…';
+  document.querySelectorAll('td.prev-cell').forEach(td => {
+    td.textContent = '—'; td.classList.remove('has-val');
+  });
 
   if (!unit) {
     document.getElementById('statusBar').textContent = 'Select a unit to load previous progress.';
     return;
   }
 
-  document.getElementById('loading').classList.add('show');
+  document.getElementById('statusBar').textContent = 'Loading…';
 
   try {
     const res  = await fetch(`/unit-progress/${unit}`);
     const data = await res.json();
-
     let filled = 0;
+
     document.querySelectorAll('tr.trade-row').forEach(tr => {
-      const key      = tr.dataset.trade;
-      const pctInput = tr.querySelector('[data-field="pct"]');
+      const key  = tr.dataset.trade;
+      const cell = tr.querySelector('td.prev-cell');
       if (data[key] !== undefined && data[key] !== null) {
         const pct = Math.round(data[key] * 100);
-        pctInput.value = pct;
-        pctInput.classList.add('prefilled');
-        tr.classList.add('has-data');
+        cell.textContent = pct + '%';
+        cell.classList.add('has-val');
         filled++;
       }
     });
 
     document.getElementById('statusBar').textContent =
       filled > 0
-        ? `${unit} — ${filled} trades pre-loaded from last entry. Update and submit.`
-        : `${unit} — no previous data found. Fill in today's progress and submit.`;
+        ? `${unit} — ${filled} trades with previous data loaded. Fill in today's updates and submit.`
+        : `${unit} — no previous data. Fill in today's progress and submit.`;
   } catch(e) {
     document.getElementById('statusBar').textContent = 'Could not load previous data.';
   }
-
-  document.getElementById('loading').classList.remove('show');
 }
 
 async function submitAll() {
-  const unit = document.getElementById('unit').value;
-  const date = document.getElementById('date').value;
+  const unit      = document.getElementById('unit').value;
+  const date      = document.getElementById('date').value;
+  const tdgNumber = document.getElementById('tdgNumber').value.trim();
+  const mbrNumber = document.getElementById('mbrNumber').value.trim();
+  const mbrSkid   = document.getElementById('mbrSkid').checked;
+  const skidRef   = document.getElementById('skidRef').value.trim();
+
   if (!unit) { showToast('Select a unit first', true); return; }
   if (!date) { showToast('Date is required', true);   return; }
+
+  const skidBy  = mbrSkid ? 'MBR Texas' : 'RV Solutions';
+  const skidRef_ = mbrSkid ? skidRef : '';
 
   const entries = [];
   document.querySelectorAll('tr.trade-row').forEach(tr => {
@@ -433,7 +447,11 @@ async function submitAll() {
         trade:        tr.dataset.trade,
         progress_pct: pct !== '' ? parseFloat(pct) : null,
         responsible:  resp,
-        notes:        note
+        notes:        note,
+        tdg_number:   tdgNumber,
+        mbr_number:   mbrNumber,
+        skid_by:      skidBy,
+        skid_ref:     skidRef_
       });
     }
   });
@@ -453,8 +471,17 @@ async function submitAll() {
     const data = await res.json();
     if (data.ok) {
       showToast(`✓ ${data.saved} trades saved`);
-      // Remove prefilled highlight — new values are now the current state
-      document.querySelectorAll('input.t-pct').forEach(el => el.classList.remove('prefilled'));
+      // Update prev cells with new values
+      document.querySelectorAll('tr.trade-row').forEach(tr => {
+        const pctInput = tr.querySelector('[data-field="pct"]');
+        const prevCell = tr.querySelector('td.prev-cell');
+        if (pctInput.value.trim() !== '') {
+          prevCell.textContent = pctInput.value + '%';
+          prevCell.classList.add('has-val');
+        }
+      });
+      document.querySelectorAll('tr.trade-row input').forEach(el => { el.value = ''; });
+      document.querySelectorAll('tr.trade-row').forEach(tr => tr.classList.remove('has-data'));
       document.getElementById('statusBar').textContent =
         `Saved: ${unit} ${selectedPeriod} ${date} — ${data.saved} trades recorded`;
     } else {
