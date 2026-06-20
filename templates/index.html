@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>TDG — Daily Log</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0f1923;
+    color: #e8edf2;
+    min-height: 100vh;
+    padding: 16px;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #1e2d3d;
+  }
+
+  .logo {
+    width: 40px;
+    height: 40px;
+    background: #1a6bc4;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    color: white;
+    flex-shrink: 0;
+  }
+
+  .header h1 { font-size: 18px; font-weight: 700; color: #ffffff; }
+  .header p  { font-size: 12px; color: #6b7f94; margin-top: 2px; }
+
+  .card {
+    background: #162030;
+    border: 1px solid #1e2d3d;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .card-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #1a6bc4;
+    margin-bottom: 16px;
+  }
+
+  .row { display: flex; gap: 12px; margin-bottom: 14px; }
+  .row:last-child { margin-bottom: 0; }
+  .col { flex: 1; min-width: 0; }
+
+  label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7f94;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    background: #0f1923;
+    border: 1px solid #1e2d3d;
+    border-radius: 8px;
+    color: #e8edf2;
+    font-size: 15px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: #1a6bc4;
+  }
+
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7f94' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+    cursor: pointer;
+  }
+
+  select option { background: #162030; }
+
+  textarea {
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.5;
+  }
+
+  .period-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .period-btn {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #1e2d3d;
+    border-radius: 8px;
+    background: #0f1923;
+    color: #6b7f94;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+    -webkit-appearance: none;
+  }
+
+  .period-btn.active {
+    background: #1a3a5c;
+    border-color: #1a6bc4;
+    color: #4da3ff;
+  }
+
+  .pct-wrap {
+    position: relative;
+  }
+
+  .pct-wrap input {
+    padding-right: 36px;
+  }
+
+  .pct-symbol {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6b7f94;
+    font-size: 14px;
+    pointer-events: none;
+  }
+
+  .submit-btn {
+    width: 100%;
+    padding: 16px;
+    background: #1a6bc4;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+    -webkit-appearance: none;
+    margin-top: 8px;
+  }
+
+  .submit-btn:active { background: #1558a0; }
+  .submit-btn:disabled { background: #1e2d3d; color: #4a5568; cursor: not-allowed; }
+
+  .toast {
+    display: none;
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #16a34a;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 100px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 999;
+    white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  }
+
+  .toast.error { background: #dc2626; }
+
+  .recent-link {
+    text-align: center;
+    margin-top: 20px;
+  }
+
+  .recent-link a {
+    color: #6b7f94;
+    font-size: 12px;
+    text-decoration: none;
+  }
+
+  @media (max-width: 400px) {
+    .row { flex-direction: column; gap: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">TDG</div>
+  <div>
+    <h1>Daily Log</h1>
+    <p>MBR Texas — Field Operations</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Date & Shift</div>
+  <div class="row">
+    <div class="col">
+      <label>Date</label>
+      <input type="date" id="date" value="{{ today }}">
+    </div>
+    <div class="col">
+      <label>Period</label>
+      <div class="period-row">
+        <button class="period-btn active" data-val="AM" onclick="setPeriod(this)">AM</button>
+        <button class="period-btn" data-val="PM" onclick="setPeriod(this)">PM</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Unit</div>
+  <div class="row">
+    <div class="col">
+      <label>Position</label>
+      <select id="position">
+        <option value="">Select unit...</option>
+        <optgroup label="A Series">
+          <option>01A</option><option>02A</option><option>03A</option>
+          <option>04A</option><option>05A</option><option>06A</option>
+          <option>07A</option><option>08A</option><option>09A</option>
+        </optgroup>
+        <optgroup label="B Series">
+          <option>01B</option><option>02B</option><option>03B</option>
+          <option>04B</option><option>05B</option><option>06B</option>
+          <option>07B</option><option>08B</option><option>09B</option>
+          <option>10B</option><option>11B</option><option>12B</option>
+          <option>13B</option><option>14B</option><option>15B</option>
+          <option>16B</option><option>17B</option><option>18B</option>
+          <option>19B</option><option>20B</option><option>21B</option>
+          <option>22B</option><option>23B</option><option>24B</option>
+          <option>25B</option><option>26B</option><option>27B</option>
+          <option>28B</option>
+        </optgroup>
+      </select>
+    </div>
+    <div class="col">
+      <label>Progress %</label>
+      <div class="pct-wrap">
+        <input type="number" id="progress" min="0" max="100" placeholder="0–100">
+        <span class="pct-symbol">%</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Activity</div>
+  <div class="row">
+    <div class="col">
+      <label>Area / Phase</label>
+      <select id="area_phase">
+        <option value="">Select or type below...</option>
+        <optgroup label="Main Trades">
+          <option>Cable Tray &amp; Drop Downs</option>
+          <option>Equipment Conduit</option>
+          <option>Equipment Install</option>
+          <option>Strut Positioning</option>
+          <option>Switchgear Pipes</option>
+          <option>Transformers Install</option>
+          <option>Wall Pipes &amp; Ground Bar</option>
+        </optgroup>
+        <optgroup label="Structure">
+          <option>1. Structure</option>
+          <option>2. Structure Paint</option>
+          <option>3. Envelope</option>
+          <option>4. Unit Paint</option>
+          <option>5. Internal Systems Rough-In</option>
+        </optgroup>
+        <optgroup label="Other">
+          <option>Final QC</option>
+          <option>Ready to Ship</option>
+          <option>No crew</option>
+          <option>No change</option>
+        </optgroup>
+      </select>
+    </div>
+  </div>
+  <div class="row" style="margin-top:8px">
+    <div class="col">
+      <label>Custom Description</label>
+      <input type="text" id="area_custom" placeholder="Override or add detail...">
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Crew & Notes</div>
+  <div class="row">
+    <div class="col">
+      <label>Crew</label>
+      <input type="text" id="crew" placeholder="Names, separated by commas">
+    </div>
+  </div>
+  <div class="row">
+    <div class="col">
+      <label>Notes / Flags</label>
+      <textarea id="notes" placeholder="Issues, delays, observations..."></textarea>
+    </div>
+  </div>
+</div>
+
+<button class="submit-btn" id="submitBtn" onclick="submitLog()">Submit Entry</button>
+
+<div class="recent-link">
+  <a href="/recent" target="_blank">View recent entries ↗</a>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let selectedPeriod = "AM";
+
+  function setPeriod(btn) {
+    document.querySelectorAll(".period-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    selectedPeriod = btn.dataset.val;
+  }
+
+  function showToast(msg, isError = false) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.className = "toast" + (isError ? " error" : "");
+    t.style.display = "block";
+    setTimeout(() => { t.style.display = "none"; }, 3000);
+  }
+
+  async function submitLog() {
+    const btn = document.getElementById("submitBtn");
+    const position = document.getElementById("position").value;
+    const dateVal = document.getElementById("date").value;
+
+    if (!dateVal) { showToast("Date is required", true); return; }
+    if (!position) { showToast("Select a position", true); return; }
+
+    // Area/phase: custom overrides dropdown
+    const areaDropdown = document.getElementById("area_phase").value;
+    const areaCustom = document.getElementById("area_custom").value.trim();
+    const area = areaCustom || areaDropdown;
+
+    const payload = {
+      date: dateVal,
+      period: selectedPeriod,
+      position: position,
+      area_phase: area,
+      progress_pct: document.getElementById("progress").value || null,
+      crew: document.getElementById("crew").value.trim(),
+      notes: document.getElementById("notes").value.trim()
+    };
+
+    btn.disabled = true;
+    btn.textContent = "Saving...";
+
+    try {
+      const res = await fetch("/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (data.ok) {
+        showToast("✓ Entry saved");
+        // Reset fields but keep date and period
+        document.getElementById("position").value = "";
+        document.getElementById("area_phase").value = "";
+        document.getElementById("area_custom").value = "";
+        document.getElementById("progress").value = "";
+        document.getElementById("crew").value = "";
+        document.getElementById("notes").value = "";
+      } else {
+        showToast(data.error || "Error saving", true);
+      }
+    } catch(e) {
+      showToast("Connection error", true);
+    }
+
+    btn.disabled = false;
+    btn.textContent = "Submit Entry";
+  }
+</script>
+</body>
+</html>
