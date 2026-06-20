@@ -7,20 +7,22 @@
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+html, body { height: 100%; overflow: hidden; }
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: #0f1923;
   color: #e8edf2;
-  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
+/* ── Top bar ── */
 .top-bar {
   background: #162030;
   border-bottom: 2px solid #1e2d3d;
   padding: 10px 14px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -29,98 +31,83 @@ body {
 
 .logo {
   width: 34px; height: 34px;
-  background: #1a6bc4;
-  border-radius: 7px;
+  background: #1a6bc4; border-radius: 7px;
   display: flex; align-items: center; justify-content: center;
-  font-weight: 800; font-size: 11px; color: white;
-  flex-shrink: 0;
+  font-weight: 800; font-size: 11px; color: white; flex-shrink: 0;
 }
 
 .ctrl-group { display: flex; align-items: center; gap: 6px; }
 
 .ctrl-label {
   font-size: 10px; font-weight: 600; color: #6b7f94;
-  text-transform: uppercase; letter-spacing: 0.6px;
-  white-space: nowrap;
+  text-transform: uppercase; letter-spacing: 0.6px; white-space: nowrap;
 }
 
 select.ctrl, input.ctrl {
-  background: #0f1923;
-  border: 1px solid #2a3d52;
-  border-radius: 6px;
-  color: #e8edf2;
-  font-size: 14px;
-  padding: 6px 10px;
-  outline: none;
-  -webkit-appearance: none;
-  height: 34px;
+  background: #0f1923; border: 1px solid #2a3d52;
+  border-radius: 6px; color: #e8edf2;
+  font-size: 14px; padding: 6px 10px;
+  outline: none; -webkit-appearance: none; height: 34px;
 }
 select.ctrl:focus, input.ctrl:focus { border-color: #1a6bc4; }
 
 .period-row { display: flex; gap: 4px; }
 .period-btn {
   height: 34px; padding: 0 14px;
-  border: 1px solid #2a3d52;
-  border-radius: 6px;
-  background: #0f1923;
-  color: #6b7f94;
-  font-size: 13px; font-weight: 700;
-  cursor: pointer;
+  border: 1px solid #2a3d52; border-radius: 6px;
+  background: #0f1923; color: #6b7f94;
+  font-size: 13px; font-weight: 700; cursor: pointer;
 }
-.period-btn.active {
-  background: #1a3a5c;
-  border-color: #1a6bc4;
-  color: #4da3ff;
-}
+.period-btn.active { background: #1a3a5c; border-color: #1a6bc4; color: #4da3ff; }
 
 .submit-btn {
-  margin-left: auto;
-  height: 34px; padding: 0 20px;
-  background: #1a6bc4;
-  border: none; border-radius: 7px;
+  margin-left: auto; height: 34px; padding: 0 20px;
+  background: #1a6bc4; border: none; border-radius: 7px;
   color: white; font-size: 14px; font-weight: 700;
   cursor: pointer; white-space: nowrap;
 }
 .submit-btn:active { background: #1558a0; }
 .submit-btn:disabled { background: #1e2d3d; color: #4a5568; cursor: not-allowed; }
 
+/* ── Scrollable table container ── */
 .table-wrap {
+  flex: 1;
+  overflow-y: auto;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
 
 table {
   width: 100%;
-  min-width: 640px;
+  min-width: 540px;
   border-collapse: collapse;
   table-layout: fixed;
 }
 
-col.c-trade      { width: 210px; }
-col.c-pct        { width: 76px; }
-col.c-resp       { width: 130px; }
-col.c-contractor { width: 88px; }
-col.c-notes      { min-width: 160px; }
+col.c-trade { width: 210px; }
+col.c-pct   { width: 78px; }
+col.c-resp  { width: 140px; }
+col.c-notes { min-width: 180px; }
 
+/* Frozen header — sticky at top of scroll container */
 thead th {
   background: #0d1520;
   color: #4a6380;
   font-size: 10px; font-weight: 700;
   text-transform: uppercase; letter-spacing: 0.8px;
-  padding: 8px 8px;
+  padding: 9px 8px;
   border-bottom: 2px solid #1e2d3d;
-  white-space: nowrap;
-  text-align: left;
-  position: sticky; top: 55px; z-index: 20;
+  white-space: nowrap; text-align: left;
+  position: sticky; top: 0; z-index: 20;
 }
 thead th:first-child {
-  position: sticky; left: 0; top: 55px; z-index: 30;
+  position: sticky; left: 0; top: 0; z-index: 30;
   background: #0d1520;
 }
 
+/* Category rows */
 tr.cat-row td {
-  background: #111d2b;
-  color: #1a6bc4;
+  background: #111d2b; color: #1a6bc4;
   font-size: 10px; font-weight: 800;
   text-transform: uppercase; letter-spacing: 1px;
   padding: 7px 10px;
@@ -132,6 +119,7 @@ tr.cat-row td:first-child {
   background: #111d2b;
 }
 
+/* Trade rows */
 tr.trade-row td {
   padding: 3px 6px;
   border-bottom: 1px solid #131f2d;
@@ -149,9 +137,10 @@ tr.trade-row td:first-child {
 }
 tr.trade-row:hover td:first-child { background: #132030; }
 
-tr.trade-row.has-data td              { background: #0e1d2e; }
-tr.trade-row.has-data td:first-child  { background: #0e1d2e; color: #e8edf2; }
+tr.trade-row.has-data td             { background: #0e1d2e; }
+tr.trade-row.has-data td:first-child { background: #0e1d2e; color: #e8edf2; }
 
+/* Inputs */
 input.t-pct {
   width: 60px;
   background: #0a1420; border: 1px solid #1e2d3d;
@@ -160,24 +149,38 @@ input.t-pct {
   padding: 4px 6px; text-align: center; outline: none;
 }
 input.t-pct:focus { border-color: #1a6bc4; }
+input.t-pct.prefilled { color: #6baed6; border-color: #1e3a52; }
 
-input.t-text, select.t-sel {
+input.t-text {
   width: 100%;
   background: #0a1420; border: 1px solid #1e2d3d;
   border-radius: 5px; color: #e8edf2;
   font-size: 12px; padding: 4px 7px;
-  outline: none; -webkit-appearance: none; height: 28px;
+  outline: none; height: 28px;
 }
-input.t-text:focus, select.t-sel:focus { border-color: #1a6bc4; }
+input.t-text:focus { border-color: #1a6bc4; }
 
+/* Status bar */
 .status-bar {
-  text-align: center; padding: 10px 16px;
+  flex-shrink: 0;
+  text-align: center; padding: 8px 16px;
   font-size: 11px; color: #3d5470;
   border-top: 1px solid #131f2d;
-  position: sticky; bottom: 0;
   background: #0f1923;
 }
 
+/* Loading overlay */
+.loading {
+  display: none;
+  position: absolute; inset: 0;
+  background: rgba(15,25,35,0.6);
+  align-items: center; justify-content: center;
+  font-size: 13px; color: #4da3ff;
+  z-index: 50;
+}
+.loading.show { display: flex; }
+
+/* Toast */
 .toast {
   display: none;
   position: fixed; top: 70px; left: 50%;
@@ -198,7 +201,7 @@ input.t-text:focus, select.t-sel:focus { border-color: #1a6bc4; }
 
   <div class="ctrl-group">
     <span class="ctrl-label">Unit</span>
-    <select class="ctrl" id="unit" style="width:82px">
+    <select class="ctrl" id="unit" style="width:82px" onchange="loadPrevious()">
       <option value="">—</option>
       <optgroup label="A Series">
         <option>01A</option><option>02A</option><option>03A</option>
@@ -236,13 +239,13 @@ input.t-text:focus, select.t-sel:focus { border-color: #1a6bc4; }
   <button class="submit-btn" id="submitBtn" onclick="submitAll()">Submit Update</button>
 </div>
 
-<div class="table-wrap">
+<div class="table-wrap" id="tableWrap">
+  <div class="loading" id="loading">Loading previous data…</div>
   <table>
     <colgroup>
       <col class="c-trade">
       <col class="c-pct">
       <col class="c-resp">
-      <col class="c-contractor">
       <col class="c-notes">
     </colgroup>
     <thead>
@@ -250,7 +253,6 @@ input.t-text:focus, select.t-sel:focus { border-color: #1a6bc4; }
         <th>Trade / Activity</th>
         <th style="text-align:center">% Done</th>
         <th>Responsible</th>
-        <th>Contractor</th>
         <th>Notes / Flags</th>
       </tr>
     </thead>
@@ -258,7 +260,7 @@ input.t-text:focus, select.t-sel:focus { border-color: #1a6bc4; }
   </table>
 </div>
 
-<div class="status-bar" id="statusBar">Select a unit, fill in active trades, then Submit Update.</div>
+<div class="status-bar" id="statusBar">Select a unit to load previous progress, fill active trades, then Submit.</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -283,13 +285,9 @@ const TRADES = [
   { cat: '4. Unit Paint',      subs: [] },
   { cat: '5. Internal Systems Rough-In', subs: [] },
   { cat: 'ELECTRICAL', subs: [
-    'Ground Bar',
-    'Wall/Ceiling Boxes & Conduit',
-    'H2 Control Box & Conduit',
-    'HVAC Control Box & Conduit',
-    'Exhaust Fan Control Box & Conduit',
-    'PLC & Conduit',
-    'Wall/Ceiling Conduit'
+    'Ground Bar', 'Wall/Ceiling Boxes & Conduit',
+    'H2 Control Box & Conduit', 'HVAC Control Box & Conduit',
+    'Exhaust Fan Control Box & Conduit', 'PLC & Conduit', 'Wall/Ceiling Conduit'
   ]},
   { cat: 'BATTERY CABINETS', subs: [
     'Unload from truck','Unpack units','Unpalletize units',
@@ -302,8 +300,7 @@ const TRADES = [
     'Put in covers','KO Plates','Cover w/ Drop Cloth'
   ]},
   { cat: 'SWITCH GEAR', subs: [
-    'Bus Bar','ATS Plate @ SwGr #2 to #3','Top Hats',
-    'KO Plates','2" EMT @ SwGr #4'
+    'Bus Bar','ATS Plate @ SwGr #2 to #3','Top Hats','KO Plates','2" EMT @ SwGr #4'
   ]},
   { cat: 'PANELS & CABLE', subs: [
     'Panels/Transformers & Conduit','Cable Tray Supports (Struts)',
@@ -314,11 +311,9 @@ const TRADES = [
   { cat: 'BATTERY CONNECTIONS', subs: [
     'Battery to Battery','Battery to SwGr #4','18" Battery Tray'
   ]},
-  { cat: 'IO CONDUIT', subs: [
-    'IO to IO','IO to Batteries','IO to SwGr #4'
-  ]},
-  { cat: 'LIGHTING', subs: ['Lighting & Conduit'] },
-  { cat: 'CLOSEOUT', subs: [
+  { cat: 'IO CONDUIT', subs: ['IO to IO','IO to Batteries','IO to SwGr #4'] },
+  { cat: 'LIGHTING',   subs: ['Lighting & Conduit'] },
+  { cat: 'CLOSEOUT',   subs: [
     'Cut Down All Thread','Cap All Thread','Caulk Screw Holes',
     'Clean Up','Final Walk Through','Check All Boxes for Bushings',
     'Check Conduit/Unistrut/All Thread Level & Plumb'
@@ -339,11 +334,10 @@ function setPeriod(btn) {
 function buildTable() {
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = '';
-
   TRADES.forEach(group => {
     const catTr = document.createElement('tr');
     catTr.className = 'cat-row';
-    catTr.innerHTML = `<td colspan="5">${group.cat}</td>`;
+    catTr.innerHTML = `<td colspan="4">${group.cat}</td>`;
     tbody.appendChild(catTr);
 
     const catOnly = group.subs.length === 0;
@@ -357,19 +351,11 @@ function buildTable() {
       tr.innerHTML = `
         <td title="${sub}">${sub}</td>
         <td style="text-align:center">
-          <input class="t-pct" type="number" min="0" max="100" placeholder="—"
-                 data-field="pct" oninput="markRow(this)">
+          <input class="t-pct" type="number" min="0" max="100"
+                 placeholder="—" data-field="pct" oninput="markRow(this)">
         </td>
         <td><input class="t-text" type="text" placeholder="Name…"
                    data-field="resp" oninput="markRow(this)"></td>
-        <td>
-          <select class="t-sel" data-field="contractor" onchange="markRow(this)">
-            <option value="">—</option>
-            <option value="MBR">MBR</option>
-            <option value="CUR">CUR</option>
-            <option value="SUB">SUB</option>
-          </select>
-        </td>
         <td><input class="t-text" type="text" placeholder="Notes…"
                    data-field="notes" oninput="markRow(this)"></td>
       `;
@@ -384,6 +370,52 @@ function markRow(el) {
   tr.classList.toggle('has-data', vals.trim() !== '');
 }
 
+async function loadPrevious() {
+  const unit = document.getElementById('unit').value;
+
+  // Clear all inputs first
+  document.querySelectorAll('tr.trade-row input').forEach(el => {
+    el.value = '';
+    el.classList.remove('prefilled');
+  });
+  document.querySelectorAll('tr.trade-row').forEach(tr => tr.classList.remove('has-data'));
+  document.getElementById('statusBar').textContent = 'Loading previous data…';
+
+  if (!unit) {
+    document.getElementById('statusBar').textContent = 'Select a unit to load previous progress.';
+    return;
+  }
+
+  document.getElementById('loading').classList.add('show');
+
+  try {
+    const res  = await fetch(`/unit-progress/${unit}`);
+    const data = await res.json();
+
+    let filled = 0;
+    document.querySelectorAll('tr.trade-row').forEach(tr => {
+      const key      = tr.dataset.trade;
+      const pctInput = tr.querySelector('[data-field="pct"]');
+      if (data[key] !== undefined && data[key] !== null) {
+        const pct = Math.round(data[key] * 100);
+        pctInput.value = pct;
+        pctInput.classList.add('prefilled');
+        tr.classList.add('has-data');
+        filled++;
+      }
+    });
+
+    document.getElementById('statusBar').textContent =
+      filled > 0
+        ? `${unit} — ${filled} trades pre-loaded from last entry. Update and submit.`
+        : `${unit} — no previous data found. Fill in today's progress and submit.`;
+  } catch(e) {
+    document.getElementById('statusBar').textContent = 'Could not load previous data.';
+  }
+
+  document.getElementById('loading').classList.remove('show');
+}
+
 async function submitAll() {
   const unit = document.getElementById('unit').value;
   const date = document.getElementById('date').value;
@@ -394,15 +426,13 @@ async function submitAll() {
   document.querySelectorAll('tr.trade-row').forEach(tr => {
     const pct  = tr.querySelector('[data-field="pct"]').value.trim();
     const resp = tr.querySelector('[data-field="resp"]').value.trim();
-    const cont = tr.querySelector('[data-field="contractor"]').value;
     const note = tr.querySelector('[data-field="notes"]').value.trim();
-    if (pct || resp || cont || note) {
+    if (pct || resp || note) {
       entries.push({
         date, period: selectedPeriod, position: unit,
         trade:        tr.dataset.trade,
         progress_pct: pct !== '' ? parseFloat(pct) : null,
         responsible:  resp,
-        contractor:   cont,
         notes:        note
       });
     }
@@ -423,12 +453,10 @@ async function submitAll() {
     const data = await res.json();
     if (data.ok) {
       showToast(`✓ ${data.saved} trades saved`);
-      document.querySelectorAll('tr.trade-row input, tr.trade-row select')
-              .forEach(el => { el.value = ''; });
-      document.querySelectorAll('tr.trade-row')
-              .forEach(tr => tr.classList.remove('has-data'));
+      // Remove prefilled highlight — new values are now the current state
+      document.querySelectorAll('input.t-pct').forEach(el => el.classList.remove('prefilled'));
       document.getElementById('statusBar').textContent =
-        `Last update: ${unit} ${selectedPeriod} ${date} — ${data.saved} trades recorded`;
+        `Saved: ${unit} ${selectedPeriod} ${date} — ${data.saved} trades recorded`;
     } else {
       showToast(`Error: ${(data.errors||['Unknown'])[0].slice(0,80)}`, true);
     }

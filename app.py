@@ -100,6 +100,22 @@ def submit_batch():
         return jsonify({"ok": True, "saved": len(rows)})
     return jsonify({"ok": False, "errors": [resp.text]}), 500
 
+@app.route("/unit-progress/<position>")
+def unit_progress(position):
+    """Return latest recorded % per trade for a given unit."""
+    resp = requests.get(
+        f"{SUPABASE_URL}/rest/v1/{TABLE}"
+        f"?select=area_phase,progress_pct&position=eq.{position}"
+        f"&order=created_at.desc&limit=500",
+        headers=sb_headers()
+    )
+    latest = {}
+    for r in resp.json():
+        phase = r.get("area_phase", "")
+        if phase and phase not in latest and r.get("progress_pct") is not None:
+            latest[phase] = r["progress_pct"]
+    return jsonify(latest)
+
 @app.route("/export.csv")
 def export_csv():
     resp = requests.get(
