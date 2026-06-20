@@ -60,6 +60,46 @@ def submit():
     else:
         return jsonify({"error": resp.text}), 500
 
+@app.route("/submit-batch", methods=["POST"])
+def submit_batch():
+    entries = request.get_json()
+    if not entries:
+        return jsonify({"error": "No entries"}), 400
+
+    rows = []
+    for entry in entries:
+        progress = None
+        pct_raw = entry.get("progress_pct")
+        if pct_raw not in ("", None):
+            try:
+                progress = max(0.0, min(1.0, float(str(pct_raw)) / 100))
+            except (ValueError, TypeError):
+                pass
+
+        responsible = (entry.get("responsible") or "").strip()
+        contractor  = (entry.get("contractor") or "").strip()
+        crew = f"{responsible} ({contractor})" if responsible and contractor else responsible or contractor
+
+        rows.append({
+            "date":         entry["date"],
+            "period":       entry["period"],
+            "position":     entry["position"],
+            "area_phase":   entry.get("trade", ""),
+            "progress_pct": progress,
+            "crew":         crew,
+            "notes":        entry.get("notes", "")
+        })
+
+    resp = requests.post(
+        f"{SUPABASE_URL}/rest/v1/{TABLE}",
+        json=rows,
+        headers={**sb_headers(), "Prefer": "return=minimal"}
+    )
+
+    if resp.status_code in (200, 201, 204):
+        return jsonify({"ok": True, "saved": len(rows)})
+    return jsonify({"ok": False, "errors": [resp.text]}), 500
+
 @app.route("/export.csv")
 def export_csv():
     resp = requests.get(

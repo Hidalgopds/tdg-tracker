@@ -3,403 +3,452 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>TDG — Daily Log</title>
+<title>TDG — Daily Update</title>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: #0f1923;
-    color: #e8edf2;
-    min-height: 100vh;
-    padding: 16px;
-  }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #0f1923;
+  color: #e8edf2;
+  min-height: 100vh;
+}
 
-  .header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 24px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid #1e2d3d;
-  }
+.top-bar {
+  background: #162030;
+  border-bottom: 2px solid #1e2d3d;
+  padding: 10px 14px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
 
-  .logo {
-    width: 40px;
-    height: 40px;
-    background: #1a6bc4;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    font-size: 14px;
-    letter-spacing: 0.5px;
-    color: white;
-    flex-shrink: 0;
-  }
+.logo {
+  width: 34px; height: 34px;
+  background: #1a6bc4;
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 11px; color: white;
+  flex-shrink: 0;
+}
 
-  .header h1 { font-size: 18px; font-weight: 700; color: #ffffff; }
-  .header p  { font-size: 12px; color: #6b7f94; margin-top: 2px; }
+.ctrl-group { display: flex; align-items: center; gap: 6px; }
 
-  .card {
-    background: #162030;
-    border: 1px solid #1e2d3d;
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 16px;
-  }
+.ctrl-label {
+  font-size: 10px; font-weight: 600; color: #6b7f94;
+  text-transform: uppercase; letter-spacing: 0.6px;
+  white-space: nowrap;
+}
 
-  .card-title {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #1a6bc4;
-    margin-bottom: 16px;
-  }
+select.ctrl, input.ctrl {
+  background: #0f1923;
+  border: 1px solid #2a3d52;
+  border-radius: 6px;
+  color: #e8edf2;
+  font-size: 14px;
+  padding: 6px 10px;
+  outline: none;
+  -webkit-appearance: none;
+  height: 34px;
+}
+select.ctrl:focus, input.ctrl:focus { border-color: #1a6bc4; }
 
-  .row { display: flex; gap: 12px; margin-bottom: 14px; }
-  .row:last-child { margin-bottom: 0; }
-  .col { flex: 1; min-width: 0; }
+.period-row { display: flex; gap: 4px; }
+.period-btn {
+  height: 34px; padding: 0 14px;
+  border: 1px solid #2a3d52;
+  border-radius: 6px;
+  background: #0f1923;
+  color: #6b7f94;
+  font-size: 13px; font-weight: 700;
+  cursor: pointer;
+}
+.period-btn.active {
+  background: #1a3a5c;
+  border-color: #1a6bc4;
+  color: #4da3ff;
+}
 
-  label {
-    display: block;
-    font-size: 11px;
-    font-weight: 600;
-    color: #6b7f94;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 6px;
-  }
+.submit-btn {
+  margin-left: auto;
+  height: 34px; padding: 0 20px;
+  background: #1a6bc4;
+  border: none; border-radius: 7px;
+  color: white; font-size: 14px; font-weight: 700;
+  cursor: pointer; white-space: nowrap;
+}
+.submit-btn:active { background: #1558a0; }
+.submit-btn:disabled { background: #1e2d3d; color: #4a5568; cursor: not-allowed; }
 
-  input, select, textarea {
-    width: 100%;
-    background: #0f1923;
-    border: 1px solid #1e2d3d;
-    border-radius: 8px;
-    color: #e8edf2;
-    font-size: 15px;
-    padding: 10px 12px;
-    outline: none;
-    transition: border-color 0.15s;
-    -webkit-appearance: none;
-  }
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
 
-  input:focus, select:focus, textarea:focus {
-    border-color: #1a6bc4;
-  }
+table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
 
-  select {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7f94' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    padding-right: 36px;
-    cursor: pointer;
-  }
+col.c-trade      { width: 210px; }
+col.c-pct        { width: 76px; }
+col.c-resp       { width: 130px; }
+col.c-contractor { width: 88px; }
+col.c-notes      { min-width: 160px; }
 
-  select option { background: #162030; }
+thead th {
+  background: #0d1520;
+  color: #4a6380;
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.8px;
+  padding: 8px 8px;
+  border-bottom: 2px solid #1e2d3d;
+  white-space: nowrap;
+  text-align: left;
+  position: sticky; top: 55px; z-index: 20;
+}
+thead th:first-child {
+  position: sticky; left: 0; top: 55px; z-index: 30;
+  background: #0d1520;
+}
 
-  textarea {
-    resize: vertical;
-    min-height: 80px;
-    line-height: 1.5;
-  }
+tr.cat-row td {
+  background: #111d2b;
+  color: #1a6bc4;
+  font-size: 10px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 1px;
+  padding: 7px 10px;
+  border-top: 2px solid #1e2d3d;
+  border-bottom: 1px solid #1e2d3d;
+}
+tr.cat-row td:first-child {
+  position: sticky; left: 0; z-index: 5;
+  background: #111d2b;
+}
 
-  .period-row {
-    display: flex;
-    gap: 8px;
-  }
+tr.trade-row td {
+  padding: 3px 6px;
+  border-bottom: 1px solid #131f2d;
+  vertical-align: middle;
+  background: #0f1923;
+}
+tr.trade-row:hover td { background: #132030; }
 
-  .period-btn {
-    flex: 1;
-    padding: 10px;
-    border: 1px solid #1e2d3d;
-    border-radius: 8px;
-    background: #0f1923;
-    color: #6b7f94;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    text-align: center;
-    transition: all 0.15s;
-    -webkit-appearance: none;
-  }
+tr.trade-row td:first-child {
+  position: sticky; left: 0; z-index: 4;
+  background: #0f1923;
+  font-size: 12px; color: #8fa3b5;
+  padding-left: 18px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+tr.trade-row:hover td:first-child { background: #132030; }
 
-  .period-btn.active {
-    background: #1a3a5c;
-    border-color: #1a6bc4;
-    color: #4da3ff;
-  }
+tr.trade-row.has-data td              { background: #0e1d2e; }
+tr.trade-row.has-data td:first-child  { background: #0e1d2e; color: #e8edf2; }
 
-  .pct-wrap {
-    position: relative;
-  }
+input.t-pct {
+  width: 60px;
+  background: #0a1420; border: 1px solid #1e2d3d;
+  border-radius: 5px; color: #e8edf2;
+  font-size: 13px; font-weight: 600;
+  padding: 4px 6px; text-align: center; outline: none;
+}
+input.t-pct:focus { border-color: #1a6bc4; }
 
-  .pct-wrap input {
-    padding-right: 36px;
-  }
+input.t-text, select.t-sel {
+  width: 100%;
+  background: #0a1420; border: 1px solid #1e2d3d;
+  border-radius: 5px; color: #e8edf2;
+  font-size: 12px; padding: 4px 7px;
+  outline: none; -webkit-appearance: none; height: 28px;
+}
+input.t-text:focus, select.t-sel:focus { border-color: #1a6bc4; }
 
-  .pct-symbol {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #6b7f94;
-    font-size: 14px;
-    pointer-events: none;
-  }
+.status-bar {
+  text-align: center; padding: 10px 16px;
+  font-size: 11px; color: #3d5470;
+  border-top: 1px solid #131f2d;
+  position: sticky; bottom: 0;
+  background: #0f1923;
+}
 
-  .submit-btn {
-    width: 100%;
-    padding: 16px;
-    background: #1a6bc4;
-    border: none;
-    border-radius: 10px;
-    color: white;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.15s;
-    -webkit-appearance: none;
-    margin-top: 8px;
-  }
-
-  .submit-btn:active { background: #1558a0; }
-  .submit-btn:disabled { background: #1e2d3d; color: #4a5568; cursor: not-allowed; }
-
-  .toast {
-    display: none;
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #16a34a;
-    color: white;
-    padding: 12px 24px;
-    border-radius: 100px;
-    font-size: 14px;
-    font-weight: 600;
-    z-index: 999;
-    white-space: nowrap;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-  }
-
-  .toast.error { background: #dc2626; }
-
-  .recent-link {
-    text-align: center;
-    margin-top: 20px;
-  }
-
-  .recent-link a {
-    color: #6b7f94;
-    font-size: 12px;
-    text-decoration: none;
-  }
-
-  @media (max-width: 400px) {
-    .row { flex-direction: column; gap: 14px; }
-  }
+.toast {
+  display: none;
+  position: fixed; top: 70px; left: 50%;
+  transform: translateX(-50%);
+  background: #16a34a; color: white;
+  padding: 11px 24px; border-radius: 100px;
+  font-size: 13px; font-weight: 700;
+  z-index: 999; white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+.toast.error { background: #dc2626; }
 </style>
 </head>
 <body>
 
-<div class="header">
+<div class="top-bar">
   <div class="logo">TDG</div>
-  <div>
-    <h1>Daily Log</h1>
-    <p>MBR Texas — Field Operations</p>
+
+  <div class="ctrl-group">
+    <span class="ctrl-label">Unit</span>
+    <select class="ctrl" id="unit" style="width:82px">
+      <option value="">—</option>
+      <optgroup label="A Series">
+        <option>01A</option><option>02A</option><option>03A</option>
+        <option>04A</option><option>05A</option><option>06A</option>
+        <option>07A</option><option>08A</option><option>09A</option>
+      </optgroup>
+      <optgroup label="B Series">
+        <option>01B</option><option>02B</option><option>03B</option>
+        <option>04B</option><option>05B</option><option>06B</option>
+        <option>07B</option><option>08B</option><option>09B</option>
+        <option>10B</option><option>11B</option><option>12B</option>
+        <option>13B</option><option>14B</option><option>15B</option>
+        <option>16B</option><option>17B</option><option>18B</option>
+        <option>19B</option><option>20B</option><option>21B</option>
+        <option>22B</option><option>23B</option><option>24B</option>
+        <option>25B</option><option>26B</option><option>27B</option>
+        <option>28B</option>
+      </optgroup>
+    </select>
   </div>
+
+  <div class="ctrl-group">
+    <span class="ctrl-label">Date</span>
+    <input type="date" class="ctrl" id="date" value="{{ today }}" style="width:142px">
+  </div>
+
+  <div class="ctrl-group">
+    <span class="ctrl-label">Shift</span>
+    <div class="period-row">
+      <button class="period-btn active" data-val="AM" onclick="setPeriod(this)">AM</button>
+      <button class="period-btn"        data-val="PM" onclick="setPeriod(this)">PM</button>
+    </div>
+  </div>
+
+  <button class="submit-btn" id="submitBtn" onclick="submitAll()">Submit Update</button>
 </div>
 
-<div class="card">
-  <div class="card-title">Date & Shift</div>
-  <div class="row">
-    <div class="col">
-      <label>Date</label>
-      <input type="date" id="date" value="{{ today }}">
-    </div>
-    <div class="col">
-      <label>Period</label>
-      <div class="period-row">
-        <button class="period-btn active" data-val="AM" onclick="setPeriod(this)">AM</button>
-        <button class="period-btn" data-val="PM" onclick="setPeriod(this)">PM</button>
-      </div>
-    </div>
-  </div>
+<div class="table-wrap">
+  <table>
+    <colgroup>
+      <col class="c-trade">
+      <col class="c-pct">
+      <col class="c-resp">
+      <col class="c-contractor">
+      <col class="c-notes">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Trade / Activity</th>
+        <th style="text-align:center">% Done</th>
+        <th>Responsible</th>
+        <th>Contractor</th>
+        <th>Notes / Flags</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
 </div>
 
-<div class="card">
-  <div class="card-title">Unit</div>
-  <div class="row">
-    <div class="col">
-      <label>Position</label>
-      <select id="position">
-        <option value="">Select unit...</option>
-        <optgroup label="A Series">
-          <option>01A</option><option>02A</option><option>03A</option>
-          <option>04A</option><option>05A</option><option>06A</option>
-          <option>07A</option><option>08A</option><option>09A</option>
-        </optgroup>
-        <optgroup label="B Series">
-          <option>01B</option><option>02B</option><option>03B</option>
-          <option>04B</option><option>05B</option><option>06B</option>
-          <option>07B</option><option>08B</option><option>09B</option>
-          <option>10B</option><option>11B</option><option>12B</option>
-          <option>13B</option><option>14B</option><option>15B</option>
-          <option>16B</option><option>17B</option><option>18B</option>
-          <option>19B</option><option>20B</option><option>21B</option>
-          <option>22B</option><option>23B</option><option>24B</option>
-          <option>25B</option><option>26B</option><option>27B</option>
-          <option>28B</option>
-        </optgroup>
-      </select>
-    </div>
-    <div class="col">
-      <label>Progress %</label>
-      <div class="pct-wrap">
-        <input type="number" id="progress" min="0" max="100" placeholder="0–100">
-        <span class="pct-symbol">%</span>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="card">
-  <div class="card-title">Activity</div>
-  <div class="row">
-    <div class="col">
-      <label>Area / Phase</label>
-      <select id="area_phase">
-        <option value="">Select or type below...</option>
-        <optgroup label="Main Trades">
-          <option>Cable Tray &amp; Drop Downs</option>
-          <option>Equipment Conduit</option>
-          <option>Equipment Install</option>
-          <option>Strut Positioning</option>
-          <option>Switchgear Pipes</option>
-          <option>Transformers Install</option>
-          <option>Wall Pipes &amp; Ground Bar</option>
-        </optgroup>
-        <optgroup label="Structure">
-          <option>1. Structure</option>
-          <option>2. Structure Paint</option>
-          <option>3. Envelope</option>
-          <option>4. Unit Paint</option>
-          <option>5. Internal Systems Rough-In</option>
-        </optgroup>
-        <optgroup label="Other">
-          <option>Final QC</option>
-          <option>Ready to Ship</option>
-          <option>No crew</option>
-          <option>No change</option>
-        </optgroup>
-      </select>
-    </div>
-  </div>
-  <div class="row" style="margin-top:8px">
-    <div class="col">
-      <label>Custom Description</label>
-      <input type="text" id="area_custom" placeholder="Override or add detail...">
-    </div>
-  </div>
-</div>
-
-<div class="card">
-  <div class="card-title">Crew & Notes</div>
-  <div class="row">
-    <div class="col">
-      <label>Crew</label>
-      <input type="text" id="crew" placeholder="Names, separated by commas">
-    </div>
-  </div>
-  <div class="row">
-    <div class="col">
-      <label>Notes / Flags</label>
-      <textarea id="notes" placeholder="Issues, delays, observations..."></textarea>
-    </div>
-  </div>
-</div>
-
-<button class="submit-btn" id="submitBtn" onclick="submitLog()">Submit Entry</button>
-
-<div class="recent-link">
-  <a href="/recent" target="_blank">View recent entries ↗</a>
-</div>
-
+<div class="status-bar" id="statusBar">Select a unit, fill in active trades, then Submit Update.</div>
 <div class="toast" id="toast"></div>
 
 <script>
-  let selectedPeriod = "AM";
+const TRADES = [
+  { cat: '1. Structure', subs: [
+    'C Channel / Holes Templates',
+    'Weld 4 I beams (10" I beams)',
+    'C Channels 12" weld to enclose frame',
+    'Square the frame',
+    'Inside C Channels/Square',
+    'Nuts inside C Channel',
+    'Floor plate (Pull, Cut, Weld)',
+    'Square tube Halo (Pull, Cut, Grind, Weld)',
+    'I beam on halo stand up Posts',
+    'Square halo and weld to post',
+    'Square tubes for doors',
+    'Ground plates',
+    'Weld floor plates together'
+  ]},
+  { cat: '2. Structure Paint', subs: [] },
+  { cat: '3. Envelope',        subs: [] },
+  { cat: '4. Unit Paint',      subs: [] },
+  { cat: '5. Internal Systems Rough-In', subs: [] },
+  { cat: 'ELECTRICAL', subs: [
+    'Ground Bar',
+    'Wall/Ceiling Boxes & Conduit',
+    'H2 Control Box & Conduit',
+    'HVAC Control Box & Conduit',
+    'Exhaust Fan Control Box & Conduit',
+    'PLC & Conduit',
+    'Wall/Ceiling Conduit'
+  ]},
+  { cat: 'BATTERY CABINETS', subs: [
+    'Unload from truck','Unpack units','Unpalletize units',
+    'Position units in place','Uninstall plates','Install Pucks',
+    'Put in covers','Fans','KO Plates','Cover w/ Drop Cloth'
+  ]},
+  { cat: 'IOs/POWER CABINETS', subs: [
+    'Unload from truck','Unpack units','Unpalletize units',
+    'Position units in place','Uninstall plates','Install Bars',
+    'Put in covers','KO Plates','Cover w/ Drop Cloth'
+  ]},
+  { cat: 'SWITCH GEAR', subs: [
+    'Bus Bar','ATS Plate @ SwGr #2 to #3','Top Hats',
+    'KO Plates','2" EMT @ SwGr #4'
+  ]},
+  { cat: 'PANELS & CABLE', subs: [
+    'Panels/Transformers & Conduit','Cable Tray Supports (Struts)',
+    '24" Cable Tray','30" Cable Tray','24" Step Down Tray',
+    'Battery to Battery Conduit','Batt to SwGr #4 Comm Conduit',
+    '18" Battery Tray','Battery Cabinet Conduit'
+  ]},
+  { cat: 'BATTERY CONNECTIONS', subs: [
+    'Battery to Battery','Battery to SwGr #4','18" Battery Tray'
+  ]},
+  { cat: 'IO CONDUIT', subs: [
+    'IO to IO','IO to Batteries','IO to SwGr #4'
+  ]},
+  { cat: 'LIGHTING', subs: ['Lighting & Conduit'] },
+  { cat: 'CLOSEOUT', subs: [
+    'Cut Down All Thread','Cap All Thread','Caulk Screw Holes',
+    'Clean Up','Final Walk Through','Check All Boxes for Bushings',
+    'Check Conduit/Unistrut/All Thread Level & Plumb'
+  ]},
+  { cat: '6. Electrical',     subs: [] },
+  { cat: '7. Final QC',       subs: [] },
+  { cat: '8. Final Touchups', subs: [] }
+];
 
-  function setPeriod(btn) {
-    document.querySelectorAll(".period-btn").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    selectedPeriod = btn.dataset.val;
-  }
+let selectedPeriod = 'AM';
 
-  function showToast(msg, isError = false) {
-    const t = document.getElementById("toast");
-    t.textContent = msg;
-    t.className = "toast" + (isError ? " error" : "");
-    t.style.display = "block";
-    setTimeout(() => { t.style.display = "none"; }, 3000);
-  }
+function setPeriod(btn) {
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedPeriod = btn.dataset.val;
+}
 
-  async function submitLog() {
-    const btn = document.getElementById("submitBtn");
-    const position = document.getElementById("position").value;
-    const dateVal = document.getElementById("date").value;
+function buildTable() {
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
 
-    if (!dateVal) { showToast("Date is required", true); return; }
-    if (!position) { showToast("Select a position", true); return; }
+  TRADES.forEach(group => {
+    const catTr = document.createElement('tr');
+    catTr.className = 'cat-row';
+    catTr.innerHTML = `<td colspan="5">${group.cat}</td>`;
+    tbody.appendChild(catTr);
 
-    // Area/phase: custom overrides dropdown
-    const areaDropdown = document.getElementById("area_phase").value;
-    const areaCustom = document.getElementById("area_custom").value.trim();
-    const area = areaCustom || areaDropdown;
+    const catOnly = group.subs.length === 0;
+    const rows    = catOnly ? [''] : group.subs;
 
-    const payload = {
-      date: dateVal,
-      period: selectedPeriod,
-      position: position,
-      area_phase: area,
-      progress_pct: document.getElementById("progress").value || null,
-      crew: document.getElementById("crew").value.trim(),
-      notes: document.getElementById("notes").value.trim()
-    };
+    rows.forEach(sub => {
+      const tradeKey = catOnly ? group.cat : `${group.cat} > ${sub}`;
+      const tr = document.createElement('tr');
+      tr.className     = 'trade-row';
+      tr.dataset.trade = tradeKey;
+      tr.innerHTML = `
+        <td title="${sub}">${sub}</td>
+        <td style="text-align:center">
+          <input class="t-pct" type="number" min="0" max="100" placeholder="—"
+                 data-field="pct" oninput="markRow(this)">
+        </td>
+        <td><input class="t-text" type="text" placeholder="Name…"
+                   data-field="resp" oninput="markRow(this)"></td>
+        <td>
+          <select class="t-sel" data-field="contractor" onchange="markRow(this)">
+            <option value="">—</option>
+            <option value="MBR">MBR</option>
+            <option value="CUR">CUR</option>
+            <option value="SUB">SUB</option>
+          </select>
+        </td>
+        <td><input class="t-text" type="text" placeholder="Notes…"
+                   data-field="notes" oninput="markRow(this)"></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  });
+}
 
-    btn.disabled = true;
-    btn.textContent = "Saving...";
+function markRow(el) {
+  const tr   = el.closest('tr');
+  const vals = [...tr.querySelectorAll('[data-field]')].map(i => i.value).join('');
+  tr.classList.toggle('has-data', vals.trim() !== '');
+}
 
-    try {
-      const res = await fetch("/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+async function submitAll() {
+  const unit = document.getElementById('unit').value;
+  const date = document.getElementById('date').value;
+  if (!unit) { showToast('Select a unit first', true); return; }
+  if (!date) { showToast('Date is required', true);   return; }
+
+  const entries = [];
+  document.querySelectorAll('tr.trade-row').forEach(tr => {
+    const pct  = tr.querySelector('[data-field="pct"]').value.trim();
+    const resp = tr.querySelector('[data-field="resp"]').value.trim();
+    const cont = tr.querySelector('[data-field="contractor"]').value;
+    const note = tr.querySelector('[data-field="notes"]').value.trim();
+    if (pct || resp || cont || note) {
+      entries.push({
+        date, period: selectedPeriod, position: unit,
+        trade:        tr.dataset.trade,
+        progress_pct: pct !== '' ? parseFloat(pct) : null,
+        responsible:  resp,
+        contractor:   cont,
+        notes:        note
       });
-      const data = await res.json();
-
-      if (data.ok) {
-        showToast("✓ Entry saved");
-        // Reset fields but keep date and period
-        document.getElementById("position").value = "";
-        document.getElementById("area_phase").value = "";
-        document.getElementById("area_custom").value = "";
-        document.getElementById("progress").value = "";
-        document.getElementById("crew").value = "";
-        document.getElementById("notes").value = "";
-      } else {
-        showToast(data.error || "Error saving", true);
-      }
-    } catch(e) {
-      showToast("Connection error", true);
     }
+  });
 
-    btn.disabled = false;
-    btn.textContent = "Submit Entry";
+  if (!entries.length) { showToast('No rows filled — nothing to save', true); return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled    = true;
+  btn.textContent = `Saving ${entries.length}…`;
+
+  try {
+    const res  = await fetch('/submit-batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(entries)
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast(`✓ ${data.saved} trades saved`);
+      document.querySelectorAll('tr.trade-row input, tr.trade-row select')
+              .forEach(el => { el.value = ''; });
+      document.querySelectorAll('tr.trade-row')
+              .forEach(tr => tr.classList.remove('has-data'));
+      document.getElementById('statusBar').textContent =
+        `Last update: ${unit} ${selectedPeriod} ${date} — ${data.saved} trades recorded`;
+    } else {
+      showToast(`Error: ${(data.errors||['Unknown'])[0].slice(0,80)}`, true);
+    }
+  } catch(e) {
+    showToast('Connection error', true);
   }
+
+  btn.disabled    = false;
+  btn.textContent = 'Submit Update';
+}
+
+function showToast(msg, isError=false) {
+  const t = document.getElementById('toast');
+  t.textContent   = msg;
+  t.className     = 'toast' + (isError ? ' error' : '');
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 3500);
+}
+
+buildTable();
 </script>
 </body>
 </html>
