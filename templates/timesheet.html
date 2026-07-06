@@ -55,6 +55,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .tool-btn.active{background:#2d1a4e;border-color:var(--accent);color:var(--accent);}
 .workers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:18px;}
 .worker-card{background:#0d1520;border:2px solid var(--border);border-radius:12px;padding:14px 10px 10px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;user-select:none;-webkit-tap-highlight-color:transparent;}
+.worker-card.absent-card{opacity:.65;border-color:#7f1d1d;background:#1a0a0a;}
 .worker-card:active{transform:scale(.97);}
 .worker-card.present{background:#061410;border-color:var(--green);}
 .wc-status{font-size:22px;margin-bottom:6px;}
@@ -672,10 +673,14 @@ function timeAgo(iso){
       </div>
     </div>
 
-    <!-- ── My Team Tab ──────────────────────────────────────────────── -->
+        <!-- ── My Team Tab ──────────────────────────────────────────────── -->
     <div class="tab-panel" id="tab-myteam">
-      <div style="padding:0 0 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <div style="font-size:14px;font-weight:700;color:#e2e8f0;">👥 Team Check-In</div>
+      <!-- Header: lead name or admin filter -->
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+        <div>
+          <div style="font-size:16px;font-weight:800;color:#e2e8f0;">👥 My Team</div>
+          <div id="myteam-subtitle" style="font-size:12px;color:#64748b;margin-top:2px;">Tap a card to check them into the safety meeting</div>
+        </div>
         <span style="flex:1;"></span>
         <div id="myteam-lead-filter" style="display:none;">
           <select id="myteam-lead-sel" onchange="loadMyTeam()" style="padding:5px 10px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:12px;">
@@ -684,11 +689,12 @@ function timeAgo(iso){
         </div>
         <button onclick="loadMyTeam()" style="padding:5px 12px;border:1px solid #334155;background:#1e293b;color:#94a3b8;border-radius:8px;font-size:12px;cursor:pointer;">↺ Refresh</button>
       </div>
-      <div id="myteam-body" style="display:flex;flex-direction:column;gap:10px;">
-        <div style="color:#64748b;text-align:center;padding:32px;">Loading team…</div>
-      </div>
-      <!-- Inline absent/late form for team members -->
-      <div id="myteam-attform" style="display:none;margin-top:20px;background:#1a1d27;border:1px solid #2a2d3e;border-radius:12px;padding:18px;">
+      <!-- Team count -->
+      <div id="myteam-count" style="font-size:13px;color:#64748b;margin-bottom:12px;"></div>
+      <!-- Chiclet grid (same style as Safety Meeting) -->
+      <div id="myteam-grid" class="workers-grid" style="margin-bottom:20px;"></div>
+      <!-- Absent/Late report form -->
+      <div id="myteam-attform" style="display:none;background:#1a1d27;border:1px solid #2a2d3e;border-radius:12px;padding:18px;margin-top:8px;">
         <div style="font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:12px;">📋 Report for: <span id="myteam-att-worker" style="color:#4f8ef7;"></span></div>
         <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
           <button onclick="setTeamAttType('late')" id="myteam-btn-late" style="flex:1;padding:9px;border-radius:8px;border:2px solid #f59e0b;background:#fffbeb;color:#92400e;font-weight:700;font-size:13px;cursor:pointer;">🕐 Late</button>
@@ -949,6 +955,8 @@ function applyTabVisibility(){
   // Yard Map: lead+ only
   var ymBtn = document.getElementById('tab-btn-yardmap');
   if(ymBtn) ymBtn.style.display = lvl >= 2 ? 'inline-block' : 'none';
+  var myTeamBtn = document.getElementById('tab-btn-myteam');
+  if(myTeamBtn) myTeamBtn.style.display = lvl >= 2 ? 'inline-block' : 'none';
   // If worker, switch default active tab to Attendance
   if(lvl < 2){
     var attBtn = document.getElementById('tab-btn-daysoff');
@@ -1660,7 +1668,7 @@ async function loadAttendance(){
       if(row.status==='approved') statusBadge='<span style="font-size:10px;font-weight:700;background:#dcfce7;color:#166534;border-radius:8px;padding:1px 7px;margin-left:4px;">✓ Approved</span>';
       else if(row.type!=='late') statusBadge='<span style="font-size:10px;font-weight:700;background:#fef9c3;color:#854d0e;border-radius:8px;padding:1px 7px;margin-left:4px;">⏳ Pending</span>';
       var approveBtn = (row.type!=='late' && row.status!=='approved') ?
-        '<button onclick="approveAtt('+row.id+')" style="margin-left:4px;padding:2px 8px;font-size:10px;font-weight:700;border:1px solid #16a34a;background:#f0fdf4;color:#166534;border-radius:6px;cursor:pointer;">✓ Approve</button>' : '';
+        '<button onclick="approveAtt('+row.id+')" style="margin-left:4px;padding:2px 8px;font-size:10px;font-weight:700;border:1px solid #16a34a;background:#f0fdf4;color:#166534;border-radius:6px;cursor:pointer;">✓ Note it</button>' : '';
       var editBtn = '<button onclick="editAttById('+row.id+')" style="margin-left:4px;padding:2px 8px;font-size:10px;border:1px solid #3b82f6;background:#eff6ff;color:#1d4ed8;border-radius:6px;cursor:pointer;">✎ Edit</button>';
       var delBtn  = '<button onclick="deleteAtt('+row.id+')" style="margin-left:4px;padding:2px 8px;font-size:10px;border:1px solid #ef4444;background:#fef2f2;color:#991b1b;border-radius:6px;cursor:pointer;">✕</button>';
       return '<div class="att-row" style="flex-wrap:wrap;gap:4px;" data-att-id="'+row.id+'">'+badge+statusBadge+
@@ -1674,7 +1682,7 @@ async function loadAttendance(){
 
 // ── Attendance edit/approve/delete ───────────────────────────────────────────
 async function approveAtt(id){
-  if(!confirm('Mark this report as approved?')) return;
+  if(!confirm('Mark this as Noted? This acknowledges the report.')) return;
   try{
     var r = await fetch('/api/attendance/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'approved'})});
     var d = await r.json();
@@ -2001,33 +2009,32 @@ if(curUser){ showMain(); }
 
 <!-- ── My Team Tab JS ─────────────────────────────────────────────── -->
 <script>
+// Team member name registry (index→{name,ciId}) to avoid onclick quoting issues
+var _teamMemberMap = {};
 var _myTeamAttWorker = null;
-var _myTeamAttType = 'late';
-var _myTeamCheckins = {}; // worker_name -> checkin record
 
+// ── Terminology helpers ──────────────────────────────────────────────────────
 function setTeamAttType(type){
   _myTeamAttType = type;
   document.getElementById('myteam-att-type').value = type;
-  // Style buttons
   var styles = {
-    late:    {active:'#f59e0b',abg:'#fffbeb',atxt:'#92400e'},
-    absent:  {active:'#ef4444',abg:'#fef2f2',atxt:'#991b1b'},
-    vacation:{active:'#818cf8',abg:'#eef2ff',atxt:'#3730a3'}
+    late:    ['#f59e0b','#fffbeb','#92400e'],
+    absent:  ['#ef4444','#fef2f2','#991b1b'],
+    vacation:['#818cf8','#eef2ff','#3730a3']
   };
   ['late','absent','vacation'].forEach(function(t){
-    var btn = document.getElementById('myteam-btn-'+( t==='vacation'?'vac':t ));
-    if(!btn) return;
-    var s = styles[t];
-    var isActive = t===type;
-    btn.style.borderColor = isActive ? s.active : '#e2e8f0';
-    btn.style.background  = isActive ? s.abg    : '#f8fafc';
-    btn.style.color       = isActive ? s.atxt   : '#64748b';
+    var id = t==='vacation'?'myteam-btn-vac':'myteam-btn-'+t;
+    var btn = document.getElementById(id); if(!btn) return;
+    var s = styles[t], active = t===type;
+    btn.style.borderColor = active?s[0]:'#e2e8f0';
+    btn.style.background  = active?s[1]:'#f8fafc';
+    btn.style.color       = active?s[2]:'#64748b';
   });
   document.getElementById('myteam-late-time-wrap').style.display = type==='late' ? '' : 'none';
   document.getElementById('myteam-return-wrap').style.display    = type!=='late' ? '' : 'none';
 }
+var _myTeamAttType = 'late';
 
-var _teamMemberMap = {};
 function openTeamAttFormIdx(idx){
   var rec = _teamMemberMap[idx]; if(!rec) return;
   openTeamAttForm(rec.name);
@@ -2040,10 +2047,10 @@ function openTeamAttForm(workerName){
   document.getElementById('myteam-late-time').value = '';
   document.getElementById('myteam-return-date').value = '';
   setTeamAttType('late');
-  document.getElementById('myteam-attform').style.display = '';
-  document.getElementById('myteam-attform').scrollIntoView({behavior:'smooth',block:'nearest'});
+  var form = document.getElementById('myteam-attform');
+  form.style.display = '';
+  form.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
-
 function closeTeamAttForm(){
   document.getElementById('myteam-attform').style.display = 'none';
   _myTeamAttWorker = null;
@@ -2057,176 +2064,182 @@ async function submitTeamAtt(){
   var ret    = document.getElementById('myteam-return-date').value;
   var st     = document.getElementById('myteam-att-status');
   if(!reason){ st.style.color='#ef4444'; st.textContent='Reason is required.'; return; }
-  if(type==='late' && !time){ st.style.color='#ef4444'; st.textContent='Expected arrival time is required for Late.'; return; }
+  if(type==='late' && !time){ st.style.color='#ef4444'; st.textContent='Expected arrival time is required.'; return; }
   st.style.color='#94a3b8'; st.textContent='Submitting…';
   var by = localStorage.getItem('mbrAuth') || '';
   var payload = {
-    worker_name: _myTeamAttWorker,
-    type: type,
+    worker_name: _myTeamAttWorker, type: type,
     reason: reason + (by ? '  [Reported by ' + by + ']' : ''),
     report_date: new Date().toISOString().slice(0,10),
-    arrival_time: time || null,
-    return_date: ret || null
+    arrival_time: time || null, return_date: ret || null
   };
   try{
     var r = await fetch('/api/attendance',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     var d = await r.json();
-    if(d.ok){
-      st.style.color='#22c55e'; st.textContent='✓ Report submitted!';
-      setTimeout(function(){ closeTeamAttForm(); loadMyTeam(); }, 1000);
-    } else {
-      st.style.color='#ef4444'; st.textContent='Error: '+(d.error||'Unknown error');
-    }
+    if(d.ok){ st.style.color='#22c55e'; st.textContent='✓ Submitted!';
+      setTimeout(function(){ closeTeamAttForm(); loadMyTeam(); }, 900); }
+    else { st.style.color='#ef4444'; st.textContent='Error: '+(d.error||'Unknown'); }
   }catch(e){ st.style.color='#ef4444'; st.textContent='Network error: '+e.message; }
 }
 
-async function teamCheckin(idx){
+// ── Safety-meeting check-in for leads (no lvl gate) ─────────────────────────
+// smPresent is shared with Safety Meeting tab — same data, same endpoint.
+async function toggleTeamWorker(name){
+  if(smPresent[name]){
+    var rec = smPresent[name];
+    if(rec.id){ try{ await fetch('/api/safety-meeting/'+rec.id,{method:'DELETE'}); }catch(e){} }
+    delete smPresent[name];
+  } else {
+    var now = new Date().toISOString();
+    smPresent[name] = {id:'', worker_name:name, checked_in_at:now};
+    try{
+      var r = await fetch('/api/safety-meeting',{method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({worker_name:name, supervisor: curUser||''})});
+      var d = await r.json();
+      if(d.ok){
+        // Sync smPresent from server so IDs are correct
+        var ar = await fetch('/api/safety-meeting');
+        var att = await ar.json();
+        smPresent = {};
+        if(Array.isArray(att)) att.forEach(function(rec){ smPresent[rec.worker_name]=rec; });
+        if(window.refreshCheckInStatus) window.refreshCheckInStatus();
+      } else { delete smPresent[name]; }
+    }catch(e){ delete smPresent[name]; }
+  }
+  renderMyTeamGrid(); // re-render My Team cards with updated smPresent
+}
+
+// ── Render My Team chiclet grid ──────────────────────────────────────────────
+function renderMyTeamGrid(){
+  var grid = document.getElementById('myteam-grid');
+  if(!grid) return;
+  var members = Object.values(_teamMemberMap);
+  if(!members.length){ grid.innerHTML=''; return; }
+
+  // Load today's attendance map
+  var today = new Date().toISOString().slice(0,10);
+
+  var html = '';
+  var checkedIn = 0;
+  members.forEach(function(rec, idx){
+    var name = rec.name;
+    var isP  = !!smPresent[name];
+    var att  = smAttendance && smAttendance[name];
+    if(isP) checkedIn++;
+
+    var leadLabel = rec.led_by ? '<div style="font-size:9px;color:#64748b;margin-top:1px;">'+escH(rec.led_by)+'</div>' : '';
+    var statusIcon = isP ? '✅' : (att ? '⚠️' : '👤');
+    var timeLabel  = isP
+      ? ('✓ '+fmtCheckin(smPresent[name].checked_in_at)+' · '+elapsed(smPresent[name].checked_in_at))
+      : (att ? (att.type==='late'?'running late':'not expected') : 'tap to check in');
+    var attBadge = '';
+    if(att){
+      var attColors={late:'background:#92400e;color:#fef3c7',absent:'background:#991b1b;color:#fee2e2',vacation:'background:#5b21b6;color:#ede9fe'};
+      attBadge='<span style="font-size:9px;font-weight:800;padding:1px 6px;border-radius:999px;'+attColors[att.type]+';text-transform:uppercase;margin-left:4px;">'+att.type+'</span>';
+    }
+
+    // Long-press / secondary action for report — use a small icon button in the card corner
+    html += '<div class="worker-card'+(isP?' present':'')+(att&&att.type!=='late'?' absent-card':'')+'" style="position:relative;"'
+      +' onclick="toggleTeamWorker_idx('+idx+')">'
+      +'<div class="wc-status">'+statusIcon+'</div>'
+      +'<div class="wc-name">'+escH(name)+attBadge+leadLabel+'</div>'
+      +'<div class="wc-time">'+timeLabel+'</div>'
+      +'<button onclick="event.stopPropagation();openTeamAttFormIdx('+idx+')" title="Report absent/late" '
+      +'style="position:absolute;top:4px;right:4px;background:none;border:none;font-size:12px;cursor:pointer;color:#64748b;padding:2px;line-height:1;">📋</button>'
+      +'</div>';
+  });
+
+  grid.innerHTML = html;
+
+  // Update count
+  var countEl = document.getElementById('myteam-count');
+  if(countEl) countEl.textContent = checkedIn + ' / ' + members.length + ' checked in';
+}
+
+function toggleTeamWorker_idx(idx){
   var rec = _teamMemberMap[idx]; if(!rec) return;
-  try{
-    var r = await fetch('/api/checkin',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({position:'Manual',worker_name:rec.name})});
-    var d = await r.json();
-    if(d.ok){ loadMyTeam(); }
-    else{ alert('Check-in error: '+(d.error||'Unknown')); }
-  }catch(e){ alert('Network error: '+e.message); }
+  // If worker has absent/vacation att — don't allow check-in
+  var att = smAttendance && smAttendance[rec.name];
+  if(att && att.type !== 'late'){ openTeamAttForm(rec.name); return; }
+  toggleTeamWorker(rec.name);
 }
 
-async function teamCheckout(idx){
-  var rec = _teamMemberMap[idx]; if(!rec || !rec.ciId) return;
-  try{
-    var r = await fetch('/api/checkin/'+rec.ciId+'/checkout',{method:'POST'});
-    var d = await r.json();
-    if(d.ok){ loadMyTeam(); }
-    else{ alert('Check-out error: '+(d.error||'Unknown')); }
-  }catch(e){ alert('Network error: '+e.message); }
-}
-
+// ── Load My Team ─────────────────────────────────────────────────────────────
 async function loadMyTeam(){
   var myName = localStorage.getItem('mbrAuth') || '';
   var role   = localStorage.getItem('mbrRole') || 'lead';
   var isAdmin = ['admin','boss','supervisor'].includes(role);
-  var body   = document.getElementById('myteam-body');
-  body.innerHTML = '<div style="color:#64748b;text-align:center;padding:32px;">Loading…</div>';
+  var grid   = document.getElementById('myteam-grid');
+  var countEl= document.getElementById('myteam-count');
+  if(grid)   grid.innerHTML = '<div style="color:#64748b;text-align:center;padding:32px;grid-column:1/-1;">Loading…</div>';
+  if(countEl)countEl.textContent = '';
 
-  // For boss/admin: show lead filter
+  // Show/hide lead filter for admin
   var filterWrap = document.getElementById('myteam-lead-filter');
   var filterSel  = document.getElementById('myteam-lead-sel');
   if(isAdmin){
     filterWrap.style.display = '';
-    // Populate leads if empty
     if(filterSel.options.length <= 1){
       try{
         var lu = await fetch('/api/users');
         var users = await lu.json();
-        var leads = users.filter(function(u){ return u.role==='lead'; });
-        leads.forEach(function(l){
+        users.filter(function(u){return u.role==='lead';}).forEach(function(l){
           var o = document.createElement('option');
-          o.value = l.name; o.textContent = l.name;
-          filterSel.appendChild(o);
+          o.value=l.name; o.textContent=l.name; filterSel.appendChild(o);
         });
       }catch(e){}
     }
-  } else {
-    filterWrap.style.display = 'none';
-  }
+  } else { filterWrap.style.display='none'; }
 
   var leadName = isAdmin ? (filterSel.value || '') : myName;
-  var today = new Date().toISOString().slice(0,10);
+  var subtitle = document.getElementById('myteam-subtitle');
+  if(subtitle) subtitle.textContent = isAdmin && !leadName
+    ? 'All teams — tap a card to check into safety meeting'
+    : ('Team of '+leadName+' — tap to check into safety meeting');
 
   try{
-    // Fetch team members and today's check-ins in parallel
     var url = '/api/team-members' + (leadName ? '?lead='+encodeURIComponent(leadName) : '');
-    var [tmRes, ciRes, attRes] = await Promise.all([
+    var [tmRes, smRes] = await Promise.all([
       fetch(url),
-      fetch('/api/today-checkins'),
-      fetch('/api/attendance?report_date=eq.'+today)
+      fetch('/api/safety-meeting')
     ]);
     var members = await tmRes.json();
-    var checkins = await ciRes.json();
-    var attRows  = await attRes.json();
+    var smRecs  = await smRes.json();
+
+    // Sync smPresent so card states match Safety Meeting tab
+    smPresent = {};
+    if(Array.isArray(smRecs)) smRecs.forEach(function(r){ smPresent[r.worker_name]=r; });
+
+    // Also load today's attendance for badges
+    var today = new Date().toISOString().slice(0,10);
+    try{
+      var ar = await fetch('/api/attendance?report_date=eq.'+today);
+      var attRows = await ar.json();
+      smAttendance = {};
+      if(Array.isArray(attRows)) attRows.forEach(function(a){ smAttendance[a.worker_name]={type:a.type||'absent'}; });
+    }catch(e){}
 
     if(!members.length){
-      body.innerHTML = '<div style="color:#64748b;text-align:center;padding:32px;">'+
-        (leadName ? 'No team members assigned to '+leadName+'.' : 'No team members assigned yet.')+'<br>'+
-        '<span style="font-size:12px;">Assign workers in Settings → Users &amp; Roles → Led By</span></div>';
+      if(grid) grid.innerHTML='<div style="color:#64748b;text-align:center;padding:32px;grid-column:1/-1;">'
+        +(leadName?'No team members assigned to '+escH(leadName)+'.':'No team members assigned yet.')
+        +'<br><span style="font-size:12px;">Go to Settings → Users &amp; Roles → Edit a worker → Led By</span></div>';
       return;
     }
 
-    // Build lookup maps
-    var ciMap  = {}; // worker_name → checkin record
-    (checkins||[]).forEach(function(c){ ciMap[c.worker_name] = c; });
-    var attMap = {}; // worker_name → attendance record
-    (Array.isArray(attRows)?attRows:[]).forEach(function(a){ attMap[a.worker_name] = a; });
+    // If admin showing all: sort by led_by then name; else just names
+    if(isAdmin && !leadName){
+      members.sort(function(a,b){ return (a.led_by||'').localeCompare(b.led_by||'') || a.name.localeCompare(b.name); });
+    }
 
-    // Group by lead if showing all
-    var grouped = {};
-    members.forEach(function(m){
-      var lead = m.led_by || 'Unassigned';
-      if(!grouped[lead]) grouped[lead] = [];
-      grouped[lead].push(m);
-    });
-
-    var html = '';
+    // Build _teamMemberMap (index → {name, led_by})
     _teamMemberMap = {};
-    Object.keys(grouped).sort().forEach(function(lead){
-      // Show lead header only when showing all teams
-      if(isAdmin && !filterSel.value){
-        html += '<div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.6px;padding:4px 0 8px;border-bottom:1px solid #1e2d3e;margin-bottom:8px;">'+lead+'</div>';
-      }
-      grouped[lead].forEach(function(m){
-        var ci   = ciMap[m.name];
-        var att  = attMap[m.name];
-        var isIn = ci && !ci.checked_out_at;
+    members.forEach(function(m, i){ _teamMemberMap[i] = {name:m.name, led_by:m.led_by||''}; });
 
-        // Status indicator
-        var statusDot, statusTxt, statusStyle;
-        if(att){
-          var tColors = {late:'#f59e0b',absent:'#ef4444',vacation:'#818cf8'};
-          statusDot = '<span style="width:10px;height:10px;border-radius:50%;background:'+(tColors[att.type]||'#f59e0b')+';display:inline-block;flex-shrink:0;"></span>';
-          statusTxt = att.type.toUpperCase() + (att.type==='late'&&att.arrival_time?' · '+att.arrival_time:'');
-          statusStyle = 'color:'+(tColors[att.type]||'#f59e0b')+';font-size:11px;font-weight:700;';
-        } else if(isIn){
-          statusDot = '<span style="width:10px;height:10px;border-radius:50%;background:#22c55e;display:inline-block;flex-shrink:0;"></span>';
-          statusTxt = 'CHECKED IN';
-          statusStyle = 'color:#22c55e;font-size:11px;font-weight:700;';
-        } else {
-          statusDot = '<span style="width:10px;height:10px;border-radius:50%;background:#475569;display:inline-block;flex-shrink:0;"></span>';
-          statusTxt = 'Not checked in';
-          statusStyle = 'color:#475569;font-size:11px;';
-        }
+    renderMyTeamGrid();
 
-        // Store name by index to avoid quoting issues in onclick attrs
-        var midx = Object.keys(_teamMemberMap).length;
-        _teamMemberMap[midx] = {name: m.name, ciId: ci ? ci.id : null};
-
-        var checkinBtn, reportBtn;
-        if(att && att.type !== 'late'){
-          checkinBtn = '<span style="font-size:11px;color:#64748b;">'+(att.status==='approved'?'✓ Approved':'⏳ Pending approval')+'</span>';
-          reportBtn  = '';
-        } else if(isIn){
-          checkinBtn = '<button onclick="teamCheckout('+midx+')" style="padding:6px 12px;font-size:12px;font-weight:700;border:1px solid #b45309;background:#fef3c7;color:#92400e;border-radius:8px;cursor:pointer;">✕ Check Out</button>';
-          reportBtn  = '<button onclick="openTeamAttFormIdx('+midx+')" style="padding:6px 10px;font-size:12px;border:1px solid #334155;background:#1e293b;color:#94a3b8;border-radius:8px;cursor:pointer;">📋 Report</button>';
-        } else {
-          checkinBtn = '<button onclick="teamCheckin('+midx+')" style="padding:6px 12px;font-size:12px;font-weight:700;border:1px solid #16a34a;background:#f0fdf4;color:#166534;border-radius:8px;cursor:pointer;">✓ Check In</button>';
-          reportBtn  = '<button onclick="openTeamAttFormIdx('+midx+')" style="padding:6px 10px;font-size:12px;border:1px solid #334155;background:#1e293b;color:#94a3b8;border-radius:8px;cursor:pointer;">📋 Report</button>';
-        }
-
-        html += '<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#1a1d27;border:1px solid #2a2d3e;border-radius:10px;">'+
-          statusDot+
-          '<div style="flex:1;min-width:0;">'+
-            '<div style="font-weight:700;color:#e2e8f0;font-size:14px;">'+m.name+'</div>'+
-            '<div style="'+statusStyle+'margin-top:2px;">'+statusTxt+'</div>'+
-          '</div>'+
-          '<div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">'+
-            checkinBtn+' '+reportBtn+
-          '</div>'+
-        '</div>';
-      });
-    });
-
-    body.innerHTML = html;
   }catch(e){
-    body.innerHTML = '<div style="color:#ef4444;text-align:center;padding:32px;">Error loading team: '+e.message+'</div>';
+    if(grid) grid.innerHTML='<div style="color:#ef4444;text-align:center;padding:32px;grid-column:1/-1;">Error loading team: '+e.message+'</div>';
   }
 }
 </script>
