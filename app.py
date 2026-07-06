@@ -2048,6 +2048,46 @@ def checkin_by_pin():
         return jsonify({"ok": ci.ok, "action": "checkin", "worker_name": worker_name})
 
 
+
+@app.route("/api/workers/no-pin", methods=["GET"])
+def workers_no_pin():
+    """Kiosk: list of active workers without a PIN (for self-registration)."""
+    if not kiosk_allowed():
+        return jsonify({"ok": False, "error": "Unauthorized IP"}), 403
+    r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/{WORKERS_TABLE}?pin=is.null&active=eq.true"
+        f"&select=id,name&order=name.asc&limit=200",
+        headers=sb_headers()
+    )
+    rows = r.json() if r.ok else []
+    return jsonify([{"id": w["id"], "name": w["name"]} for w in rows if w.get("name")])
+
+@app.route("/api/workers/<worker_id>/set-kiosk-pin", methods=["POST"])
+def set_kiosk_pin(worker_id):
+    """Kiosk: assign a PIN to a worker who does not have one yet."""
+    if not kiosk_allowed():
+        return jsonify({"ok": False, "error": "Unauthorized IP"}), 403
+    data = request.get_json() or {}
+    pin = str(data.get("pin", "")).strip()
+    if len(pin) != 4 or not pin.isdigit():
+        return jsonify({"ok": False, "error": "PIN must be 4 digits"}), 400
+    # Uniqueness check
+    check = requests.get(
+        f"{SUPABASE_URL}/rest/v1/{WORKERS_TABLE}?pin=eq.{pin}&select=id&limit=1",
+        headers=sb_headers()
+    )
+    if check.ok and check.json():
+        return jsonify({"ok": False, "error": "PIN already taken — choose another"}), 409
+    # Save PIN
+    r = requests.patch(
+        f"{SUPABASE_URL}/rest/v1/{WORKERS_TABLE}?id=eq.{worker_id}",
+        json={"pin": pin},
+        headers={**sb_headers(), "Prefer": "return=representation"}
+    )
+    if not r.ok:
+        return jsonify({"ok": False, "error": "Failed to save PIN"}), 500
+    return jsonify({"ok": True})
+
 @app.route("/api/contractor/profile", methods=["GET"])
 def get_contractor_profile():
     """Get the current worker's profile by name — returns pin_set (bool), never the actual PIN."""
