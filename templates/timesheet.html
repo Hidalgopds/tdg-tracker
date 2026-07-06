@@ -479,7 +479,7 @@ function loadNotifications(){
       if(notifs.length===0){list.innerHTML='<div class="np-empty">No notifications</div>';return;}
       list.innerHTML = notifs.map(function(n){
         var ago = timeAgo(n.created_at);
-        return '<div class="np-item '+(n.read?'read':'unread')+'" onclick="markRead(''+n.id+'')">'
+        return '<div class="np-item '+(n.read?'read':'unread')+'" onclick="markRead(\''+n.id+'\')">'
           +'<div class="np-title">'+escHtml(n.title)+'</div>'
           +(n.body?'<div class="np-body">'+escHtml(n.body)+'</div>':'')
           +'<div class="np-time">'+ago+'</div></div>';
@@ -1601,37 +1601,7 @@ function exportAttPDF(){
     +'.late{background:#fef3c7;color:#92400e;}'
     +'.absent{background:#fee2e2;color:#991b1b;}'
     +'.vacation{background:#ede9fe;color:#5b21b6;}'
-    +'
-/* ── Mobile responsive ── */
-@media (max-width: 640px) {
-  /* Top bar */
-  .mbr-top-bar { padding: 0 10px !important; gap: 6px !important; height: auto !important; min-height: 44px !important; flex-wrap: wrap !important; }
-  #mbr-checkin-chip { font-size: 10px !important; padding: 2px 7px !important; }
-  #headerUser { font-size: 11px !important; }
-  /* Tabs: allow horizontal scroll */
-  .tab-bar, [class*="tab-bar"], .tab-list { overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
-  .tab-btn { padding: 0 12px !important; font-size: 12px !important; }
-  /* Safety Meeting grid: 3 cols on phone */
-  .workers-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 7px !important; }
-  .worker-card { padding: 10px 6px 8px !important; }
-  .wc-name { font-size: 11px !important; }
-  .wc-time { font-size: 9px !important; }
-  .wc-status { font-size: 18px !important; }
-  /* Bulk action row stack */
-  #smBulkRow { flex-direction: column !important; align-items: flex-start !important; gap: 6px !important; }
-  /* QR card */
-  .gate-card { width: 100% !important; padding: 20px 16px !important; }
-  .pin-grid { max-width: 240px !important; }
-  /* Attendance forms */
-  .att-form { padding: 14px !important; }
-  /* General padding */
-  #mainContent, .tab-panel { padding-bottom: 70px !important; }
-  /* Bottom nav stays */
-  .gnav { height: 52px !important; }
-  .gnav a { font-size: 9px !important; min-width: 36px !important; }
-  .gnav a .gi { font-size: 17px !important; }
-}
-</style></head><body>'
+    +'@media(max-width:640px){.mbr-top-bar{padding:0 10px!important;gap:6px!important;height:auto!important;min-height:44px!important;flex-wrap:wrap!important;}#mbr-checkin-chip{font-size:10px!important;padding:2px 7px!important;}#headerUser{font-size:11px!important;}.tab-btn{padding:0 12px!important;font-size:12px!important;}.workers-grid{grid-template-columns:repeat(3,1fr)!important;gap:7px!important;}.worker-card{padding:10px 6px 8px!important;}.wc-name{font-size:11px!important;}.wc-time{font-size:9px!important;}.wc-status{font-size:18px!important;}#smBulkRow{flex-direction:column!important;align-items:flex-start!important;gap:6px!important;}.gate-card{width:100%!important;padding:20px 16px!important;}.pin-grid{max-width:240px!important;}.att-form{padding:14px!important;}#mainContent,.tab-panel{padding-bottom:70px!important;}.gnav{height:52px!important;}.gnav a{font-size:9px!important;min-width:36px!important;}.gnav a .gi{font-size:17px!important;}}</style></head><body>'
     +'<h1>'+title+'</h1><p>'+sub+' &nbsp;|&nbsp; Generated: '+new Date().toLocaleDateString()+'</p>'
     +'<table><thead><tr><th>Type</th><th>Name</th><th>Date</th><th>Details</th><th>Reason</th></tr></thead><tbody>';
   rows.forEach(function(row){
