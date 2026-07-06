@@ -10,6 +10,7 @@ import requests
 import uuid
 
 # ── Kiosk IP restriction ─────────────────────────────────────────────────────
+KIOSK_PASS = os.environ.get("KIOSK_ADMIN_PASS", "MBR2026admin")
 KIOSK_IPS = set(
     ip.strip() for ip in
     os.environ.get("KIOSK_IPS", "174.202.224.245").split(",")
@@ -640,15 +641,17 @@ def api_checkin():
     name = data.get("worker_name", "").strip()
     if not position or not name:
         return jsonify({"error": "position and worker_name required"}), 400
-    row = {"position": position, "worker_name": name}
+    from datetime import date as _today
+    row = {"position": position, "worker_name": name, "date": _today.today().isoformat()}
     r = requests.post(
         f"{SUPABASE_URL}/rest/v1/{CHECKINS_TABLE}",
         json=row,
         headers={**sb_headers(), "Prefer": "return=representation"}
     )
     if r.ok:
-        return jsonify({"ok": True, "checkin": r.json()[0] if r.json() else {}})
-    return jsonify({"error": r.text}), 400
+        rows = r.json() if r.ok else []
+        return jsonify({"ok": True, "checkin": rows[0] if rows else {}})
+    return jsonify({"ok": False, "error": r.text}), 400
 
 @app.route("/api/checkin/<checkin_id>/checkout", methods=["POST"])
 def api_checkout(checkin_id):
@@ -2188,15 +2191,25 @@ def update_contractor_name():
 
 @app.route("/tablet")
 def tablet_page():
-    """Tablet check-in/out kiosk — restricted to job site IP."""
-    if not kiosk_allowed():
+    """Tablet check-in/out kiosk — restricted to job site IP, or admin pass."""
+    admin_pass = request.args.get("pass", "")
+    if not kiosk_allowed() and admin_pass != KIOSK_PASS:
         ip = get_client_ip()
         return f"""<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>body{{font-family:sans-serif;background:#0f172a;color:#e2e8f0;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;flex-direction:column;gap:16px;text-align:center;padding:24px;}}
-h1{{font-size:28px;color:#ef4444;}}p{{color:#94a3b8;font-size:14px;max-width:340px;}}</style></head>
+h1{{font-size:28px;color:#ef4444;}}p{{color:#94a3b8;font-size:14px;max-width:340px;}}
+form{{display:flex;flex-direction:column;gap:10px;margin-top:16px;}}
+input{{background:#1e293b;border:1px solid #334155;border-radius:8px;color:#e2e8f0;padding:10px 14px;font-size:15px;text-align:center;}}
+button{{background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:700;cursor:pointer;}}
+</style></head>
 <body><h1>🔒 Access Restricted</h1>
 <p>This kiosk is only accessible from the authorized job site network.</p>
-<p style="font-size:12px;color:#475569;">Your IP: {ip}</p></body></html>""", 403
+<p style="font-size:12px;color:#475569;">Your IP: {ip}</p>
+<form method="get" action="/tablet">
+  <input type="password" name="pass" placeholder="Admin access code" autocomplete="off">
+  <button type="submit">Unlock</button>
+</form>
+</body></html>""", 403
     return render_template("tablet.html")
 
 @app.route("/api/config/<key>", methods=["GET"])
@@ -2239,7 +2252,7 @@ SENT_TABLE = "sent_units"
 @app.route("/api/unit-sent/<position>", methods=["POST"])
 def mark_unit_sent(position):
     import io, csv
-    from datetime import date, datetime, timezone, timedelta as dt_date
+    from datetime import date as _dt_date, datetime, timezone, timedelta
     from flask import send_file
     data = request.json or {}
     editor     = data.get("editor", "Unknown")
@@ -2300,7 +2313,7 @@ def mark_unit_sent(position):
         "mbr_skid": mbr_skid,
         "fase": fase,
         "building_no": building,
-        "sent_date": dt_date.today().isoformat(),
+        "sent_date": _dt_date.today().isoformat(),
         "sent_by": editor,
         "overall_pct": overall,
         "log_count": len(logs),
@@ -2328,7 +2341,7 @@ def mark_unit_sent(position):
     w.writerow(["MBR Skid", mbr_skid])
     w.writerow(["Fase", fase])
     w.writerow(["Building", building])
-    w.writerow(["Date Sent", dt_date.today().isoformat()])
+    w.writerow(["Date Sent", _dt_date.today().isoformat()])
     w.writerow(["Sent By", editor])
     w.writerow(["Overall Progress", f"{round(overall*100)}%"])
     w.writerow([])
@@ -2338,7 +2351,7 @@ def mark_unit_sent(position):
     w.writerow([])
     w.writerow(["Total log records archived", len(logs)])
 
-    fname = f"{position}_sent_{dt_date.today().isoformat()}.csv"
+    fname = f"{position}_sent_{_dt_date.today().isoformat()}.csv"
     buf.seek(0)
     return send_file(
         io.BytesIO(buf.getvalue().encode("utf-8-sig")),

@@ -523,6 +523,18 @@ button.fill-all-btn{height:28px !important;font-size:11px !important;padding:3px
   <button class="submit-btn" id="submitBtn" onclick="submitAll()">Submit Update</button>
   <button class="submit-btn" id="repeatBtn" onclick="repeatLastReport()" style="background:#0f766e;margin-left:6px;" title="Copy previous % values into inputs">📋 Repeat Last</button>
   <button class="sent-btn" id="sentBtn" onclick="markUnitSent()" title="Archive this unit and download report">✓ Unit Sent</button>
+  <button class="sent-btn" id="histBtn" onclick="openSentHistory()" title="View archived units" style="background:#1e3a5f;border-color:#2563eb;color:#93c5fd;margin-left:4px;">📋 Sent History</button>
+</div>
+
+<!-- Sent History Modal -->
+<div id="sentHistModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:none;align-items:center;justify-content:center;">
+  <div style="background:#0f172a;border:1px solid #1e3a5f;border-radius:14px;padding:24px;max-width:700px;width:95%;max-height:85vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <span style="font-size:17px;font-weight:800;color:#e2e8f0;">📋 Sent Unit History</span>
+      <button onclick="closeSentHistory()" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <div id="sentHistBody" style="font-size:13px;color:#cbd5e1;"></div>
+  </div>
 </div>
 
 <div class="summary-strip" id="summaryStrip"></div>
@@ -945,6 +957,38 @@ async function markUnitSent() {
     showToast('\u2713 ' + unit + ' archived and report downloaded!');
   } catch(e2) { showToast('Error: ' + e2.message, true); }
   finally { btn.disabled = false; btn.textContent = '\u2713 Unit Sent'; }
+}
+function closeSentHistory(){
+  document.getElementById('sentHistModal').style.display='none';
+}
+async function openSentHistory(){
+  var modal = document.getElementById('sentHistModal');
+  var body  = document.getElementById('sentHistBody');
+  modal.style.display='flex';
+  body.innerHTML='<div style="text-align:center;padding:20px;color:#94a3b8;">Loading…</div>';
+  try{
+    var r = await fetch('/api/sent-units');
+    var rows = await r.json();
+    if(!rows.length){ body.innerHTML='<div style="color:#94a3b8;text-align:center;padding:20px;">No units archived yet.</div>'; return; }
+    var html='<table style="width:100%;border-collapse:collapse;">';
+    html+='<thead><tr style="border-bottom:1px solid #1e3a5f;color:#64748b;font-size:11px;text-transform:uppercase;">';
+    html+='<th style="padding:6px 10px;text-align:left;">Unit</th><th style="padding:6px 10px;text-align:left;">TDG #</th><th style="padding:6px 10px;text-align:left;">MBR #</th><th style="padding:6px 10px;text-align:left;">Date Sent</th><th style="padding:6px 10px;text-align:left;">By</th><th style="padding:6px 10px;text-align:right;">Progress</th></tr></thead>';
+    html+='<tbody>';
+    rows.forEach(function(r){
+      html+='<tr style="border-bottom:1px solid #1e2d45;">';
+      html+='<td style="padding:8px 10px;font-weight:700;color:#e2e8f0;">'+(r.position||'—')+'</td>';
+      html+='<td style="padding:8px 10px;color:#94a3b8;">'+(r.tdg_number||'—')+'</td>';
+      html+='<td style="padding:8px 10px;color:#94a3b8;">'+(r.mbr_number||'—')+'</td>';
+      html+='<td style="padding:8px 10px;color:#94a3b8;">'+(r.sent_date||'—')+'</td>';
+      html+='<td style="padding:8px 10px;color:#94a3b8;">'+(r.sent_by||'—')+'</td>';
+      var pct=r.overall_pct!=null?Math.round(r.overall_pct*100)+'%':'—';
+      var col=r.overall_pct>=.99?'#4ade80':r.overall_pct>=.8?'#facc15':'#94a3b8';
+      html+='<td style="padding:8px 10px;text-align:right;font-weight:700;color:'+col+';">'+pct+'</td>';
+      html+='</tr>';
+    });
+    html+='</tbody></table>';
+    body.innerHTML=html;
+  }catch(e){ body.innerHTML='<div style="color:#ef4444;text-align:center;padding:20px;">Error loading history.</div>'; }
 }
 
 async function submitAll() {
