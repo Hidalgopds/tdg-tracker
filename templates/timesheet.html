@@ -933,30 +933,39 @@ function procPIN(){if(setNew&&!pin1st){pin1st=pinBuf;pinBuf='';document.getEleme
 function applyTabVisibility(){
   var role = localStorage.getItem('mbrRole') || 'worker';
   var lvl  = {admin:5,boss:4,inventory:3,lead:2,worker:1}[role] || 1;
-  // Safety Meeting: lead+ sees it (read-only); worker hides it
+  // Safety Meeting: boss/admin only (lvl>=4)
   var safBtn  = document.getElementById('tab-btn-safety');
-  if(safBtn)  safBtn.style.display  = lvl >= 2 ? 'inline-block' : 'none';
+  if(safBtn)  safBtn.style.display  = lvl >= 4 ? 'inline-block' : 'none';
   // Show/hide Safety edit controls based on role (boss/admin only)
   var editOnlyEls = document.querySelectorAll('.sm-boss-only');
   editOnlyEls.forEach(function(el){ el.style.display = lvl >= 4 ? (el.id==='smBulkRow'?'flex':'') : 'none'; });
-  // Worker cards: pointer only for boss/admin — leads see read-only
-  var styleId = 'smReadOnlyStyle';
-  var existing = document.getElementById(styleId);
-  if(lvl < 4){
-    if(!existing){
-      var s = document.createElement('style');
-      s.id = styleId;
-      s.textContent = '.worker-card{cursor:default!important;}.worker-card:active{transform:none!important;}';
-      document.head.appendChild(s);
-    }
-  } else {
-    if(existing) existing.remove();
-  }
-  // Yard Map: lead+ only
+  // QR Check-In/Out: boss/admin only
+  var qrBtn = document.getElementById('tab-btn-qr');
+  if(qrBtn) qrBtn.style.display = lvl >= 4 ? 'inline-block' : 'none';
+  // Yard Map: boss/admin only
   var ymBtn = document.getElementById('tab-btn-yardmap');
-  if(ymBtn) ymBtn.style.display = lvl >= 2 ? 'inline-block' : 'none';
+  if(ymBtn) ymBtn.style.display = lvl >= 4 ? 'inline-block' : 'none';
+  // My Team: lead+ (lvl>=2)
   var myTeamBtn = document.getElementById('tab-btn-myteam');
   if(myTeamBtn) myTeamBtn.style.display = lvl >= 2 ? 'inline-block' : 'none';
+  // Leads (lvl==2 or 3): default to My Team tab, not Safety Meeting
+  if(lvl >= 2 && lvl < 4){
+    // Remove smReadOnlyStyle if it exists (leads can interact with My Team chiclets)
+    var existing2 = document.getElementById('smReadOnlyStyle');
+    if(existing2) existing2.remove();
+    // Switch active tab to My Team
+    var mt = document.getElementById('tab-btn-myteam');
+    var mp = document.getElementById('tab-myteam');
+    var safetyPanel = document.getElementById('tab-safety');
+    // Only switch if Safety Meeting is currently the active tab (default on load)
+    if(safetyPanel && safetyPanel.classList.contains('active')){
+      document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+      document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');p.style.display='none';});
+      if(mt) mt.classList.add('active');
+      if(mp){ mp.classList.add('active'); mp.style.display='block'; }
+      if(typeof loadMyTeam==='function') loadMyTeam();
+    }
+  }
   // If worker, switch default active tab to Attendance
   if(lvl < 2){
     var attBtn = document.getElementById('tab-btn-daysoff');
