@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>MBR Texas — Join the Crew</title>
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --card: #111;
+      --border: #222;
+      --accent: #f59e0b;
+      --accent2: #d97706;
+      --text: #f1f1f1;
+      --muted: #888;
+      --green: #22c55e;
+      --red: #ef4444;
+      --input-bg: #1a1a1a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 48px;
+    }
+    .logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 28px;
+      margin-top: 8px;
+    }
+    .logo-icon {
+      width: 56px;
+      height: 56px;
+      background: var(--accent);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+    }
+    .logo h1 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .logo p {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px 20px;
+      width: 100%;
+      max-width: 420px;
+    }
+    .card h2 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .card .subtitle {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 22px;
+      line-height: 1.5;
+    }
+    .field {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    input, select {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 15px;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+      transition: border-color .15s;
+    }
+    input:focus, select:focus {
+      border-color: var(--accent);
+    }
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 36px;
+    }
+    input::placeholder { color: #444; }
+    .btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background .15s, opacity .15s;
+    }
+    .btn:hover { background: var(--accent2); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .err {
+      background: #3b0000;
+      border: 1px solid var(--red);
+      color: var(--red);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 13px;
+      margin-bottom: 14px;
+      display: none;
+    }
+    /* Success screen */
+    .success-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 14px;
+      padding: 8px 0;
+    }
+    .success-icon {
+      width: 72px;
+      height: 72px;
+      background: #052e16;
+      border: 2px solid var(--green);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+    }
+    .success-screen h2 {
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .success-screen p {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 280px;
+    }
+    .name-badge {
+      background: #1a1a0a;
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .footer-note {
+      margin-top: 24px;
+      font-size: 12px;
+      color: #444;
+      text-align: center;
+      max-width: 320px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="logo">
+    <div class="logo-icon">🏗️</div>
+    <h1>MBR Texas</h1>
+    <p>Contractor Registration</p>
+  </div>
+
+  <div class="card">
+    <!-- Form -->
+    <div id="formView">
+      <h2>Join the Crew</h2>
+      <p class="subtitle">Fill in your info below. Your lead or admin will activate your access once you're added.</p>
+
+      <div class="err" id="errBox"></div>
+
+      <div class="field">
+        <label>Full Name *</label>
+        <input type="text" id="regName" placeholder="e.g. Juan Pérez" autocomplete="name" inputmode="text">
+      </div>
+
+      <div class="field">
+        <label>Phone Number *</label>
+        <input type="tel" id="regPhone" placeholder="e.g. 832-555-1234" autocomplete="tel" inputmode="tel">
+      </div>
+
+      <div class="field">
+        <label>Trade / Work Area *</label>
+        <select id="regTrade">
+          <option value="">— Select your trade —</option>
+          <option>Structure</option>
+          <option>Structure Paint</option>
+          <option>Envelope</option>
+          <option>Electrical</option>
+          <option>Battery Cabinets</option>
+          <option>IO Cabinets</option>
+          <option>Switch Gear</option>
+          <option>Cable &amp; Panels</option>
+          <option>Lighting</option>
+          <option>Closeout</option>
+          <option>General Labor</option>
+          <option>Foreman</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Your Lead *</label>
+        <select id="regLead">
+          <option value="">— Loading leads… —</option>
+        </select>
+      </div>
+
+      <button class="btn" id="submitBtn" onclick="submitReg()">Submit Registration</button>
+    </div>
+
+    <!-- Success -->
+    <div class="success-screen" id="successView">
+      <div class="success-icon">✓</div>
+      <h2>You're registered!</h2>
+      <div class="name-badge" id="successName"></div>
+      <p>Your lead will activate your access. Show this screen to your lead or admin if needed.</p>
+    </div>
+  </div>
+
+  <div class="footer-note">MBR Texas — Metal Building Repairs of Texas<br>Questions? Talk to your lead or site admin.</div>
+
+  <script>
+    // Load leads on page open
+    (async function loadLeads(){
+      var sel = document.getElementById('regLead');
+      try {
+        var r = await fetch('/api/users?leads_only=1');
+        var data = await r.json();
+        // filter to leads + boss + admin
+        var leads = data.filter(function(u){
+          return u.role === 'lead' || u.role === 'boss' || u.role === 'admin';
+        });
+        sel.innerHTML = '<option value="">— Select your lead —</option>';
+        leads.forEach(function(u){
+          var o = document.createElement('option');
+          o.value = u.name;
+          o.textContent = u.name;
+          sel.appendChild(o);
+        });
+        if(leads.length === 0){
+          sel.innerHTML = '<option value="">No leads found — ask your admin</option>';
+        }
+      } catch(e) {
+        sel.innerHTML = '<option value="">Could not load leads — ask your admin</option>';
+      }
+    })();
+
+    async function submitReg(){
+      var name  = document.getElementById('regName').value.trim();
+      var phone = document.getElementById('regPhone').value.trim();
+      var trade = document.getElementById('regTrade').value;
+      var lead  = document.getElementById('regLead').value;
+      var btn   = document.getElementById('submitBtn');
+      var err   = document.getElementById('errBox');
+
+      err.style.display = 'none';
+
+      if(!name){ showErr('Please enter your full name.'); return; }
+      if(!phone){ showErr('Please enter your phone number.'); return; }
+      if(!trade){ showErr('Please select your trade.'); return; }
+      if(!lead){ showErr('Please select your lead.'); return; }
+
+      btn.disabled = true;
+      btn.textContent = 'Submitting…';
+
+      try {
+        var r = await fetch('/api/self-register', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({name:name, phone:phone, trade:trade, led_by:lead})
+        });
+        var d = await r.json();
+        if(!r.ok || d.error){
+          showErr(d.error || 'Something went wrong. Try again.');
+          btn.disabled = false;
+          btn.textContent = 'Submit Registration';
+          return;
+        }
+        // Success
+        document.getElementById('successName').textContent = name;
+        document.getElementById('formView').style.display = 'none';
+        var sv = document.getElementById('successView');
+        sv.style.display = 'flex';
+      } catch(e) {
+        showErr('Network error. Check your connection and try again.');
+        btn.disabled = false;
+        btn.textContent = 'Submit Registration';
+      }
+    }
+
+    function showErr(msg){
+      var e = document.getElementById('errBox');
+      e.textContent = msg;
+      e.style.display = 'block';
+      e.scrollIntoView({behavior:'smooth', block:'nearest'});
+    }
+  </script>
+</body>
+</html>

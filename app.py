@@ -214,6 +214,51 @@ def api_register():
     return jsonify({"error": err}), 400
 
 
+@app.route("/register")
+def register_page():
+    """Public self-registration page for workers."""
+    return render_template("register.html")
+
+@app.route("/api/self-register", methods=["POST"])
+def api_self_register():
+    """Simplified registration — no username/password required.
+    Worker fills name, phone, trade, led_by. Admin activates later."""
+    import datetime as dt
+    data = request.get_json() or {}
+    name   = data.get("name", "").strip()
+    phone  = data.get("phone", "").strip()
+    trade  = data.get("trade", "").strip()
+    led_by = data.get("led_by", "").strip() or None
+    if not name or not phone or not trade:
+        return jsonify({"error": "Name, phone and trade are required"}), 400
+    # Check for duplicate name
+    chk = requests.get(
+        f"{SUPABASE_URL}/rest/v1/app_users?name=eq.{requests.utils.quote(name)}&limit=1&select=id",
+        headers=sb_headers()
+    )
+    if chk.ok and len(chk.json()) > 0:
+        return jsonify({"error": "A user with that name is already registered. Ask your lead or admin for help."}), 409
+    payload = {
+        "name": name,
+        "phone": phone,
+        "trade": trade,
+        "led_by": led_by,
+        "role": "worker",
+        "approved": False,
+    }
+    r = requests.post(
+        f"{SUPABASE_URL}/rest/v1/app_users",
+        headers={**sb_headers(), "Prefer": "return=representation"},
+        json=payload
+    )
+    if r.ok:
+        return jsonify({"ok": True, "name": name})
+    err = r.text
+    if "duplicate" in err.lower() or "unique" in err.lower():
+        err = "You are already registered. Talk to your lead or admin."
+    return jsonify({"error": err}), 400
+
+
 @app.route("/api/forgot-password", methods=["POST"])
 def forgot_password():
     """Generate a temp password and email it, OR return admin contact info."""
@@ -287,7 +332,7 @@ def approve_user():
 @app.route("/api/users/pending", methods=["GET"])
 def pending_users():
     r = requests.get(
-        f"{SUPABASE_URL}/rest/v1/app_users?approved=eq.false&select=name,role,email,phone,created_at&order=created_at.desc&limit=50",
+        f"{SUPABASE_URL}/rest/v1/app_users?approved=eq.false&select=name,role,email,phone,trade,led_by,created_at&order=created_at.desc&limit=50",
         headers=sb_headers()
     )
     return jsonify(r.json() if r.ok else [])

@@ -295,6 +295,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 .rg-cell{border-top-color:#f1f5f9 !important;}
 </style>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -430,7 +431,7 @@ function loadNotifications(){
       if(notifs.length===0){list.innerHTML='<div class="np-empty">No notifications</div>';return;}
       list.innerHTML = notifs.map(function(n){
         var ago = timeAgo(n.created_at);
-        return '<div class="np-item '+(n.read?'read':'unread')+'" onclick="markRead(''+n.id+'')">'
+        return '<div class="np-item '+(n.read?'read':'unread')+'" onclick="markRead('+n.id+')">'
           +'<div class="np-title">'+escHtml(n.title)+'</div>'
           +(n.body?'<div class="np-body">'+escHtml(n.body)+'</div>':'')
           +'<div class="np-time">'+ago+'</div></div>';
@@ -558,13 +559,27 @@ function timeAgo(iso){
     </div>
   </div>
 
+  <!-- Registration QR -->
+  <div class="section-card" id="regQrCard" style="margin-top:16px;display:none;">
+    <div class="section-header">
+      <h3>📲 Crew Registration QR</h3>
+      <button class="btn btn-ghost btn-sm" onclick="window.print()">🖨 Print</button>
+    </div>
+    <p style="color:var(--muted);font-size:13px;margin:0 0 16px;">Share this QR or link with contractors. They fill in their info and you approve them below.</p>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:8px 0 16px;">
+      <div id="regQrCanvas" style="background:#fff;padding:12px;border-radius:12px;"></div>
+      <div style="font-size:12px;color:var(--muted);word-break:break-all;text-align:center;max-width:320px;" id="regQrUrl"></div>
+      <button class="btn btn-ghost btn-sm" onclick="copyRegUrl()" style="width:auto;padding:8px 20px;">Copy Link</button>
+    </div>
+  </div>
+
   <div class="section-card" id="pendingSection" style="display:none;margin-top:16px;">
       <div class="section-header">
-        <h3>⏳ Pending Approval <span id="pendingCount" style="background:#ca8a04;color:#fff;border-radius:12px;padding:2px 10px;font-size:12px;margin-left:8px;">0</span></h3>
+        <h3>⏳ Pending Activation <span id="pendingCount" style="background:#ca8a04;color:#fff;border-radius:12px;padding:2px 10px;font-size:12px;margin-left:8px;">0</span></h3>
       </div>
-      <p style="color:var(--muted);font-size:13px;margin:0 0 12px;">These users registered but need your approval before they can log in.</p>
+      <p style="color:var(--muted);font-size:13px;margin:0 0 12px;">Contractors who self-registered via QR. Activate them so they can check in.</p>
       <table>
-        <thead><tr><th>Name</th><th>Email</th><th>Registered</th><th>Action</th></tr></thead>
+        <thead><tr><th>Name</th><th>Trade</th><th>Lead</th><th>Phone</th><th>Action</th></tr></thead>
         <tbody id="pendingBody"></tbody>
       </table>
     </div>
@@ -977,13 +992,13 @@ function renderPending(rows){
   cnt.textContent=rows.length;
   tb.innerHTML=rows.map(function(u){
     var nk=encodeURIComponent(u.name);
-    var dt=u.created_at?new Date(u.created_at).toLocaleDateString():'—';
     return '<tr style="background:rgba(202,138,4,0.08);">'+
       '<td><strong>'+esc(u.name)+'</strong></td>'+
-      '<td style="font-size:12px;color:var(--muted);">'+(u.email||'—')+'</td>'+
-      '<td style="font-size:12px;color:var(--muted);">'+dt+'</td>'+
-      '<td><button class="btn btn-primary btn-sm" onclick="approveUser(\'' + nk + '\',\'' + esc(u.name) + '\')">✓ Approve</button> ' +
-      '<button class="btn btn-danger btn-sm" onclick="removeUser(\'' + nk + '\',\'' + esc(u.name) + '\')">✗ Reject</button></td>' +
+      '<td style="font-size:12px;color:var(--muted);">'+esc(u.trade||'—')+'</td>'+
+      '<td style="font-size:12px;color:var(--muted);">'+esc(u.led_by||'—')+'</td>'+
+      '<td style="font-size:12px;color:var(--muted);">'+esc(u.phone||'—')+'</td>'+
+      '<td style="white-space:nowrap;"><button class="btn btn-primary btn-sm" onclick="approveUser(\'' + nk + '\',\'' + esc(u.name) + '\')">✓ Activate</button> ' +
+      '<button class="btn btn-danger btn-sm" onclick="removeUser(\'' + nk + '\',\'' + esc(u.name) + '\')">✗ Remove</button></td>' +
     '</tr>';
   }).join('');
 }
@@ -1763,6 +1778,7 @@ switchTab = function(name, btn){
   }
   if(document.readyState==='loading'){
     document.addEventListener('DOMContentLoaded', _updateBarChip);
+document.addEventListener('DOMContentLoaded', function(){ setTimeout(initRegQr, 300); });
   } else { _updateBarChip(); }
   setInterval(_updateBarChip, 60000);
 })();
@@ -1777,6 +1793,38 @@ switchTab = function(name, btn){
   }
 })();
 
+
+// ── Registration QR ──────────────────────────────────────────────
+function initRegQr(){
+  var role = (localStorage.getItem('mbrRole')||'').toLowerCase();
+  var lvl = {admin:5,boss:4,inventory:3,lead:2,worker:1}[role]||0;
+  if(lvl < 4) return; // boss/admin only
+  var card = document.getElementById('regQrCard');
+  if(!card) return;
+  card.style.display = 'block';
+  var url = window.location.origin + '/register';
+  document.getElementById('regQrUrl').textContent = url;
+  var container = document.getElementById('regQrCanvas');
+  container.innerHTML = '';
+  try {
+    new QRCode(container, {
+      text: url,
+      width: 200,
+      height: 200,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  } catch(e){ container.textContent = url; }
+}
+function copyRegUrl(){
+  var url = window.location.origin + '/register';
+  navigator.clipboard.writeText(url).then(function(){
+    showToast('Link copied!');
+  }).catch(function(){
+    prompt('Copy this link:', url);
+  });
+}
 </script>
 
 <!-- PIN Modal -->
