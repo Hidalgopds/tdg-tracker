@@ -33,7 +33,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .tab-btn:hover{color:var(--text);}
 .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
 /* Restricted tabs — hidden by default, shown by JS for lead+ */
-#tab-btn-safety,#tab-btn-history{display:none;}
+#tab-btn-safety{display:none;}
 .tab-panel{display:none;}
 .tab-panel.active{display:block;}
 /* Safety */
@@ -84,10 +84,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .sm-reset-btn:hover{border-color:#f59e0b;color:#f59e0b;}
 .sm-status{text-align:center;font-size:12px;color:#475569;margin-top:8px;min-height:18px;}
 /* History tab */
-.hist-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
-.hist-week-nav{display:flex;align-items:center;gap:6px;}
-.wnav-btn{height:32px;width:32px;background:#111d2b;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-.wnav-btn:hover{border-color:var(--accent);color:var(--text);}
+
 .week-label{font-size:13px;font-weight:700;color:var(--text);min-width:180px;text-align:center;}
 .hist-day{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden;}
 .hist-day-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#0a1525;cursor:pointer;}
@@ -369,6 +366,161 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 </head>
 <body>
 
+<style>
+#mbr-status-bar{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 14px;background:#1e3a5f;border-bottom:1px solid rgba(255,255,255,0.1);height:48px;}
+#mbr-checkin-chip{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px;cursor:default;transition:.3s;}
+.chip-in{background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);}
+.chip-out{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.45);border:1px solid rgba(255,255,255,0.1);}
+.chip-dot{width:6px;height:6px;border-radius:50%;}
+.dot-in{background:#22c55e;}
+.dot-out{background:rgba(255,255,255,0.25);}
+#mbr-bell-btn{position:relative;background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.5);font-size:18px;padding:2px 4px;transition:.2s;}
+#mbr-bell-btn:hover{color:#fff;}
+#mbr-bell-badge{position:absolute;top:-2px;right:-2px;background:#ef4444;color:#fff;font-size:9px;font-weight:700;min-width:15px;height:15px;border-radius:999px;display:none;align-items:center;justify-content:center;padding:0 3px;}
+#mbr-notif-panel{position:fixed;top:36px;right:0;width:320px;max-height:420px;overflow-y:auto;background:#0f1e35;border:1px solid rgba(255,255,255,0.1);border-top:none;border-radius:0 0 0 12px;z-index:499;display:none;box-shadow:0 8px 32px rgba(0,0,0,0.4);}
+#mbr-notif-panel .np-header{padding:10px 14px;font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;justify-content:space-between;align-items:center;}
+.np-item{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.06);cursor:pointer;transition:.15s;}
+.np-item:hover{background:rgba(255,255,255,0.04);}
+.np-item.unread{border-left:3px solid #0ea5e9;}
+.np-item.read{border-left:3px solid transparent;opacity:.65;}
+.np-title{font-size:13px;font-weight:600;color:#fff;margin-bottom:3px;}
+.np-body{font-size:12px;color:rgba(255,255,255,0.5);line-height:1.4;}
+.np-time{font-size:10px;color:rgba(255,255,255,0.3);margin-top:5px;}
+.np-empty{padding:24px;text-align:center;font-size:12px;color:rgba(255,255,255,0.3);}
+body{padding-top:48px!important;}
+</style>
+<div id="mbr-status-bar">
+  <!-- Left: navigation -->
+  <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
+    <button class="back-btn" onclick="window.location='/'" style="background:none;border:none;cursor:pointer;font-size:18px;color:#93c5fd;padding:0;line-height:1;">◀</button>
+    <span class="hlogo" style="font-size:15px;font-weight:700;color:#e2e8f0;white-space:nowrap;">📍 On-Site Timesheet</span>
+  </div>
+  <!-- Right: status + user + bell -->
+  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+    <div id="mbr-loc-chip" style="font-size:11px;font-weight:600;color:#7a9cc4;padding:2px 8px;display:none;">📍 <span id="loc-chip-text"></span></div>
+    <div id="mbr-checkin-chip" class="chip-out">
+      <span class="chip-dot dot-out" id="chip-dot"></span>
+      <span id="chip-label">Not Checked In</span>
+    </div>
+    <span id="userPill" class="user-pill" style="font-size:12px;"></span>
+    <button id="mbr-bell-btn" onclick="toggleNotifPanel()" title="Notifications" style="position:relative;background:none;border:none;cursor:pointer;font-size:16px;padding:4px;color:#94a3b8;line-height:1;">🔔<div id="mbr-bell-badge"></div></button>
+  </div>
+</div>
+<div id="mbr-notif-panel">
+  <div class="np-header">
+    <span>Notifications</span>
+    <span id="np-mark-all" onclick="markAllRead()" style="cursor:pointer;color:#0ea5e9;font-size:10px;text-transform:none;letter-spacing:0;">Mark all read</span>
+  </div>
+  <div id="np-list"></div>
+</div>
+<script>
+(function(){
+  var auth = localStorage.getItem('mbrAuth')||'';
+  if(!auth) return;
+  // Check-in status — named function so it can be called after SM tap & auto-refreshes
+  window.refreshCheckInStatus = function refreshCheckInStatus(){
+    fetch('/api/contractor/status?name='+encodeURIComponent(auth))
+      .then(function(r){return r.json();})
+      .then(function(d){
+        var chip = document.getElementById('mbr-checkin-chip');
+        var dot  = document.getElementById('chip-dot');
+        var lbl  = document.getElementById('chip-label');
+        if(!chip||!dot||!lbl) return;
+        if(d.checked_in){
+          chip.style.background='rgba(34,197,94,0.15)';chip.style.color='#16a34a';chip.style.border='1px solid rgba(34,197,94,0.3)';
+          dot.style.background='#22c55e';
+          lbl.textContent = d.since ? 'Checked In · '+d.since : 'Checked In';
+        } else {
+          chip.style.background='rgba(100,116,139,0.15)';chip.style.color='#94a3b8';chip.style.border='1px solid rgba(100,116,139,0.2)';
+          dot.style.background='#64748b';
+          lbl.textContent = 'Not Checked In';
+        }
+      }).catch(function(){ setTimeout(refreshCheckInStatus, 5000); });
+  }
+  refreshCheckInStatus();
+  setInterval(refreshCheckInStatus, 60000); // auto-refresh every 60s
+
+  // Location chip
+  var unit = localStorage.getItem('mbrUnit');
+  if(unit){
+    var lc = document.getElementById('mbr-loc-chip');
+    var lt = document.getElementById('loc-chip-text');
+    if(lc && lt){ lt.textContent = 'Unit ' + unit; lc.style.display = 'block'; }
+  }
+
+  // Notifications
+  loadNotifications();
+})();
+
+var _notifPanel = false;
+function toggleNotifPanel(){
+  _notifPanel = !_notifPanel;
+  document.getElementById('mbr-notif-panel').style.display = _notifPanel ? 'block' : 'none';
+  if(_notifPanel) loadNotifications();
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('#mbr-bell-btn') && !e.target.closest('#mbr-notif-panel')){
+    document.getElementById('mbr-notif-panel').style.display='none';
+    _notifPanel=false;
+  }
+});
+function loadNotifications(){
+  var auth = localStorage.getItem('mbrAuth')||'';
+  fetch('/api/notifications?name='+encodeURIComponent(auth))
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var list = document.getElementById('np-list');
+      var badge = document.getElementById('mbr-bell-badge');
+      if(!d.ok||!d.notifications) return;
+      var notifs = d.notifications;
+      var unread = notifs.filter(function(n){return !n.read;}).length;
+      if(unread>0){badge.style.display='flex';badge.textContent=unread>9?'9+':unread;}
+      else{badge.style.display='none';}
+      if(notifs.length===0){list.innerHTML='<div class="np-empty">No notifications</div>';return;}
+      list.innerHTML = notifs.map(function(n){
+        var ago = timeAgo(n.created_at);
+        return '<div class="np-item '+(n.read?'read':'unread')+'" onclick="markRead(''+n.id+'')">'
+          +'<div class="np-title">'+escHtml(n.title)+'</div>'
+          +(n.body?'<div class="np-body">'+escHtml(n.body)+'</div>':'')
+          +'<div class="np-time">'+ago+'</div></div>';
+      }).join('');
+    }).catch(function(){});
+}
+function markRead(id){
+  var auth = localStorage.getItem('mbrAuth')||'';
+  fetch('/api/notifications/'+id+'/read',{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:auth})})
+    .then(function(){loadNotifications();});
+}
+function markAllRead(){
+  var auth = localStorage.getItem('mbrAuth')||'';
+  var items = document.querySelectorAll('.np-item.unread');
+  var ids = [];
+  items.forEach(function(el){
+    var m = el.getAttribute('onclick').match(/'([^']+)'/);
+    if(m) ids.push(m[1]);
+  });
+  Promise.all(ids.map(function(id){
+    return fetch('/api/notifications/'+id+'/read',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:auth})});
+  })).then(function(){loadNotifications();});
+}
+function escHtml(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function timeAgo(iso){
+  if(!iso) return '';
+  var d=new Date(iso), now=new Date();
+  var mins=Math.floor((now-d)/60000);
+  if(mins<1) return 'Just now';
+  if(mins<60) return mins+'m ago';
+  var hrs=Math.floor(mins/60);
+  if(hrs<24) return hrs+'h ago';
+  return Math.floor(hrs/24)+'d ago';
+}
+</script>
+
+
 <!-- RENAME MODAL -->
 <div class="rename-overlay" id="renameOverlay">
   <div class="rename-modal">
@@ -381,12 +533,9 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   </div>
 </div>
 
-<div class="header">
-  <button class="back-btn" onclick="window.location='/'">◀</button>
-  <span class="hlogo">📍 On-Site Timesheet</span>
-  <div style="flex:1"></div>
-  <span id="userPill" class="user-pill" style="font-size:12px;" id="headerUser"></span>
-</div>
+
+
+
 
 
 <!-- MAIN -->
@@ -394,9 +543,9 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <div style="max-width:1100px;margin:0 auto;">
     <div class="tabs">
       <button class="tab-btn active" id="tab-btn-safety" onclick="switchTab('safety',this)">🛡 Safety Meeting</button>
-      <button class="tab-btn" id="tab-btn-history" onclick="switchTab('history',this);loadHistory()">📋 Timesheet</button>
-      <button class="tab-btn" id="tab-btn-qr" onclick="switchTab('qr',this)">📱 QR Check-In/Out</button>
       <button class="tab-btn" id="tab-btn-daysoff" onclick="switchTab('daysoff',this);loadAttendance()">📋 Attendance</button>
+      <button class="tab-btn" id="tab-btn-qr" onclick="switchTab('qr',this)">📱 QR Check-In/Out</button>
+      <button class="tab-btn" id="tab-btn-yardmap" onclick="switchTab('yardmap',this);loadYardMap()" style="display:none;">📍 Yard Map</button>
     </div>
 
     <!-- TAB: Safety Meeting -->
@@ -415,58 +564,104 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 
       <div class="sm-toolbar">
         <input class="sm-search" type="text" id="smSearch" placeholder="🔍  Search name…" oninput="filterCards()" autocomplete="off">
-        <button class="tool-btn" id="editBtn" onclick="toggleEditMode()">⚙ Edit List</button>
+        <button class="tool-btn sm-boss-only" id="editBtn" onclick="toggleEditMode()" style="display:none;">⚙ Edit List</button>
       </div>
 
       <div class="workers-grid" id="workersGrid">
         <div class="no-data" style="grid-column:1/-1">Loading crew…</div>
       </div>
 
-      <div class="add-row">
+      <div class="add-row sm-boss-only" style="display:none;">
         <input class="add-inp" type="text" id="newWorkerName" placeholder="Add crew member not on list…" autocomplete="off">
         <button class="add-btn" onclick="addWorker()">＋ Add</button>
       </div>
 
-      <div id="smActionArea">
+      <div id="smActionArea" class="sm-boss-only" style="display:none;">
         <button class="sm-complete-btn" id="smCompleteBtn" onclick="completeMeeting()">✓ Mark Safety Meeting Complete — Start Sign-In</button>
         <button class="save-day-btn" id="saveDayBtn" onclick="saveDay()">💾 Save Day</button>
         <div class="sm-status" id="smStatus"></div>
       </div>
     </div>
 
-    <!-- TAB: Timesheet History -->
-    <div class="tab-panel" id="tab-history">
-      <div class="hist-toolbar">
-        <div class="hist-week-nav">
-          <button class="wnav-btn" onclick="changeWeek(-1)">‹</button>
-          <div class="week-label" id="weekLabel">Loading…</div>
-          <button class="wnav-btn" onclick="changeWeek(1)">›</button>
-        </div>
-        <button class="tool-btn" onclick="goToCurrentWeek()">This Week</button>
-      </div>
-      <div id="histContent" class="hist-loading">Loading history…</div>
-    </div>
-
     <!-- TAB: QR Check-In -->
     <div class="tab-panel" id="tab-qr">
-      <div class="coming-soon">
-        <div class="cs-icon">📱</div>
-        <div class="cs-title">QR Check-In / Check-Out</div>
-        <div class="cs-sub">Workers scan a QR code at their unit to clock in and out. Live yard view shows where every crew member is.</div>
-        <div class="cs-badge">🚧 Coming Soon</div>
 
+      <!-- ── WORKER: CHECK IN / OUT ───────────────────────────────── -->
+      <div style="max-width:480px;margin:0 auto;">
+
+        <!-- Status card (shown when checked in) -->
+        <div id="qr-active-card" style="display:none;background:linear-gradient(135deg,#052e16,#14532d);border:1px solid #16a34a44;border-radius:14px;padding:20px 22px;margin-bottom:16px;">
+          <div style="font-size:11px;font-weight:700;color:#4ade80;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;">✓ You are checked in</div>
+          <div style="font-size:22px;font-weight:800;color:#f0fdf4;" id="qr-active-unit">—</div>
+          <div style="font-size:13px;color:#86efac;margin-top:4px;" id="qr-active-since">Since —</div>
+          <button onclick="qrCheckOut()" style="margin-top:16px;width:100%;padding:13px;border:none;border-radius:10px;background:#dc2626;color:#fff;font-size:15px;font-weight:700;cursor:pointer;">✕ Check Out</button>
+          <div id="qr-out-err" style="color:#fca5a5;font-size:12px;margin-top:8px;display:none;"></div>
+        </div>
+
+        <!-- Check-in form (shown when not checked in) -->
+        <div id="qr-checkin-form" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 22px;margin-bottom:16px;">
+          <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px;">📍 Check In to a Unit</div>
+          <div style="margin-bottom:14px;">
+            <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px;">Select Unit</label>
+            <select id="qr-unit-select" style="width:100%;padding:11px 14px;border-radius:9px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;font-weight:600;">
+              <option value="">— choose unit —</option>
+            </select>
+          </div>
+          <button onclick="qrCheckIn()" style="width:100%;padding:13px;border:none;border-radius:10px;background:#16a34a;color:#fff;font-size:15px;font-weight:700;cursor:pointer;">✓ Check In</button>
+          <div id="qr-in-err" style="color:#f87171;font-size:12px;margin-top:8px;display:none;"></div>
+        </div>
+
+        <!-- Loading state -->
+        <div id="qr-loading" style="text-align:center;padding:32px;color:var(--muted);font-size:14px;">Loading…</div>
       </div>
+
+      <!-- ── LEAD/BOSS/ADMIN: WHO IS CHECKED IN ───────────────────── -->
+      <div id="qr-active-list-section" style="display:none;max-width:640px;margin:16px auto 0;">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+          <span>🟢 Currently Checked In</span>
+          <button onclick="qrLoadActiveList()" style="background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer;font-weight:600;">↻ Refresh</button>
+        </div>
+        <div id="qr-active-list-body">
+          <div style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">Loading…</div>
+        </div>
+      </div>
+
     </div>
 
     <!-- TAB: Attendance -->
+
+    <!-- TAB: Yard Map (Boss/Lead/Admin only) -->
+    <div class="tab-panel" id="tab-yardmap">
+      <div style="padding:16px 0;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <div>
+            <div style="font-size:16px;font-weight:800;">📍 Section B — Live Map</div>
+            <div style="font-size:12px;color:#64748b;margin-top:2px;">TDG Yard · Auto-refreshes every 30 seconds</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button onclick="loadYardMap()" style="padding:6px 14px;background:#1e2d45;border:1px solid #2d3f57;border-radius:8px;color:#94a3b8;font-size:12px;cursor:pointer;">↻ Refresh</button>
+            <button onclick="exportLocationPDF()" style="padding:6px 14px;background:#1e3a2f;border:1px solid #16a34a;border-radius:8px;color:#16a34a;font-size:12px;cursor:pointer;">⬇ Export PDF</button>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+          <label style="font-size:12px;color:#64748b;">Report date:</label>
+          <input type="date" id="ym-date-picker" style="padding:4px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;" />
+        </div>
+        <div id="ym-summary" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;"></div>
+        <div id="ym-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;max-width:700px;"></div>
+        <div id="ym-updated" style="font-size:11px;color:#94a3b8;margin-top:12px;text-align:center;"></div>
+      </div>
+    </div>
+
     <div class="tab-panel" id="tab-daysoff">
 
       <!-- Attendance Overview — shown first for supervisors -->
       <div id="todayPanel" style="display:none;margin-bottom:16px;"></div>
 
       <!-- Admin Manual Entry Button -->
-      <div id="adminManualBtn" style="display:none;margin-bottom:14px;text-align:right;">
-        <button onclick="openManualLate()" style="background:#7c3aed;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;">✏️ Manual Late Entry (Admin)</button>
+      <div id="adminManualBtn" style="display:none;margin-bottom:14px;display:none;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+        <button onclick="openManualLate()" style="background:#7c3aed;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;">✏️ Manual Late</button>
+        <button onclick="openManualAbsent()" style="background:#dc2626;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;">❌ Manual Absent</button>
       </div>
 
       <!-- Form type toggle -->
@@ -605,7 +800,59 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   </div>
 </div>
 
+<div id="manualAbsentModal" style="display:none;position:fixed;inset:0;background:#00000088;z-index:500;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;padding:28px;width:90%;max-width:440px;box-shadow:0 8px 32px rgba(0,0,0,.2);">
+    <div style="font-size:16px;font-weight:800;color:#1e293b;margin-bottom:4px;">❌ Manual Absent Entry</div>
+    <div style="font-size:12px;color:#64748b;margin-bottom:18px;">Record an absence on behalf of a worker.</div>
+    <div style="margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;margin-bottom:4px;">Worker *</div>
+      <select id="manualAbsWorker" style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;background:#f8fafc;">
+        <option value="">— Select worker —</option>
+      </select>
+    </div>
+    <div style="margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;margin-bottom:4px;">Type *</div>
+      <select id="manualAbsType" onchange="toggleManualReturnDate()" style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;background:#f8fafc;">
+        <option value="absent">❌ Absent</option>
+        <option value="vacation">🏖 Vacation</option>
+      </select>
+    </div>
+    <div style="margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;margin-bottom:4px;">Date *</div>
+      <input type="date" id="manualAbsDate" style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;background:#f8fafc;box-sizing:border-box;">
+    </div>
+    <div id="manualReturnWrap" style="margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;margin-bottom:4px;">Back to Work On</div>
+      <input type="date" id="manualAbsReturn" style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;background:#f8fafc;box-sizing:border-box;">
+    </div>
+    <div style="margin-bottom:18px;">
+      <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;margin-bottom:4px;">Reason *</div>
+      <textarea id="manualAbsReason" rows="3" placeholder="Reason for absence…" style="width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;background:#f8fafc;box-sizing:border-box;resize:vertical;"></textarea>
+    </div>
+    <div id="manualAbsStatus" style="font-size:13px;margin-bottom:10px;"></div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="submitManualAbsent()" style="flex:1;background:#dc2626;color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">✓ Submit</button>
+      <button onclick="closeManualAbsent()" style="flex:1;background:#f1f5f9;color:#475569;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <script>
+
+  // Session version check — force logout if admin invalidated sessions
+  (async function(){
+    try {
+      var r = await fetch('/api/session-version');
+      var d = await r.json();
+      var sv = localStorage.getItem('mbr_sv');
+      if(!sv){ localStorage.setItem('mbr_sv', d.version); }
+      else if(sv !== d.version){
+        ['mbrAuth','mbrRole','mbr_sv','mbrPinRequired'].forEach(function(k){ localStorage.removeItem(k); });
+        location.href = '/login';
+      }
+    } catch(e){}
+  })();
+
 // ── Auth ──────────────────────────────────────────────────────────────────────
 var curUser=null,pinBuf='',setNew=false,pin1st='';
 var sv=localStorage.getItem('mbrAuth');
@@ -619,19 +866,36 @@ function procPIN(){if(setNew&&!pin1st){pin1st=pinBuf;pinBuf='';document.getEleme
 function applyTabVisibility(){
   var role = localStorage.getItem('mbrRole') || 'worker';
   var lvl  = {admin:5,boss:4,inventory:3,lead:2,worker:1}[role] || 1;
-  // Safety Meeting & Timesheet history: lead+ only
+  // Safety Meeting: lead+ sees it (read-only); worker hides it
   var safBtn  = document.getElementById('tab-btn-safety');
-  var histBtn = document.getElementById('tab-btn-history');
   if(safBtn)  safBtn.style.display  = lvl >= 2 ? 'inline-block' : 'none';
-  if(histBtn) histBtn.style.display = lvl >= 2 ? 'inline-block' : 'none';
-  // If worker, switch default active tab to QR
+  // Show/hide Safety edit controls based on role (boss/admin only)
+  var editOnlyEls = document.querySelectorAll('.sm-boss-only');
+  editOnlyEls.forEach(function(el){ el.style.display = lvl >= 4 ? '' : 'none'; });
+  // Worker cards: pointer only for boss/admin — leads see read-only
+  var styleId = 'smReadOnlyStyle';
+  var existing = document.getElementById(styleId);
+  if(lvl < 4){
+    if(!existing){
+      var s = document.createElement('style');
+      s.id = styleId;
+      s.textContent = '.worker-card{cursor:default!important;}.worker-card:active{transform:none!important;}';
+      document.head.appendChild(s);
+    }
+  } else {
+    if(existing) existing.remove();
+  }
+  // Yard Map: lead+ only
+  var ymBtn = document.getElementById('tab-btn-yardmap');
+  if(ymBtn) ymBtn.style.display = lvl >= 2 ? 'inline-block' : 'none';
+  // If worker, switch default active tab to Attendance
   if(lvl < 2){
-    var qrBtn = document.getElementById('tab-btn-qr');
+    var attBtn = document.getElementById('tab-btn-daysoff');
     document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
     document.querySelectorAll('.tab-panel').forEach(function(p){p.style.display='none';});
-    if(qrBtn){ qrBtn.classList.add('active'); }
-    var qrPanel = document.getElementById('tab-qr');
-    if(qrPanel) qrPanel.style.display='block';
+    if(attBtn){ attBtn.classList.add('active'); }
+    var attPanel = document.getElementById('tab-daysoff');
+    if(attPanel){ attPanel.classList.add('active'); attPanel.style.display='block'; }
   }
 }
 
@@ -641,7 +905,58 @@ function showMain(){
 function doLogout(){localStorage.removeItem('mbrAuth');localStorage.removeItem('mbrRole');curUser=null;location.href='/login';}
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
-function switchTab(name,btn){document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');p.style.display='none';});btn.classList.add('active');var panel=document.getElementById('tab-'+name);if(panel){panel.classList.add('active');panel.style.display='block';}}
+
+var _ymInterval = null;
+function exportLocationPDF(){
+  var picker = document.getElementById('ym-date-picker');
+  var d = picker && picker.value ? picker.value : new Date().toISOString().slice(0,10);
+  window.open('/api/reports/location-history?date='+d, '_blank');
+}
+function loadYardMap(){
+  var picker = document.getElementById('ym-date-picker');
+  if(picker && !picker.value) picker.value = new Date().toISOString().slice(0,10);
+  var grid = document.getElementById('ym-grid');
+  var summ = document.getElementById('ym-summary');
+  var upd  = document.getElementById('ym-updated');
+  if(!grid) return;
+  var UNITS = [];
+  for(var i=1;i<=28;i++) UNITS.push((i<10?'0':'')+i+'B');
+  fetch('/api/worker/locations')
+    .then(function(r){return r.json();})
+    .then(function(locs){
+      var byUnit = {};
+      UNITS.forEach(function(u){ byUnit[u]=[]; });
+      locs.forEach(function(l){ if(byUnit[l.unit]) byUnit[l.unit].push(l.worker_name); });
+      var total = locs.length;
+      var occ   = Object.values(byUnit).filter(function(a){return a.length>0;}).length;
+      summ.innerHTML =
+        '<div style="background:#f1f5f9;border-radius:8px;padding:8px 14px;font-size:12px;"><strong style="font-size:16px;display:block;">'+total+'</strong>On Field</div>'+
+        '<div style="background:#f0fdf4;border-radius:8px;padding:8px 14px;font-size:12px;"><strong style="font-size:16px;display:block;color:#16a34a;">'+occ+'</strong>Units Occupied</div>'+
+        '<div style="background:#fafafa;border-radius:8px;padding:8px 14px;font-size:12px;"><strong style="font-size:16px;display:block;color:#94a3b8;">'+(28-occ)+'</strong>Units Empty</div>';
+      var html = '';
+      UNITS.forEach(function(unit){
+        var workers = byUnit[unit]||[];
+        var occupied = workers.length > 0;
+        html += '<div style="background:'+(occupied?'#f0fdf4':'#f8fafc')+';border:1.5px solid '+(occupied?'#86efac':'#e2e8f0')+';border-radius:10px;padding:10px 12px;">';
+        html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:'+(occupied?'6':'0')+'px;">';
+        html += '<span style="font-size:15px;font-weight:800;color:'+(occupied?'#15803d':'#475569')+';">'+unit+'</span>';
+        html += '<span style="font-size:11px;font-weight:700;background:'+(occupied?'#dcfce7':'#f1f5f9')+';color:'+(occupied?'#16a34a':'#94a3b8')+';padding:2px 8px;border-radius:999px;">'+workers.length+'</span>';
+        html += '</div>';
+        if(occupied){
+          workers.forEach(function(w){
+            html += '<div style="font-size:11px;background:#fff;border:1px solid #bbf7d0;border-radius:5px;padding:2px 7px;margin-top:3px;color:#15803d;">● '+w+'</div>';
+          });
+        }
+        html += '</div>';
+      });
+      grid.innerHTML = html;
+      upd.textContent = 'Last updated: '+new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      // Set auto-refresh when tab is active
+      if(!_ymInterval) _ymInterval = setInterval(function(){ if(document.getElementById('tab-yardmap').style.display!=='none') loadYardMap(); }, 30000);
+    }).catch(function(){ if(grid) grid.innerHTML='<div style="color:#ef4444;padding:20px;">Error loading data.</div>'; });
+}
+
+function switchTab(name,btn){document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');p.style.display='none';});btn.classList.add('active');var panel=document.getElementById('tab-'+name);if(panel){panel.classList.add('active');panel.style.display='block';}if(name==='qr'){qrInit();}}
 
 // ── Hardcoded fallback ────────────────────────────────────────────────────────
 var DEFAULT_CREW=['Michael Garza','John Garza','Jason Remington','Ryan Elsby','Daniel Bowdell','Daniel Bobadilla','Robert Hernandez','Kevin','Joseph Lizotte','Tigris Dunn','Luis Lopez','Victor Ivanez','Ricardo Andrade','Steven Lucero','Fabio Hernandez','Julian Nieva','Axell Pequeno','Christian Morales','Miguel Castillo','Jesse Centeno','Jake Salazar','Ulises Nava','Junior Gonzalez','Kevin Hernandez','Ryan Jones','Jesse Adams','Alex Flores','Jonas Sonner','Christopher Jones','Luis Lopez II','Jon Paul Bronin','Frank Rojas','Joe Garza','Kevin B.','Henry','Aracelys','Markis','Wilton Brown','Sebastian','Jailen','Junior G (w)','Kenry','Fernando','Gerardo','Melbin','Ivan','Gary Jones','Anthony Jordan','Ernesto','Daniel H.'];
@@ -702,7 +1017,11 @@ document.getElementById('renameInp').addEventListener('keydown',function(e){if(e
 function deleteWorker(id,name){if(!confirm('Remove "'+name+'" from the crew list?'))return;smWorkers=smWorkers.filter(function(w){return w.name!==name;});smFiltered=smFiltered.filter(function(w){return w.name!==name;});delete smPresent[name];renderWorkerCards();if(id)fetch('/api/workers/'+id,{method:'DELETE'}).catch(function(){});}
 
 // ── Check-in toggle ───────────────────────────────────────────────────────────
-async function toggleWorker(name){if(smPresent[name]){var rec=smPresent[name];if(rec.id){try{await fetch('/api/safety-meeting/'+rec.id,{method:'DELETE'});}catch(e){}}delete smPresent[name];renderWorkerCards();}else{var now=new Date().toISOString();smPresent[name]={id:'',worker_name:name,checked_in_at:now};renderWorkerCards();try{var r=await fetch('/api/safety-meeting',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({worker_name:name,supervisor:curUser||''})});var d=await r.json();if(d.ok){var ar=await fetch('/api/safety-meeting');var att=await ar.json();smPresent={};if(Array.isArray(att))att.forEach(function(rec){smPresent[rec.worker_name]=rec;});renderWorkerCards();}else{delete smPresent[name];renderWorkerCards();}}catch(e){delete smPresent[name];renderWorkerCards();}}}
+async function toggleWorker(name){
+  var _role = localStorage.getItem('mbrRole')||'worker';
+  var _lvl = {admin:5,boss:4,inventory:3,lead:2,worker:1}[_role]||1;
+  if(_lvl < 4) return;
+if(smPresent[name]){var rec=smPresent[name];if(rec.id){try{await fetch('/api/safety-meeting/'+rec.id,{method:'DELETE'});}catch(e){}}delete smPresent[name];renderWorkerCards();}else{var now=new Date().toISOString();smPresent[name]={id:'',worker_name:name,checked_in_at:now};renderWorkerCards();try{var r=await fetch('/api/safety-meeting',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({worker_name:name,supervisor:curUser||''})});var d=await r.json();if(d.ok){var ar=await fetch('/api/safety-meeting');var att=await ar.json();smPresent={};if(Array.isArray(att))att.forEach(function(rec){smPresent[rec.worker_name]=rec;});renderWorkerCards();if(window.refreshCheckInStatus)window.refreshCheckInStatus();}else{delete smPresent[name];renderWorkerCards();}}catch(e){delete smPresent[name];renderWorkerCards();}}}
 
 // ── Add worker ────────────────────────────────────────────────────────────────
 async function addWorker(){var inp=document.getElementById('newWorkerName');var name=inp.value.trim();if(!name)return;if(!smWorkers.find(function(w){return w.name===name;})){smWorkers.push({id:'',name:name,role:''});smFiltered=smWorkers.slice();}inp.value='';try{var r=await fetch('/api/workers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name})});var d=await r.json();if(d.ok&&d.worker&&d.worker.id){var w=smWorkers.find(function(x){return x.name===name;});if(w)w.id=d.worker.id;}}catch(e){}renderWorkerCards();}
@@ -828,7 +1147,9 @@ setInterval(function(){if(Object.keys(smPresent).length>0)renderWorkerCards();},
 function showAdminManualBtn(){
   var role = localStorage.getItem('mbrRole') || '';
   var btn = document.getElementById('adminManualBtn');
-  if(btn && (role==='admin'||role==='boss')) btn.style.display='block';
+  if(btn && (role==='admin'||role==='boss'||role==='lead')){
+    btn.style.display='flex';
+  }
 }
 
 function openManualLate(){
@@ -849,6 +1170,53 @@ function openManualLate(){
 function closeManualLate(){
   document.getElementById('manualLateModal').style.display='none';
 }
+function toggleManualReturnDate(){
+  var t = document.getElementById('manualAbsType').value;
+  document.getElementById('manualReturnWrap').style.display = '';
+}
+function openManualAbsent(){
+  var sel = document.getElementById('manualAbsWorker');
+  var names = (smWorkers||[]).map(function(w){return w.name;}).sort();
+  sel.innerHTML = '<option value="">— Select worker —</option>' +
+    names.map(function(n){return '<option>'+n+'</option>';}).join('');
+  document.getElementById('manualAbsDate').value = new Date().toISOString().slice(0,10);
+  document.getElementById('manualAbsReturn').value = '';
+  document.getElementById('manualAbsReason').value = '';
+  document.getElementById('manualAbsStatus').textContent = '';
+  document.getElementById('manualAbsType').value = 'absent';
+  document.getElementById('manualAbsentModal').style.display='flex';
+}
+function closeManualAbsent(){
+  document.getElementById('manualAbsentModal').style.display='none';
+}
+async function submitManualAbsent(){
+  var name   = document.getElementById('manualAbsWorker').value;
+  var type   = document.getElementById('manualAbsType').value;
+  var date   = document.getElementById('manualAbsDate').value;
+  var ret    = document.getElementById('manualAbsReturn').value;
+  var reason = document.getElementById('manualAbsReason').value.trim();
+  var st     = document.getElementById('manualAbsStatus');
+  if(!name)  { st.style.color='#ef4444'; st.textContent='Select a worker.'; return; }
+  if(!date)  { st.style.color='#ef4444'; st.textContent='Date is required.'; return; }
+  if(!reason){ st.style.color='#ef4444'; st.textContent='Reason is required.'; return; }
+  st.style.color='#64748b'; st.textContent='Submitting…';
+  try {
+    var by = localStorage.getItem('mbrAuth') || 'lead';
+    var r = await fetch('/api/attendance',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({worker_name:name,type:type,reason:reason+' [Manual entry by '+by+']',
+        report_date:date,return_date:ret||null})});
+    var d = await r.json();
+    if(d.ok){
+      st.style.color='#15803d'; st.textContent='✓ Absence recorded!';
+      setTimeout(function(){closeManualAbsent();loadAttendance();},1200);
+    } else {
+      st.style.color='#ef4444'; st.textContent=d.error||'Error submitting.';
+    }
+  } catch(e){
+    st.style.color='#ef4444'; st.textContent='Network error.';
+  }
+}
+
 
 async function submitManualLate(){
   var name   = document.getElementById('manualWorker').value;
@@ -872,6 +1240,135 @@ async function submitManualLate(){
     } else { st.style.color='#ef4444'; st.textContent='Error — try again.'; }
   } catch(e){ st.style.color='#ef4444'; st.textContent='Network error.'; }
 }
+// ── QR CHECK-IN / CHECK-OUT ───────────────────────────────────────────────────
+var _qrCheckin = null; // {id, position, worker_name, checked_in_at}
+
+function _qrFmt(ts){
+  if(!ts) return '—';
+  var d = new Date(ts);
+  return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+}
+
+async function qrInit(){
+  document.getElementById('qr-loading').style.display='block';
+  document.getElementById('qr-active-card').style.display='none';
+  document.getElementById('qr-checkin-form').style.display='none';
+
+  var lvl = ({admin:5,boss:4,inventory:3,lead:2,worker:1}[localStorage.getItem('mbrRole')||'worker'])||1;
+
+  // Show active list section for lead+
+  var listSec = document.getElementById('qr-active-list-section');
+  if(lvl >= 2){ listSec.style.display='block'; qrLoadActiveList(); }
+  else { listSec.style.display='none'; }
+
+  // Load units into dropdown
+  try{
+    var ur = await fetch('/api/project-units');
+    var units = await ur.json();
+    var sel = document.getElementById('qr-unit-select');
+    sel.innerHTML = '<option value="">— choose unit —</option>';
+    units.forEach(function(u){
+      if(u.status==='active'||!u.status){
+        var o = document.createElement('option');
+        o.value = u.unit_name;
+        o.textContent = u.unit_name;
+        sel.appendChild(o);
+      }
+    });
+    // Fallback units if table empty
+    if(sel.options.length <= 1){
+      ['05.26.001','05.26.002','05.26.003','05.26.004'].forEach(function(u){
+        var o=document.createElement('option');o.value=u;o.textContent=u;sel.appendChild(o);
+      });
+    }
+  }catch(e){}
+
+  // Check active check-in for this worker
+  var name = localStorage.getItem('mbrAuth')||'';
+  if(!name){ document.getElementById('qr-loading').style.display='none'; document.getElementById('qr-checkin-form').style.display='block'; return; }
+
+  try{
+    var r = await fetch('/api/checkin/by-name?name='+encodeURIComponent(name));
+    var d = await r.json();
+    document.getElementById('qr-loading').style.display='none';
+    if(d.active){
+      _qrCheckin = Object.assign({}, d.active, {worker_name: name});
+      document.getElementById('qr-active-unit').textContent = _qrCheckin.position || '—';
+      document.getElementById('qr-active-since').textContent = 'Since ' + _qrFmt(_qrCheckin.checked_in_at);
+      document.getElementById('qr-active-card').style.display='block';
+    } else {
+      _qrCheckin = null;
+      document.getElementById('qr-checkin-form').style.display='block';
+    }
+  }catch(e){
+    document.getElementById('qr-loading').style.display='none';
+    document.getElementById('qr-checkin-form').style.display='block';
+  }
+}
+
+async function qrCheckIn(){
+  var name = localStorage.getItem('mbrAuth')||'';
+  var unit = document.getElementById('qr-unit-select').value;
+  var err  = document.getElementById('qr-in-err');
+  err.style.display='none';
+  if(!unit){ err.textContent='Select a unit first.'; err.style.display='block'; return; }
+  if(!name){ err.textContent='Not logged in.'; err.style.display='block'; return; }
+  try{
+    var r = await fetch('/api/checkin',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({position:unit, worker_name:name})});
+    var d = await r.json();
+    if(d.ok){
+      _qrCheckin = Object.assign({}, d.checkin, {worker_name:name});
+      document.getElementById('qr-active-unit').textContent = unit;
+      document.getElementById('qr-active-since').textContent = 'Since ' + _qrFmt(new Date().toISOString());
+      document.getElementById('qr-checkin-form').style.display='none';
+      document.getElementById('qr-active-card').style.display='block';
+      var lvl = ({admin:5,boss:4,inventory:3,lead:2,worker:1}[localStorage.getItem('mbrRole')||'worker'])||1;
+      if(lvl>=2) qrLoadActiveList();
+    } else { err.textContent = d.error||'Error checking in.'; err.style.display='block'; }
+  }catch(e){ err.textContent='Network error.'; err.style.display='block'; }
+}
+
+async function qrCheckOut(){
+  var err = document.getElementById('qr-out-err');
+  err.style.display='none';
+  if(!_qrCheckin||!_qrCheckin.id){ err.textContent='No active check-in found.'; err.style.display='block'; return; }
+  try{
+    var r = await fetch('/api/checkin/'+_qrCheckin.id+'/checkout',{method:'POST'});
+    var d = await r.json();
+    if(d.ok){
+      _qrCheckin = null;
+      document.getElementById('qr-active-card').style.display='none';
+      document.getElementById('qr-checkin-form').style.display='block';
+      document.getElementById('qr-in-err').style.display='none';
+      var lvl = ({admin:5,boss:4,inventory:3,lead:2,worker:1}[localStorage.getItem('mbrRole')||'worker'])||1;
+      if(lvl>=2) qrLoadActiveList();
+    } else { err.textContent = d.error||'Error checking out.'; err.style.display='block'; }
+  }catch(e){ err.textContent='Network error.'; err.style.display='block'; }
+}
+
+async function qrLoadActiveList(){
+  var body = document.getElementById('qr-active-list-body');
+  body.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px;">Loading…</div>';
+  try{
+    var r = await fetch('/api/active-checkins');
+    var rows = await r.json();
+    if(!rows.length){
+      body.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px;">No one currently checked in.</div>';
+      return;
+    }
+    body.innerHTML = rows.map(function(row){
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;">'
+        +'<div><div style="font-size:14px;font-weight:700;color:var(--text);">'+esc(row.worker_name||'')+'</div>'
+        +'<div style="font-size:12px;color:var(--muted);">'+esc(row.position||'')+'</div></div>'
+        +'<div style="font-size:12px;color:#4ade80;font-weight:600;">In since '+_qrFmt(row.checked_in_at)+'</div>'
+        +'</div>';
+    }).join('');
+  }catch(e){
+    body.innerHTML='<div style="color:#f87171;font-size:13px;text-align:center;padding:16px;">Error loading list.</div>';
+  }
+}
+
 </script>
 <!-- GNAV -->
 
@@ -898,13 +1395,13 @@ async function submitManualLate(){
     if(sBtn) sBtn.style.display='inline-block';
     if(hBtn) hBtn.style.display='inline-block';
   } else {
-    // Worker: switch active tab to QR
+    // Worker: default to Attendance tab
     document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
     document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');p.style.display='none';});
-    var qb=document.getElementById('tab-btn-qr');
-    var qp=document.getElementById('tab-qr');
-    if(qb) qb.classList.add('active');
-    if(qp){qp.classList.add('active');qp.style.display='block';}
+    var ab=document.getElementById('tab-btn-daysoff');
+    var ap=document.getElementById('tab-daysoff');
+    if(ab) ab.classList.add('active');
+    if(ap){ap.classList.add('active');ap.style.display='block';}
   }
 })();
 
@@ -939,7 +1436,6 @@ function showAttForm(type){
 }
 
 document.getElementById('absType').addEventListener('change', function(){
-  // Show "Back to Work On" for absent AND vacation — hide only for single-day (not needed but keeps form clean)
   document.getElementById('returnDateWrap').style.display = '';
 });
 document.getElementById('returnDateWrap').style.display = '';
@@ -1108,20 +1604,13 @@ function renderTodayPanel(){
   var late = todayReports.filter(function(r){return r.type==='late';});
   var absent = todayReports.filter(function(r){return r.type==='absent';});
   var vacation = todayReports.filter(function(r){return r.type==='vacation';});
-  // Fetch today's check-ins for "present" count
-  fetch('/api/checkins?date='+today+'&select=worker_name&limit=200')
-    .then(function(r){return r.ok?r.json():[];})
-    .then(function(checkins){
-      var presentNames = [...new Set(checkins.map(function(c){return c.worker_name;}))];
+  // Build today panel (no check-in column)
+  (function(){
+      var presentNames = [];
       var html = '<div style="background:var(--card,#fff);border:1px solid #e2e8f0;border-radius:14px;padding:16px 20px;">' +
         '<div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:12px;">📅 Today — ' +
         new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}) + '</div>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;">';
-      // Present
-      html += '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px;">' +
-        '<div style="font-size:11px;font-weight:700;color:#15803d;text-transform:uppercase;margin-bottom:6px;">✅ Checked In</div>' +
-        (presentNames.length ? presentNames.map(function(n){return '<div style="font-size:12px;color:#166534;padding:2px 0">'+n+'</div>';}).join('') :
-        '<div style="font-size:12px;color:#94a3b8;">None yet</div>') + '</div>';
       // Late
       html += '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px;">' +
         '<div style="font-size:11px;font-weight:700;color:#b45309;text-transform:uppercase;margin-bottom:6px;">🕐 Running Late</div>' +
@@ -1139,7 +1628,8 @@ function renderTodayPanel(){
         '<div style="font-size:12px;color:#94a3b8;">None</div>') + '</div>';
       html += '</div></div>';
       panel.innerHTML = html;
-    }).catch(function(){ panel.style.display='none'; });
+    panel.innerHTML = html;
+  })();
 }
 
 function renderCalendar(){
@@ -1157,7 +1647,6 @@ function renderCalendar(){
   calAllReports.forEach(function(rep){
     if(!rep.report_date) return;
     var startStr = rep.report_date.slice(0,10);
-    // "Back to Work On" is exclusive — mark up to the day BEFORE they return
     var endStr = startStr;
     if(rep.return_date && rep.return_date > startStr){
       var tmp = new Date(rep.return_date.slice(0,10)+'T12:00:00');
@@ -1235,6 +1724,36 @@ function changeCalMonth(dir){
 
 // ── Bootstrap: run after ALL functions are defined ──────────────────────────
 if(curUser){ showMain(); }
+</script>
+<script>
+/* DOMContentLoaded check-in chip */
+(function(){
+  var _a=localStorage.getItem('mbrAuth')||'';
+  if(!_a)return;
+  function _upd(){
+    fetch('/api/contractor/status?name='+encodeURIComponent(_a))
+      .then(function(r){return r.json();})
+      .then(function(d){
+        var bc=document.getElementById('mbr-checkin-chip');
+        var bd=document.getElementById('chip-dot');
+        var bl=document.getElementById('chip-label');
+        if(!bc||!bd||!bl)return;
+        if(d.checked_in){
+          bc.style.background='rgba(34,197,94,0.15)';bc.style.color='#16a34a';bc.style.border='1px solid rgba(34,197,94,0.3)';
+          bd.style.background='#22c55e';
+          bl.textContent=d.since?'Checked In · '+d.since:'Checked In';
+        }else{
+          bc.style.background='rgba(100,116,139,0.15)';bc.style.color='#94a3b8';bc.style.border='1px solid rgba(100,116,139,0.2)';
+          bd.style.background='#64748b';
+          bl.textContent='Not Checked In';
+        }
+      }).catch(function(){setTimeout(_upd,5000);});
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',_upd);
+  }else{_upd();}
+  setInterval(_upd,60000);
+})();
 </script>
 </body>
 </html>
