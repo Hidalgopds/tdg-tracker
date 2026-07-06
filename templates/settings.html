@@ -774,6 +774,12 @@ function timeAgo(iso){
       </select>
     </div>
     <div class="field"><label>PIN (4 digits — leave blank to keep existing)</label><input type="password" id="um-pin" placeholder="••••" maxlength="4" inputmode="numeric"></div>
+    <div class="field" id="um-led-by-wrap">
+      <label>Led By <span style="font-weight:400;font-size:11px;color:var(--muted);">(assign this person to a lead)</span></label>
+      <select id="um-led-by" style="width:100%;">
+        <option value="">— Not assigned —</option>
+      </select>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('userModal')">Cancel</button>
       <button class="btn btn-primary" onclick="saveUser()">Save</button>
@@ -998,7 +1004,7 @@ function renderUsers(){
     var em=u.email?'<a href="mailto:'+u.email+'" style="color:var(--accent);font-size:11px">'+esc(u.email)+'</a>':'<em style="color:var(--muted);font-size:11px">no email</em>';
     var ph=u.phone?'<span style="font-size:11px;color:var(--muted)"> · '+esc(u.phone)+'</span>':'';
     return '<tr>'+
-      '<td><strong>'+esc(u.name)+'</strong><br>'+em+ph+'</td>'+
+      '<td><strong>'+esc(u.name)+'</strong><br>'+em+ph+(u.led_by?'<br><span style="font-size:10px;color:var(--muted);">Led by: '+esc(u.led_by)+'</span>':'')+'</td>'+
       '<td><span class="badge '+bc+'">'+(u.role||'—')+'</span></td>'+
 
       (window._bossReadOnly?'<td><em style="color:var(--muted);font-size:11px">view only</em></td>':'<td><button class="btn btn-ghost btn-sm" onclick="openUserModalByName(\''+nk+'\')">'+'Edit</button> '+
@@ -1017,6 +1023,15 @@ function openUserModal(){
   document.getElementById('um-email').value='';
   document.getElementById('um-phone').value='';
   document.getElementById('um-pin').value='';
+  // Populate Led By dropdown (no preselect for new users)
+  var leads2 = ALL_USERS.filter(function(x){ return x.role==='lead'; });
+  var sel2 = document.getElementById('um-led-by');
+  sel2.innerHTML = '<option value="">— Not assigned —</option>';
+  leads2.forEach(function(l){
+    var opt = document.createElement('option');
+    opt.value = l.name; opt.textContent = l.name;
+    sel2.appendChild(opt);
+  });
   document.getElementById('userModal').classList.add('open');
 }
 function openUserModalByName(nk){
@@ -1031,6 +1046,16 @@ function openUserModalByName(nk){
   document.getElementById('um-email').value=u.email||'';
   document.getElementById('um-phone').value=u.phone||'';
   document.getElementById('um-pin').value='';
+  // Populate Led By dropdown with all leads
+  var leads = ALL_USERS.filter(function(x){ return x.role==='lead'; });
+  var sel = document.getElementById('um-led-by');
+  sel.innerHTML = '<option value="">— Not assigned —</option>';
+  leads.forEach(function(l){
+    var opt = document.createElement('option');
+    opt.value = l.name; opt.textContent = l.name;
+    if(u && u.led_by === l.name) opt.selected = true;
+    sel.appendChild(opt);
+  });
   document.getElementById('userModal').classList.add('open');
 }
 function saveUser(){
@@ -1040,7 +1065,8 @@ function saveUser(){
   var email=document.getElementById('um-email').value.trim();
   var phone=document.getElementById('um-phone').value.trim();
   if(!name){showToast('Name required',true);return;}
-  var body={role:role,email:email||null,phone:phone||null};if(pin)body.pin=pin;
+  var ledBy=document.getElementById('um-led-by').value;
+  var body={role:role,email:email||null,phone:phone||null,led_by:ledBy||null};if(pin)body.pin=pin;
   var url=editUserName?'/api/users/by-name/'+encodeURIComponent(editUserName):'/api/users';
   var method=editUserName?'PATCH':'POST';
   if(!editUserName){body.name=name;}

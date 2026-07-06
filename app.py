@@ -1791,7 +1791,7 @@ def settings_page():
 # ── App Users CRUD ───────────────────────────────────────────────
 @app.route("/api/users", methods=["GET"])
 def list_users():
-    url = f"{SUPABASE_URL}/rest/v1/app_users?order=name.asc&select=name,role,pin,email,phone&limit=200"
+    url = f"{SUPABASE_URL}/rest/v1/app_users?order=name.asc&select=name,role,pin,email,phone,led_by&limit=200"
     r = requests.get(url, headers=sb_headers(), timeout=8)
     rows = r.json() if r.ok else []
     # Mask pin
@@ -1799,6 +1799,19 @@ def list_users():
         row["has_pin"] = bool(row.get("pin"))
         row.pop("pin", None)
     return jsonify(rows)
+
+@app.route("/api/team-members", methods=["GET"])
+def get_team_members():
+    """Returns workers (from app_users) whose led_by matches the given lead name."""
+    lead = request.args.get("lead","").strip()
+    if not lead:
+        # Boss/admin: return all with led_by populated
+        url = f"{SUPABASE_URL}/rest/v1/app_users?led_by=not.is.null&order=led_by.asc,name.asc&select=name,role,led_by&limit=200"
+    else:
+        url = (f"{SUPABASE_URL}/rest/v1/app_users"
+               f"?led_by=eq.{requests.utils.quote(lead)}&order=name.asc&select=name,role,led_by&limit=200")
+    r = requests.get(url, headers=sb_headers(), timeout=8)
+    return jsonify(r.json() if r.ok else [])
 
 @app.route("/api/users", methods=["POST"])
 def create_user():
@@ -1829,6 +1842,7 @@ def update_user_by_name(name):
     if data.get("pin"):  payload["pin"]   = str(data["pin"])
     if "email" in data:  payload["email"] = data["email"] or None
     if "phone" in data:  payload["phone"] = data["phone"] or None
+    if "led_by" in data: payload["led_by"] = data["led_by"] or None
     new_name = data.get("new_name", "").strip()
     if new_name:         payload["name"]  = new_name
     if not payload:
