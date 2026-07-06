@@ -870,7 +870,7 @@ function selName(n){curUser=n;pinBuf='';setNew=false;pin1st='';document.getEleme
 function goS1(){document.getElementById('gs2').style.display='none';document.getElementById('gs1').style.display='block';pinBuf='';setNew=false;pin1st='';}
 function pk(k){if(k==='C'){if(pinBuf.length>0){pinBuf=pinBuf.slice(0,-1);updDots();}return;}if(pinBuf.length>=4)return;pinBuf+=k;updDots();if(pinBuf.length===4)setTimeout(procPIN,110);}
 function updDots(){for(var i=0;i<4;i++){var d=document.getElementById('pd'+i);if(d)d.className='pin-dot'+(i<pinBuf.length?' on':'');}}
-function procPIN(){if(setNew&&!pin1st){pin1st=pinBuf;pinBuf='';document.getElementById('pinSub').textContent='Confirm your PIN';updDots();return;}if(setNew&&pin1st){if(pinBuf!==pin1st){document.getElementById('pinErr').textContent='PINs do not match.';pinBuf='';pin1st='';updDots();return;}fetch('/api/users/set-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:curUser,pin:pinBuf})}).then(function(r){return r.json();}).then(function(d){if(d.ok){var body='MBR Texas Timesheet%0A%0APIN Set For: '+encodeURIComponent(curUser)+'%0APIN: '+pinBuf+'%0ADate: '+new Date().toLocaleDateString();window.open('mailto:dshidalgop@gmail.com?subject='+encodeURIComponent('Timesheet PIN – '+curUser)+'&body='+body,'_blank');localStorage.setItem('mbrAuth',curUser);showMain();}else{document.getElementById('pinErr').textContent='Error saving PIN';}}).catch(function(){document.getElementById('pinErr').textContent='Error.';});return;}fetch('/api/users/verify-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:curUser,pin:pinBuf})}).then(function(r){return r.json();}).then(function(d){if(d.ok){localStorage.setItem('mbrAuth',curUser);localStorage.setItem('mbrRole',d.role||'lead');showMain();}else{document.getElementById('pinErr').textContent='Incorrect PIN.';pinBuf='';updDots();}}).catch(function(){document.getElementById('pinErr').textContent='Error.';});}
+function procPIN(){if(setNew&&!pin1st){pin1st=pinBuf;pinBuf='';document.getElementById('pinSub').textContent='Confirm your PIN';updDots();return;}if(setNew&&pin1st){if(pinBuf!==pin1st){document.getElementById('pinErr').textContent='PINs do not match.';pinBuf='';pin1st='';updDots();return;}fetch('/api/users/set-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:curUser,pin:pinBuf})}).then(function(r){return r.json();}).then(function(d){if(d.ok){var body='MBR Texas Timesheet%0A%0APIN Set For: '+encodeURIComponent(curUser)+'%0APIN: '+pinBuf+'%0ADate: '+new Date().toLocaleDateString();window.open('mailto:dshidalgop@gmail.com?subject='+encodeURIComponent('Timesheet PIN – '+curUser)+'&body='+body,'_blank');localStorage.setItem('mbrAuth',curUser);showMain();}else{document.getElementById('pinErr').textContent='Error saving PIN';}}).catch(function(){document.getElementById('pinErr').textContent='Error.';});return;}fetch('/api/users/verify-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:curUser,pin:pinBuf})}).then(function(r){return r.json();}).then(function(d){if(d.ok){localStorage.setItem('mbrAuth',curUser);localStorage.setItem('mbrRole',d.role||'worker');showMain();}else{document.getElementById('pinErr').textContent='Incorrect PIN.';pinBuf='';updDots();}}).catch(function(){document.getElementById('pinErr').textContent='Error.';});}
 
 function applyTabVisibility(){
   var role = localStorage.getItem('mbrRole') || 'worker';
@@ -901,16 +901,17 @@ function applyTabVisibility(){
   if(lvl < 2){
     var attBtn = document.getElementById('tab-btn-daysoff');
     document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
-    document.querySelectorAll('.tab-panel').forEach(function(p){p.style.display='none';});
+    document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');p.style.display='none';});
     if(attBtn){ attBtn.classList.add('active'); }
     var attPanel = document.getElementById('tab-daysoff');
     if(attPanel){ attPanel.classList.add('active'); attPanel.style.display='block'; }
+    if(typeof loadAttendance==='function') loadAttendance();
   }
 }
 
 function showMain(){
   showAdminManualBtn();
-  applyTabVisibility();populateAttWorkers();document.getElementById('mainContent').style.display='block';(function(){var el=document.getElementById('userPill');var r=localStorage.getItem('mbrRole')||'';var cap=r?r.charAt(0).toUpperCase()+r.slice(1):'';el.innerHTML='<span style="font-weight:700;">'+curUser+(cap?' &middot; '+cap:'')+'</span>';el.style.display='inline-flex';el.style.gap='10px';el.style.alignItems='center';el.innerHTML+='<button onclick="localStorage.removeItem(\'mbrAuth\');localStorage.removeItem(\'mbrRole\');location.href=\'/login\';" style="padding:4px 10px;background:#1e2d45;border:1px solid #2d3f57;border-radius:8px;color:#94a3b8;font-size:11px;cursor:pointer;">Sign Out</button>';})();loadSafetyMeeting();}
+  applyTabVisibility();populateAttWorkers();document.getElementById('mainContent').style.display='block';(function(){var el=document.getElementById('userPill');var r=localStorage.getItem('mbrRole')||'';var cap=r?r.charAt(0).toUpperCase()+r.slice(1):'';el.innerHTML='<span style="font-weight:700;">'+curUser+(cap?' &middot; '+cap:'')+'</span>';el.style.display='inline-flex';el.style.gap='10px';el.style.alignItems='center';el.innerHTML+='<button onclick="localStorage.removeItem(\'mbrAuth\');localStorage.removeItem(\'mbrRole\');location.href=\'/login\';" style="padding:4px 10px;background:#1e2d45;border:1px solid #2d3f57;border-radius:8px;color:#94a3b8;font-size:11px;cursor:pointer;">Sign Out</button>';})();var _lvl=({admin:5,boss:4,inventory:3,lead:2,worker:1}[localStorage.getItem('mbrRole')||'worker'])||1;if(_lvl>=2){loadSafetyMeeting();}}
 function doLogout(){localStorage.removeItem('mbrAuth');localStorage.removeItem('mbrRole');curUser=null;location.href='/login';}
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
@@ -1481,7 +1482,7 @@ function showAttForm(type){
     lateBtn.style.borderColor='#f59e0b'; lateBtn.style.background='#fffbeb'; lateBtn.style.color='#92400e';
     absBtn.style.borderColor='#e2e8f0';  absBtn.style.background='#f8fafc';  absBtn.style.color='#64748b';
   } else {
-    absForm.style.display = '';  lateForm.style.display = 'none';
+    absForm.style.display = 'block';  lateForm.style.display = 'none';
     absBtn.style.borderColor='#ef4444';  absBtn.style.background='#fef2f2';  absBtn.style.color='#991b1b';
     lateBtn.style.borderColor='#e2e8f0'; lateBtn.style.background='#f8fafc'; lateBtn.style.color='#64748b';
   }
