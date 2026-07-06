@@ -573,7 +573,7 @@ function timeAgo(iso){
     <div class="section-card">
       <div class="section-header">
         <h3>App Users</h3>
-        <button class="btn btn-primary btn-sm" onclick="openUserModal()">+ Add User</button>
+        <button class="btn btn-primary btn-sm" id="addUserBtn" onclick="openUserModal()">+ Add User</button>
       </div>
       <div class="info-bar">
         <strong>Boss</strong> — owner level, all access &nbsp;|&nbsp;
@@ -1001,10 +1001,10 @@ function renderUsers(){
       '<td><strong>'+esc(u.name)+'</strong><br>'+em+ph+'</td>'+
       '<td><span class="badge '+bc+'">'+(u.role||'—')+'</span></td>'+
 
-      '<td><button class="btn btn-ghost btn-sm" onclick="openUserModalByName(\''+nk+'\')">'+'Edit</button> '+
+      (window._bossReadOnly?'<td><em style="color:var(--muted);font-size:11px">view only</em></td>':'<td><button class="btn btn-ghost btn-sm" onclick="openUserModalByName(\''+nk+'\')">'+'Edit</button> '+
       '<button class="btn btn-secondary btn-sm" onclick="openResetPw(\''+nk+'\'\,\''+esc(u.name)+'\')">'+'Reset Pw</button> '+
       '<button class="btn btn-secondary btn-sm" onclick="resetPin(\''+nk+'\',\''+esc(u.name)+'\')" title="Reset worker PIN">'+'🔄 Reset PIN</button> '+
-      '<button class="btn btn-danger btn-sm" onclick="removeUser(\''+nk+'\'\,\''+esc(u.name)+'\')">'+'Remove</button></td>'+
+      '<button class="btn btn-danger btn-sm" onclick="removeUser(\''+nk+'\'\,\''+esc(u.name)+'\')">'+'Remove</button></td>')+
     '</tr>';
   }).join('');
 }
@@ -1361,19 +1361,23 @@ function showToast(msg,err){var t=document.getElementById('toast');t.textContent
       if(dn2) dn2.textContent = name;
       if(dr2) dr2.textContent = role;
     })();
+  } else if(level === 4) {
+    // Boss: can VIEW Users list (read-only), NO Role Access tab, no Workers/Hours edit
+    var rolesBtn = document.getElementById('tab-btn-roles');
+    if(rolesBtn) rolesBtn.style.display = 'none';
+    window._bossReadOnly = true;
+    loadUsers(); setThisWeek();
+    var ab=document.getElementById('addUserBtn'); if(ab) ab.style.display='none';
+    var nas = document.getElementById('notifAdminSection');
+    if(nas) nas.style.display = 'block';
+    loadContractorArea();
   } else {
-    // Admin / Boss: load all tabs normally
+    // Admin: full access
     loadUsers(); loadWorkers(); loadPerms(); setThisWeek();
-    // Show force logout button for Admin only
-    if(level >= 4){
-      var nas = document.getElementById('notifAdminSection');
-      if(nas) nas.style.display = 'block';
-    }
-    if(level >= 5){
-      var fls = document.getElementById('forceLogoutSection');
-      if(fls) fls.style.display = 'block';
-    }
-    // Pre-load My Profile data for when admin clicks that tab
+    var nas = document.getElementById('notifAdminSection');
+    if(nas) nas.style.display = 'block';
+    var fls = document.getElementById('forceLogoutSection');
+    if(fls) fls.style.display = 'block';
     loadContractorArea();
   }
 })();

@@ -572,7 +572,7 @@ function timeAgo(iso){
       </div>
 
       <!-- Bulk Check-In / Check-Out (Boss/Admin only) -->
-      <div id="smBulkRow" class="sm-boss-only" style="display:none;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0;">
+      <div id="smBulkRow" class="sm-boss-only" style="display:none;margin-bottom:10px;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0;">
         <label style="font-size:12px;color:#94a3b8;font-weight:600;">Check-in time:</label>
         <input type="time" id="smBulkTime" style="padding:5px 8px;border:1px solid #334155;border-radius:8px;background:#0f172a;color:#e2e8f0;font-size:13px;">
         <button onclick="allCheckIn()" style="padding:6px 14px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✓ All Check In</button>
@@ -880,7 +880,7 @@ function applyTabVisibility(){
   if(safBtn)  safBtn.style.display  = lvl >= 2 ? 'inline-block' : 'none';
   // Show/hide Safety edit controls based on role (boss/admin only)
   var editOnlyEls = document.querySelectorAll('.sm-boss-only');
-  editOnlyEls.forEach(function(el){ el.style.display = lvl >= 4 ? '' : 'none'; });
+  editOnlyEls.forEach(function(el){ el.style.display = lvl >= 4 ? (el.id==='smBulkRow'?'flex':'') : 'none'; });
   // Worker cards: pointer only for boss/admin — leads see read-only
   var styleId = 'smReadOnlyStyle';
   var existing = document.getElementById(styleId);
@@ -978,7 +978,7 @@ async function loadSafetyMeeting(){
   document.getElementById('smDateLabel').textContent=todayLabel();
   // Default bulk time to current local time
   (function(){var t=new Date();var inp=document.getElementById('smBulkTime');if(inp)inp.value=String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');})();
-  checkSavedToday();
+  try{checkSavedToday();}catch(_e){}
   try{
     var today=todayISO();
     var[wRes,attRes,absRes]=await Promise.all([fetch('/api/workers'),fetch('/api/safety-meeting'),fetch('/api/attendance?report_date=eq.'+today)]);
