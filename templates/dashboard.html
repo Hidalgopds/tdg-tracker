@@ -3,446 +3,1478 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TDG Field Operations Dashboard — MBR Texas</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<title>TDG Unit Dashboard -- MBR Texas</title>
 <style>
-  :root {
-    --bg: #0f1117;
-    --card: #1a1d27;
-    --border: #2a2d3e;
-    --accent: #4f8ef7;
-    --green: #22c55e;
-    --yellow: #f59e0b;
-    --red: #ef4444;
-    --text: #e2e8f0;
-    --muted: #64748b;
-    --header-h: 56px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; }
+:root {
+  --bg: #0d1117; --card: #161b22; --border: #21262d;
+  --accent: #1a6bc4; --green: #22c55e; --yellow: #f59e0b;
+  --red: #ef4444; --text: #e2e8f0; --muted: #6b7280;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; display: flex; flex-direction: column; }
 
-  /* ── Header ── */
-  header {
-    height: var(--header-h); background: var(--card); border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
-    position: sticky; top: 0; z-index: 100;
-  }
-  header h1 { font-size: 16px; font-weight: 600; letter-spacing: .4px; }
-  header h1 span { color: var(--accent); }
-  #refresh-btn {
-    background: var(--accent); color: #fff; border: none; border-radius: 6px;
-    padding: 6px 14px; cursor: pointer; font-size: 13px; font-weight: 600;
-    display: flex; align-items: center; gap: 6px;
-  }
-  #refresh-btn:hover { opacity: .85; }
-  #last-updated { color: var(--muted); font-size: 12px; }
+/* Header */
+header {
+  background: var(--card); border-bottom: 1px solid var(--border);
+  padding: 0 16px; height: 50px; display: flex; align-items: center;
+  justify-content: space-between; flex-shrink: 0; z-index: 100;
+}
+header h1 { font-size: 15px; font-weight: 700; }
+header h1 span { color: var(--accent); }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.active-unit-label { font-size: 12px; color: var(--muted); }
+.active-unit-val { font-size: 14px; font-weight: 800; color: var(--accent); min-width: 36px; }
+#refreshBtn {
+  background: var(--accent); color: #fff; border: none; border-radius: 7px;
+  padding: 5px 14px; cursor: pointer; font-size: 13px; font-weight: 600; height: 32px;
+}
+#refreshBtn:hover { opacity: .85; }
+.home-btn {
+  width: 32px; height: 32px; background: #1e2a3a; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  text-decoration: none; font-size: 16px; flex-shrink: 0;
+}
+.home-btn:hover { background: #263a52; }
 
-  /* ── Layout ── */
-  main { padding: 20px 24px; display: flex; flex-direction: column; gap: 20px; max-width: 1400px; margin: 0 auto; }
+/* App layout */
+.app-wrap { display: flex; flex: 1; overflow: hidden; }
 
-  /* ── KPI Strip ── */
-  #kpi-strip { display: flex; gap: 14px; flex-wrap: wrap; }
-  .kpi-card {
-    flex: 1 1 140px; background: var(--card); border: 1px solid var(--border);
-    border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 6px;
-  }
-  .kpi-card .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
-  .kpi-card .value { font-size: 28px; font-weight: 700; }
-  .kpi-card .sub { font-size: 11px; color: var(--muted); }
-  .kpi-bar { height: 4px; border-radius: 2px; background: var(--border); margin-top: 6px; }
-  .kpi-bar-fill { height: 4px; border-radius: 2px; }
+/* Sidebar */
+.sidebar {
+  width: 210px; flex-shrink: 0;
+  background: #0a0f16; border-right: 1px solid var(--border);
+  overflow-y: auto; padding: 10px 8px 16px;
+}
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-thumb { background: #2a3d52; border-radius: 2px; }
 
-  /* ── Row of charts ── */
-  .chart-row { display: grid; gap: 14px; }
-  .chart-row.two-col { grid-template-columns: 1fr 1fr; }
-  .chart-row.three-col { grid-template-columns: 1fr 1fr 1fr; }
+/* Section blocks */
+.sb-section { margin-bottom: 14px; }
+.sb-section-title {
+  font-size: 9px; font-weight: 700; color: #94a3b8;
+  text-transform: uppercase; letter-spacing: .8px;
+  padding: 3px 4px 6px; display: block;
+}
+.sb-header {
+  background: #1a4a8a; border-radius: 6px;
+  text-align: center; padding: 6px 4px;
+  font-size: 11px; font-weight: 700; color: #e2e8f0;
+  letter-spacing: .4px; margin-bottom: 5px;
+}
+.chiclet-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+}
 
-  .chart-card {
-    background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px;
-  }
-  .chart-card h2 { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 14px; }
-  .chart-wrap { position: relative; }
-  .chart-wrap canvas { width: 100% !important; }
+/* Chiclet */
+.chiclet {
+  border-radius: 7px; padding: 7px 4px 6px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--card);
+  transition: border-color .12s, background .12s;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+}
+.chiclet:hover { border-color: #2a4060; background: #1a2535; }
+.chiclet.active { border-color: var(--accent); background: #0d1e35; }
+.c-unit { font-size: 13px; font-weight: 800; color: var(--text); letter-spacing: .2px; }
+.c-pct  { font-size: 10px; font-weight: 700; }
+.c-bar  { width: 100%; height: 3px; background: #21262d; border-radius: 2px; }
+.c-bar-fill { height: 3px; border-radius: 2px; transition: width .5s; }
+.c-nodata { font-size: 10px; color: #4a5568; }
 
-  /* ── Attendance table ── */
-  .table-scroll { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  thead th {
-    text-align: left; padding: 8px 12px; color: var(--muted);
-    font-size: 11px; text-transform: uppercase; letter-spacing: .5px;
-    border-bottom: 1px solid var(--border);
-  }
-  tbody tr:hover { background: rgba(79,142,247,.06); }
-  tbody td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
-  .badge {
-    display: inline-block; padding: 2px 8px; border-radius: 20px;
-    font-size: 11px; font-weight: 600;
-  }
-  .badge-am { background: rgba(79,142,247,.18); color: #7db4ff; }
-  .badge-pm { background: rgba(245,158,11,.18); color: #fbbf24; }
-  .pct-pill {
-    display: inline-block; padding: 2px 8px; border-radius: 20px;
-    font-size: 11px; font-weight: 700;
-  }
+/* Main scroll */
+.main-scroll { flex: 1; overflow-y: auto; }
+.main-scroll::-webkit-scrollbar { width: 6px; }
+.main-scroll::-webkit-scrollbar-thumb { background: #2a3d52; border-radius: 3px; }
 
-  /* ── Matrix table ── */
-  .matrix-wrap { overflow-x: auto; }
-  .matrix-table { border-collapse: collapse; font-size: 12px; min-width: 600px; }
-  .matrix-table th, .matrix-table td { padding: 7px 12px; border: 1px solid var(--border); }
-  .matrix-table thead th { background: rgba(79,142,247,.12); color: var(--accent); font-weight: 700; text-align: center; }
-  .matrix-table .row-header { color: var(--text); font-weight: 600; white-space: nowrap; }
-  .matrix-cell { text-align: center; font-weight: 700; }
+main { padding: 18px 20px; max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
 
-  /* ── Loading / error ── */
-  #loading { text-align: center; padding: 60px; color: var(--muted); font-size: 15px; }
-  #error-msg { background: rgba(239,68,68,.12); border: 1px solid var(--red); color: #fca5a5;
-    border-radius: 8px; padding: 14px 18px; display: none; }
+/* Empty / loading */
+#emptyState { text-align: center; padding: 80px 20px; color: var(--muted); font-size: 15px; }
+#emptyState p { margin-top: 8px; font-size: 13px; }
+#loadingMsg { text-align: center; padding: 60px; color: var(--muted); display: none; }
 
-  @media (max-width: 768px) {
-    .chart-row.two-col, .chart-row.three-col { grid-template-columns: 1fr; }
-    #kpi-strip .kpi-card { flex: 1 1 100%; }
-  }
+/* Meta bar */
+#metaBar {
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px 18px; display: flex; flex-wrap: wrap; gap: 20px; align-items: center;
+}
+.meta-item { display: flex; flex-direction: column; gap: 2px; }
+.meta-item .ml { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
+.meta-item .mv { font-size: 14px; font-weight: 700; }
+.meta-item .mv.accent { color: var(--accent); }
+
+/* KPI */
+#kpiRow { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 12px; }
+.kpi { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 4px; }
+.kpi .kl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
+.kpi .kv { font-size: 24px; font-weight: 800; }
+.kpi .ks { font-size: 11px; color: var(--muted); }
+.kpi-bar { height: 4px; border-radius: 2px; background: var(--border); margin-top: 5px; }
+.kpi-bar-fill { height: 4px; border-radius: 2px; }
+
+/* Two col */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 800px) { .two-col { grid-template-columns: 1fr; } }
+
+/* Cards */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.card h2 { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 12px; }
+
+/* Trade bars */
+.trade-bars { display: flex; flex-direction: column; gap: 9px; }
+.trade-bar-row { display: flex; flex-direction: column; gap: 3px; }
+.trade-bar-label { display: flex; justify-content: space-between; align-items: center; }
+.trade-bar-label span:first-child { font-size: 12px; font-weight: 500; }
+.trade-bar-label .pct { font-size: 12px; font-weight: 700; }
+.bar-track { height: 7px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.bar-fill { height: 7px; border-radius: 4px; transition: width .4s; }
+.bar-no-data { height: 7px; background: #21262d; border-radius: 4px; }
+
+/* Internal sub grid */
+.sub-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 7px; }
+.sub-cell { background: #0d1117; border: 1px solid var(--border); border-radius: 8px; padding: 9px; display: flex; flex-direction: column; gap: 3px; }
+.sub-cell .sn { font-size: 9px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
+.sub-cell .sp { font-size: 17px; font-weight: 800; }
+.sub-cell .sb { height: 3px; border-radius: 2px; background: #21262d; margin-top: 2px; }
+.sub-cell .sbf { height: 3px; border-radius: 2px; }
+
+/* Log table */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead th { text-align: left; padding: 7px 9px; color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+tbody tr:hover { background: rgba(26,107,196,.06); }
+tbody td { padding: 6px 9px; border-bottom: 1px solid #161b22; vertical-align: top; }
+.badge { display: inline-block; padding: 2px 7px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+.badge-am { background: rgba(26,107,196,.2); color: #7db4ff; }
+.badge-pm { background: rgba(245,158,11,.2); color: #fbbf24; }
+.pct-tag { display: inline-block; padding: 2px 7px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+
+/* Day-by-day cards */
+.day-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
+.day-header {
+  background: #111d2b; padding: 9px 14px; display: flex; align-items: center;
+  justify-content: space-between; cursor: pointer; user-select: none;
+}
+.day-header:hover { background: #152030; }
+.day-header .dh-left { display: flex; align-items: center; gap: 10px; }
+.day-date { font-size: 13px; font-weight: 800; color: var(--text); }
+.day-stats { font-size: 11px; color: var(--muted); }
+.day-chevron { font-size: 12px; color: var(--muted); transition: transform .2s; }
+.day-chevron.open { transform: rotate(180deg); }
+.day-body { display: none; padding: 10px 14px; display: flex; flex-direction: column; gap: 5px; }
+.day-body.collapsed { display: none; }
+.act-row { display: flex; align-items: center; gap: 10px; padding: 4px 0; border-bottom: 1px solid #1a2535; }
+.act-row:last-child { border-bottom: none; }
+.act-shift { flex-shrink: 0; }
+.act-name { flex: 1; font-size: 12px; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.act-name.has-pct { color: var(--text); }
+.act-pct { flex-shrink: 0; font-size: 12px; font-weight: 800; min-width: 40px; text-align: right; }
+.act-crew { flex-shrink: 0; font-size: 11px; color: #4a6380; min-width: 60px; text-align: right; }
+.day-ovr { font-size: 11px; font-weight: 700; }
+
+/* AM/PM shift sections inside day card */
+.shift-section { margin-top: 6px; }
+.shift-section:first-child { margin-top: 0; }
+.shift-label {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 0 4px; border-bottom: 1px solid #1a2535; margin-bottom: 4px;
+}
+.shift-label .slb { font-size: 10px; font-weight: 800; letter-spacing: .5px; }
+.shift-label .sl-hrs { font-size: 10px; color: var(--muted); }
+.shift-label .sl-workers { font-size: 10px; color: var(--muted); }
+
+/* Chart */
+#laborChart { width: 100% !important; }
+
+/* ── Auth gate overlay ── */
+#authGate{position:fixed;inset:0;background:#0a0f16;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
+.ag-card{background:#111d2b;border:1px solid #1e2d3d;border-radius:16px;padding:32px 28px;width:100%;max-width:340px;text-align:center}
+.ag-icon{font-size:36px;margin-bottom:8px}
+.ag-title{font-size:17px;font-weight:800;color:#e8edf2;margin-bottom:4px}
+.ag-sub{font-size:12px;color:#4a6380;margin-bottom:20px}
+.ag-name-btn{display:block;width:100%;margin-bottom:8px;height:40px;background:#162030;border:1px solid #1e2d3d;border-radius:8px;color:#e8edf2;font-size:14px;font-weight:600;cursor:pointer;transition:background .12s}
+.ag-name-btn:hover{background:#1a3a5c;border-color:#1a6bc4}
+.ag-back{display:block;width:100%;margin-top:8px;height:36px;background:none;border:1px solid #1e2d3d;border-radius:8px;color:#4a6380;font-size:13px;cursor:pointer}
+.ag-pin-dots{display:flex;gap:12px;justify-content:center;margin:14px 0}
+.ag-dot{width:15px;height:15px;border-radius:50%;border:2px solid #2a3d52}
+.ag-dot.on{background:#1a6bc4;border-color:#1a6bc4}
+.ag-pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:240px;margin:0 auto}
+.ag-pk{height:44px;background:#162030;border:1px solid #1e2d3d;border-radius:8px;color:#e8edf2;font-size:18px;font-weight:700;cursor:pointer}
+.ag-pk:hover{background:#1a3a5c}
+.ag-err{color:#ef4444;font-size:12px;min-height:16px;margin-top:6px}
+
+</style>
+
+<style id="gnav-style">
+.gnav{position:fixed;bottom:0;left:0;right:0;height:54px;background:#060c18;border-top:1px solid #1a2535;display:flex;justify-content:space-around;align-items:center;z-index:9999;box-shadow:0 -4px 24px rgba(0,0,0,.5);}
+.gnav a{display:flex;flex-direction:column;align-items:center;gap:1px;text-decoration:none;color:#475569;padding:0 8px;font-size:10px;font-weight:500;transition:.15s;min-width:44px;}
+.gnav a:hover,.gnav a.gna{color:#a855f7;}
+.gnav a .gi{font-size:19px;line-height:1.2;}
+body{padding-bottom:60px !important;}
+</style>
+<style>
+/* ── View Tabs ── */
+.view-tabs{display:flex;gap:0;border-bottom:2px solid #cbd5e1;margin:0;background:#fff;padding:0 16px;}
+.view-tab{padding:8px 18px;font-size:12px;font-weight:700;border:none;background:none;cursor:pointer;color:#64748b;border-bottom:3px solid transparent;margin-bottom:-2px;letter-spacing:.3px;transition:color .15s;}
+.view-tab.active{color:#1a6bc4;border-bottom-color:#1a6bc4;}
+.view-tab:hover:not(.active){color:#0f172a;}
+
+/* ── Urgency Panel ── */
+#urgency-panel{display:none;padding:16px;overflow-y:auto;flex:1;background:#f0f4f8;}
+#urgency-panel.visible{display:block;}
+.urg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;max-width:1400px;}
+.urg-card{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.urg-header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #f1f5f9;}
+.urg-mbr{font-size:22px;font-weight:900;color:#1a6bc4;}
+.urg-pos{font-size:12px;font-weight:700;color:#64748b;background:#f1f5f9;padding:2px 8px;border-radius:4px;}
+.urg-section{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;margin:8px 0 5px;color:#94a3b8;}
+.urg-item{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f8fafc;}
+.urg-item:last-child{border-bottom:none;}
+.urg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.urg-dot.prog{background:#f59e0b;}
+.urg-dot.none{background:#cbd5e1;border:1px solid #94a3b8;}
+.urg-dot.done{background:#10b981;}
+.urg-trade{font-size:12px;color:#1e293b;flex:1;line-height:1.3;}
+.urg-pct{font-size:11px;font-weight:700;color:#f59e0b;white-space:nowrap;}
+.urg-pct.done{color:#10b981;}
+.urg-empty{text-align:center;padding:40px;color:#94a3b8;font-size:13px;}
+.urg-refresh{font-size:11px;color:#94a3b8;margin-bottom:12px;}
+.urg-sec5{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #f1f5f9;}
+.urg-sec5-label{font-size:10px;font-weight:700;color:#64748b;white-space:nowrap;}
+.urg-sec5-bar{flex:1;height:7px;background:#e2e8f0;border-radius:4px;overflow:hidden;}
+.urg-sec5-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#1a6bc4,#38bdf8);transition:width .4s;}
+.urg-sec5-pct{font-size:11px;font-weight:800;color:#1a6bc4;white-space:nowrap;}
+.urg-lu-meta{font-size:10px;color:#94a3b8;white-space:nowrap;}
+</style>
+<!-- LIGHT-THEME -->
+
+<style id="light-theme">
+/* ============================================
+   MBR TEXAS — LIGHT CORPORATE THEME
+   High-contrast for outdoor / sunlight use
+   ============================================ */
+:root{
+  --bg:#f0f4f8;--card:#ffffff;--border:#cbd5e1;
+  --text:#0f172a;--muted:#475569;
+  --accent:#1a6bc4;--green:#15803d;
+  --red:#b91c1c;--yellow:#92400e;--purple:#6d28d9;
+}
+html,body{background:#f0f4f8 !important;color:#0f172a !important;}
+
+/* ── Headers: stay dark blue (brand + readable with sunglasses) ── */
+.header,.topbar,header,#app-header{
+  background:#1e3a5f !important;color:#e2e8f0 !important;
+  border-bottom-color:#0f2d52 !important;
+}
+.hlogo{color:#60a5fa !important;}
+.back-btn,.topbar a,.header a{color:#93c5fd !important;}
+
+/* ── Gate / auth area ── */
+.gate{background:#f0f4f8 !important;}
+.gate-card{background:#ffffff !important;border-color:#e2e8f0 !important;
+  box-shadow:0 4px 24px rgba(0,0,0,.08) !important;}
+.gate-card h2{color:#0f172a !important;}
+.gate-card p{color:#475569 !important;}
+
+/* ── Name / user buttons ── */
+.name-btn,.user-btn{
+  background:#f1f5f9 !important;border-color:#e2e8f0 !important;color:#0f172a !important;
+}
+.name-btn:hover,.name-btn:active,.user-btn.active,.user-btn:hover{
+  background:#1a6bc4 !important;color:#ffffff !important;border-color:#1a6bc4 !important;
+}
+
+/* ── PIN pad ── */
+.pin-dot,.dot{background:#e2e8f0 !important;border-color:#cbd5e1 !important;}
+.pin-dot.on,.dot.filled{background:#1a6bc4 !important;border-color:#1a6bc4 !important;}
+.pk,.numpad button{
+  background:#f1f5f9 !important;border-color:#e2e8f0 !important;color:#0f172a !important;
+}
+.pk:active,.numpad button:hover{background:#dbeafe !important;}
+.pin-err,.pinErr,#pinErr{color:#b91c1c !important;}
+
+/* ── Tabs ── */
+.tabs{border-bottom-color:#e2e8f0 !important;}
+.tab-btn{color:#475569 !important;}
+.tab-btn:hover{color:#0f172a !important;}
+.tab-btn.active{color:#1a6bc4 !important;border-bottom-color:#1a6bc4 !important;}
+.tab-btn.active,.tab-btn:hover{background:none !important;}
+
+/* ── Inputs / selects / textareas ── */
+input,select,textarea,.sm-search{
+  background:#ffffff !important;border-color:#cbd5e1 !important;
+  color:#0f172a !important;
+}
+input:focus,select:focus,textarea:focus,.sm-search:focus{
+  border-color:#1a6bc4 !important;outline:none;
+}
+input::placeholder,.sm-search::placeholder{color:#94a3b8 !important;}
+
+/* ── Buttons ── */
+.btn-ghost,.tool-btn,.eb,.btn-s{
+  background:#f1f5f9 !important;border-color:#e2e8f0 !important;color:#1e293b !important;
+}
+.btn-ghost:hover,.tool-btn:hover{background:#e2e8f0 !important;}
+.tool-btn.active{background:#dbeafe !important;border-color:#1a6bc4 !important;color:#1a6bc4 !important;}
+.eb-edit{border-color:#3b82f6 !important;color:#1d4ed8 !important;}
+.eb-edit:hover{background:#dbeafe !important;}
+.eb-del{border-color:#ef4444 !important;color:#b91c1c !important;}
+.eb-del:hover{background:#fee2e2 !important;}
+
+/* ── Cards / panels ── */
+.section-card,.card,.modal,.gate-card,
+[class*="-card"]:not(.worker-card):not(.name-btn):not(.user-btn){
+  background:#ffffff !important;border-color:#e2e8f0 !important;
+}
+.content{background:#f0f4f8 !important;}
+
+/* ── Worker attendance cards ── */
+.worker-card{background:#ffffff !important;border-color:#e2e8f0 !important;}
+.worker-card.present{background:#dcfce7 !important;border-color:#16a34a !important;}
+.wc-name{color:#475569 !important;}
+.worker-card.present .wc-name{color:#0f172a !important;}
+.wc-time{color:#94a3b8 !important;}
+.worker-card.present .wc-time{color:#15803d !important;}
+.worker-card.edit-card{background:#f8fafc !important;border-color:#bfdbfe !important;}
+
+/* ── Phase banners ── */
+.phase-banner.meeting{background:#ede9fe !important;border-color:#c4b5fd !important;color:#6d28d9 !important;}
+.phase-banner.signin{background:#dcfce7 !important;border-color:#86efac !important;color:#15803d !important;}
+.phase-banner.saved{background:#dbeafe !important;border-color:#93c5fd !important;color:#1d4ed8 !important;}
+
+/* ── User pill ── */
+.user-pill{background:#ede9fe !important;border-color:#a78bfa !important;color:#6d28d9 !important;}
+
+/* ── Info bars ── */
+.info-bar{background:#dbeafe !important;border-color:#93c5fd !important;color:#1e40af !important;}
+.info-bar strong{color:#1d4ed8 !important;}
+
+/* ── Tables ── */
+table{background:transparent !important;}
+th{background:#f8fafc !important;color:#475569 !important;border-bottom-color:#e2e8f0 !important;}
+td{border-bottom-color:#f1f5f9 !important;color:#0f172a;}
+tr:hover td{background:#f8fafc !important;}
+
+/* ── Summary / stat cards ── */
+.summary-card,.summary-row .summary-card{
+  background:#ffffff !important;border-color:#e2e8f0 !important;
+  box-shadow:0 1px 4px rgba(0,0,0,.06) !important;
+}
+.summary-card .val{color:#1a6bc4 !important;}
+.summary-card .lbl{color:#475569 !important;}
+
+/* ── Badges ── */
+.badge-admin{background:#ede9fe !important;color:#5b21b6 !important;}
+.badge-lead,.badge-editor{background:#dbeafe !important;color:#1e40af !important;}
+.badge-worker,.badge-active{background:#dcfce7 !important;color:#15803d !important;}
+.badge-inactive{background:#f1f5f9 !important;color:#64748b !important;}
+
+/* ── Role access matrix ── */
+.role-matrix th{background:#f8fafc !important;border-bottom-color:#e2e8f0 !important;}
+.role-matrix th.admin-h{color:#5b21b6 !important;}
+.role-matrix th.lead-h{color:#1e40af !important;}
+.role-matrix th.worker-h{color:#15803d !important;}
+.role-matrix tr.sub-row{background:#fafafa !important;}
+.toggle-cell.on{background:#dcfce7 !important;color:#15803d !important;}
+.toggle-cell.off{background:#f1f5f9 !important;color:#94a3b8 !important;}
+
+/* ── Modal overlay ── */
+.modal-overlay.open{background:rgba(15,23,42,0.55) !important;}
+.modal{background:#ffffff !important;box-shadow:0 20px 60px rgba(0,0,0,.18) !important;}
+
+/* ── Global nav stays dark ── */
+.gnav{background:#1e3a5f !important;border-top-color:#0f2d52 !important;}
+.gnav a{color:#94a3b8 !important;}
+.gnav a:hover,.gnav a.gna{color:#60a5fa !important;}
+
+/* ── Toast ── */
+#toast{background:#1e293b !important;color:#e2e8f0 !important;}
+#toast.err{border-color:#b91c1c !important;color:#fca5a5 !important;}
+
+/* ── Scrollbars ── */
+::-webkit-scrollbar{width:6px;height:6px;background:#f1f5f9;}
+::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px;}
+
+/* ── Log out / utility bars ── */
+.log-out-bar,.logout-area{background:#1e3a5f !important;}
+
+/* ── SM section ── */
+.sm-item{background:#ffffff !important;border-color:#e2e8f0 !important;}
+.sm-date,.sm-counter span{color:#475569 !important;}
+
+/* ── Landing page cards ── */
+.card{background:#ffffff !important;border-color:#e2e8f0 !important;}
+.card:hover{border-color:#1a6bc4 !important;box-shadow:0 8px 32px rgba(26,107,196,.12) !important;}
+.card-body p{color:#475569 !important;}
+footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
+
+/* ── Dashboard ── */
+.unit-progress-card,.kpi-card,.chart-card{background:#ffffff !important;border-color:#e2e8f0 !important;}
+
+/* ── Week picker ── */
+.week-picker input{background:#ffffff !important;color:#0f172a !important;border-color:#cbd5e1 !important;}
+
+/* ── Roles grid (old) ── */
+.roles-grid{border-color:#e2e8f0 !important;}
+.rg-header{background:#f8fafc !important;color:#475569 !important;}
+.rg-cell{border-top-color:#f1f5f9 !important;}
+</style>
+
+<!-- DASH-LIGHT-FIX -->
+
+<style id="dash-light-fix">
+/* Dashboard — override auth gate and sidebar hardcoded dark colors */
+#authGate{background:#f0f4f8 !important;}
+.ag-card{
+  background:#ffffff !important;border-color:#e2e8f0 !important;
+  box-shadow:0 4px 24px rgba(0,0,0,.08) !important;
+}
+.ag-card h2,.ag-card p{color:#0f172a !important;}
+.ag-name-btn{
+  background:#f1f5f9 !important;border-color:#e2e8f0 !important;color:#0f172a !important;
+}
+.ag-name-btn:hover{background:#1a6bc4 !important;color:#ffffff !important;border-color:#1a6bc4 !important;}
+.ag-dot{background:#e2e8f0 !important;border-color:#cbd5e1 !important;}
+.ag-dot.on{background:#1a6bc4 !important;border-color:#1a6bc4 !important;}
+.ag-pk{background:#f1f5f9 !important;border-color:#e2e8f0 !important;color:#0f172a !important;}
+.ag-pk:hover{background:#dbeafe !important;}
+/* Sidebar */
+.sidebar{background:#f8fafc !important;border-right-color:#e2e8f0 !important;}
+.sidebar::-webkit-scrollbar-thumb{background:#cbd5e1 !important;}
+/* Section labels in sidebar */
+.section-label,.fab-label{
+  background:#e8f0fe !important;color:#1e40af !important;border-color:#bfdbfe !important;
+}
+/* Unit buttons */
+.unit-btn,.unit-card{
+  background:#ffffff !important;border-color:#e2e8f0 !important;color:#0f172a !important;
+}
+.unit-btn:hover,.unit-btn.active{background:#dbeafe !important;border-color:#1a6bc4 !important;}
+.unit-btn .pct{color:#1a6bc4 !important;}
+/* Chiclets — light bg; unit + MBR inline, MBR more prominent */
+.chiclet{background:#ffffff !important;border-color:#e2e8f0 !important;}
+.chiclet:hover{background:#f1f5f9 !important;border-color:#93c5fd !important;}
+.chiclet.active{background:#1e3a5f !important;border-color:#1a6bc4 !important;}
+.c-unit{font-size:11px !important;font-weight:700 !important;color:#334155 !important;white-space:nowrap !important;}
+.c-mbr{font-size:13px !important;font-weight:900 !important;color:#1a6bc4 !important;}
+.chiclet.active .c-unit{color:#cbd5e1 !important;}
+.chiclet.active .c-mbr{color:#60a5fa !important;}
+.chiclet.active .c-pct{color:#e2e8f0 !important;}
+.c-bar{background:#e2e8f0 !important;}
+.c-nodata{color:#94a3b8 !important;}
+/* Main content area */
+.main{background:#f0f4f8 !important;}
+.card,.kpi{background:#ffffff !important;border-color:#e2e8f0 !important;}
+/* Progress bars text */
+.trade-row,.trade-name{color:#0f172a !important;}
+/* Chart area */
+.chart-wrap,.chart-card{background:#ffffff !important;border-color:#e2e8f0 !important;}
 </style>
 </head>
 <body>
+<script>
+(function(){
+  var role = localStorage.getItem('mbrRole') || '';
+  var name = localStorage.getItem('mbrAuth') || '';
+  var lvl  = {admin:5,boss:4,inventory:3,lead:2,worker:1}[role] || 0;
+  if(!name || lvl < 4) { location.href='/home'; }
+})();
+</script>
+
+
+<!-- ── Auth Gate ── -->
+<div id="authGate" style="display:none">
+  <div class="ag-card">
+    <div id="ag1">
+      <div class="ag-icon">🔒</div>
+      <div class="ag-title">Supervisor Access</div>
+      <div class="ag-sub">Select your name to continue</div>
+      <button class="ag-name-btn" onclick="agSelName('John G.')">John G.</button>
+      <button class="ag-name-btn" onclick="agSelName('Mike G.')">Mike G.</button>
+      <button class="ag-name-btn" onclick="agSelName('Jason R.')">Jason R.</button>
+      <button class="ag-name-btn" onclick="agSelName('Daniel H.')">Daniel H.</button>
+      <button class="ag-back" onclick="history.back()">← Back</button>
+    </div>
+    <div id="ag2" style="display:none">
+      <div class="ag-title" id="agPinTitle">Enter PIN</div>
+      <div style="font-size:12px;color:#4a6380;margin-top:4px" id="agPinSub">4-digit PIN</div>
+      <div class="ag-pin-dots">
+        <div class="ag-dot" id="agd0"></div><div class="ag-dot" id="agd1"></div>
+        <div class="ag-dot" id="agd2"></div><div class="ag-dot" id="agd3"></div>
+      </div>
+      <div class="ag-err" id="agErr"></div>
+      <div class="ag-pin-grid">
+        <button class="ag-pk" onclick="agPk('1')">1</button><button class="ag-pk" onclick="agPk('2')">2</button><button class="ag-pk" onclick="agPk('3')">3</button>
+        <button class="ag-pk" onclick="agPk('4')">4</button><button class="ag-pk" onclick="agPk('5')">5</button><button class="ag-pk" onclick="agPk('6')">6</button>
+        <button class="ag-pk" onclick="agPk('7')">7</button><button class="ag-pk" onclick="agPk('8')">8</button><button class="ag-pk" onclick="agPk('9')">9</button>
+        <button class="ag-pk" onclick="agPk('C')" style="color:#6b7f94;font-size:18px">⌫</button>
+        <button class="ag-pk" onclick="agPk('0')">0</button>
+        <button class="ag-pk" onclick="agBack()" style="color:#ef4444;font-size:13px">✕</button>
+      </div>
+      <button class="ag-back" onclick="agBack()">← Back</button>
+    </div>
+  </div>
+</div>
+
 
 <header>
-  <h1>TDG Field Operations &mdash; <span>MBR Texas</span></h1>
-  <div style="display:flex;align-items:center;gap:16px;">
-    <span id="last-updated"></span>
-    <button id="refresh-btn" onclick="loadData()">↻ Refresh</button>
+  <h1>TDG Unit Dashboard &mdash; <span>MBR Texas</span></h1>
+  <div class="header-right">
+    <span class="active-unit-label">Unit:</span>
+    <span class="active-unit-val" id="activeUnitVal">--</span>
+    <button id="refreshBtn" onclick="reloadUnit()">&#8635; Refresh</button>
+    <a href="/" class="home-btn" title="Home">&#127968;</a>
+    <div id="headerUser" style="display:flex;align-items:center;gap:8px;margin-left:8px;"></div>
   </div>
 </header>
-
-<main>
-  <div id="error-msg"></div>
-  <div id="loading">Loading dashboard data…</div>
-
-  <!-- KPI strip -->
-  <div id="kpi-strip" style="display:none"></div>
-
-  <!-- Charts row 1: main_trade + individual trade -->
-  <div class="chart-row two-col" id="row1" style="display:none">
-    <div class="chart-card">
-      <h2>Progress by Main Trade</h2>
-      <div class="chart-wrap" style="height:220px"><canvas id="chart-main-trade"></canvas></div>
-    </div>
-    <div class="chart-card">
-      <h2>Progress by Individual Trade</h2>
-      <div class="chart-wrap" style="height:220px"><canvas id="chart-trade"></canvas></div>
-    </div>
-  </div>
-
-  <!-- Charts row 2: line chart + matrix -->
-  <div class="chart-row two-col" id="row2" style="display:none">
-    <div class="chart-card">
-      <h2>Day-by-Day History</h2>
-      <div class="chart-wrap" style="height:220px"><canvas id="chart-history"></canvas></div>
-    </div>
-    <div class="chart-card">
-      <h2>Unit × Trade Matrix</h2>
-      <div class="matrix-wrap"><div id="matrix-container"></div></div>
-    </div>
-  </div>
-
-  <!-- Attendance log -->
-  <div class="chart-card" id="row3" style="display:none">
-    <h2>Attendance Log</h2>
-    <div class="table-scroll"><table id="attendance-table">
-      <thead><tr>
-        <th>Date</th><th>Unit</th><th>Shift</th><th>Trade</th><th>Progress</th><th>Crew</th><th>Notes</th>
-      </tr></thead>
-      <tbody id="attendance-body"></tbody>
-    </table></div>
-  </div>
-</main>
-
+<script>(function(){var n=localStorage.getItem('mbrAuth')||'';var r=localStorage.getItem('mbrRole')||'';var el=document.getElementById('headerUser');if(!el||!n)return;var cap=r?r.charAt(0).toUpperCase()+r.slice(1):'';el.innerHTML='<span style="font-size:12px;font-weight:700;color:#94a3b8;">'+n+(cap?' &middot; '+cap:'')+' </span>'+'<button onclick="localStorage.removeItem(\'mbrAuth\');localStorage.removeItem(\'mbrRole\');location.href=\'/login\';" '+'style="padding:5px 12px;background:#1e2d45;border:1px solid #2d3f57;border-radius:8px;color:#94a3b8;font-size:12px;cursor:pointer;">Sign Out</button>';})();</script>
 <script>
-const COLORS = [
-  '#4f8ef7','#22c55e','#f59e0b','#ef4444','#a78bfa','#34d399',
-  '#fb923c','#38bdf8','#f472b6','#84cc16','#e879f9','#2dd4bf'
-];
+(function(){
+  var _a=localStorage.getItem('mbrAuth')||'';
+  if(!_a)return;
+  var chip=document.createElement('div');
+  chip.id='mbr-checkin-chip';
+  chip.style.cssText='display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px;background:rgba(100,116,139,0.15);color:#94a3b8;border:1px solid rgba(100,116,139,0.2);cursor:default;white-space:nowrap;flex-shrink:0;';
+  chip.innerHTML='<span id="chip-dot" style="width:6px;height:6px;border-radius:50%;background:#64748b;flex-shrink:0;display:inline-block;"></span> <span id="chip-label">—</span>';
+  function _insert(){
+    var hu=document.getElementById('headerUser');
+    if(hu&&hu.parentNode){hu.parentNode.insertBefore(chip,hu);return;}
+    var tb=document.querySelector('.top-bar,header');
+    if(tb){tb.appendChild(chip);}
+  }
+  function _upd(){
+    fetch('/api/contractor/status?name='+encodeURIComponent(_a))
+      .then(function(r){return r.json();})
+      .then(function(d){
+        var bc=document.getElementById('mbr-checkin-chip');
+        var bd=document.getElementById('chip-dot');
+        var bl=document.getElementById('chip-label');
+        if(!bc||!bd||!bl)return;
+        if(d.checked_in){
+          bc.style.background='rgba(34,197,94,0.15)';bc.style.color='#16a34a';bc.style.borderColor='rgba(34,197,94,0.3)';
+          bd.style.background='#22c55e';
+          bl.textContent=d.since?'Checked In · '+d.since:'Checked In';
+        }else{
+          bc.style.background='rgba(100,116,139,0.15)';bc.style.color='#94a3b8';bc.style.borderColor='rgba(100,116,139,0.2)';
+          bd.style.background='#64748b';
+          bl.textContent='Not Checked In';
+        }
+      }).catch(function(){setTimeout(_upd,5000);});
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',function(){_insert();_upd();});
+  }else{_insert();_upd();}
+  setInterval(_upd,60000);
+})();
+</script>
 
-let charts = {};
+<div class="view-tabs">
+  <button class="view-tab active" id="tab-full" onclick="switchView('full')">📊 Full Dashboard</button>
+  <button class="view-tab" id="tab-urgency" onclick="switchView('urgency')">⚡ Urgency Order</button>
+</div>
 
-function destroyChart(id) {
-  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+<div id="urgency-panel">
+  <div class="urg-refresh" id="urg-refresh-label"></div>
+  <div class="urg-grid" id="urg-grid"><div class="urg-empty">Loading...</div></div>
+</div>
+
+<div class="app-wrap" id="full-dashboard">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <!-- Section A: Skid Fabrication -->
+    <div class="sb-section">
+      <span class="sb-section-title">Skid Fabrication</span>
+      <div class="sb-header">Section A</div>
+      <div class="chiclet-grid" id="gridA"></div>
+    </div>
+
+    <!-- Section B: TDG Yard -->
+    <div class="sb-section">
+      <span class="sb-section-title">TDG Yard</span>
+      <div class="sb-header">Section B</div>
+      <div class="chiclet-grid" id="gridB"></div>
+    </div>
+
+  </div>
+
+  <!-- MAIN -->
+  <div class="main-scroll">
+    <main>
+      <div id="loadingMsg">Loading unit data...</div>
+
+      <div id="emptyState">
+        <div style="font-size:32px">&#128202;</div>
+        <strong>Select a unit from the sidebar</strong>
+        <p>Click any unit to view its progress and activity log.</p>
+      </div>
+
+      <div id="metaBar" style="display:none"></div>
+      <div id="kpiRow" style="display:none"></div>
+
+      <div class="two-col" id="tradeRow" style="display:none">
+        <div class="card">
+          <h2>Trade Progress</h2>
+          <div class="trade-bars" id="tradeBars"></div>
+        </div>
+        <div class="card">
+          <h2>5. Internal Systems Breakdown</h2>
+          <div class="sub-grid" id="subGrid"></div>
+        </div>
+      </div>
+
+      <div class="card" id="chartCard" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <h2 style="margin:0">Trade Progress by Day</h2>
+          <button id="dayByDayBtn" onclick="toggleDayLog()"
+            style="height:30px;padding:0 13px;background:#111d2b;border:1px solid var(--border);border-radius:7px;color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;">
+            📅 Day by Day Operations
+          </button>
+        </div>
+        <div style="position:relative;height:260px;">
+          <canvas id="laborChart"></canvas>
+        </div>
+        <!-- Workers per day table -->
+        <div id="workersTable" style="margin-top:16px;display:none">
+          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">👷 Workers by Day</div>
+          <div style="overflow-x:auto">
+            <table id="workersTbl" style="width:100%;border-collapse:collapse;font-size:12px">
+              <thead>
+                <tr>
+                  <th style="text-align:left;padding:5px 8px;color:var(--muted);font-size:10px;border-bottom:1px solid var(--border)">Date</th>
+                  <th style="text-align:center;padding:5px 8px;color:#3b82f6;font-size:10px;border-bottom:1px solid var(--border)">AM</th>
+                  <th style="text-align:center;padding:5px 8px;color:#f59e0b;font-size:10px;border-bottom:1px solid var(--border)">PM</th>
+                  <th style="text-align:center;padding:5px 8px;color:#22c55e;font-size:10px;border-bottom:1px solid var(--border)">Man-hrs</th>
+                  <th style="text-align:left;padding:5px 8px;color:#94a3b8;font-size:10px;border-bottom:1px solid var(--border)">Crew</th>
+                </tr>
+              </thead>
+              <tbody id="workersTbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div id="tradeTimeline" style="margin-top:20px;display:none">
+          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">📅 Trade Timeline</div>
+          <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:12px" id="timelineTbl">
+              <thead><tr>
+                <th style="text-align:left;padding:5px 8px;color:var(--muted);font-size:10px;border-bottom:1px solid var(--border)">Trade</th>
+                <th style="text-align:center;padding:5px 8px;color:var(--muted);font-size:10px;border-bottom:1px solid var(--border)">Started</th>
+                <th style="text-align:center;padding:5px 8px;color:var(--muted);font-size:10px;border-bottom:1px solid var(--border)">Days Active</th>
+                <th style="text-align:center;padding:5px 8px;color:var(--muted);font-size:10px;border-bottom:1px solid var(--border)">Current %</th>
+                <th style="text-align:center;padding:5px 8px;color:var(--muted);font-size:10px;border-bottom:1px solid var(--border)">Ended</th>
+              </tr></thead>
+              <tbody id="timelineTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="logCard" style="display:none">
+        <h2>Day-by-Day Operations</h2>
+        <div id="dayLog"></div>
+      </div>
+    </main>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+var SECTION_A = ['01A','02A','03A','04A','05A','06A','07A','08A','09A','10A'];
+var SECTION_B = ['01B','02B','03B','04B','05B','06B','07B','08B','09B','10B',
+                 '11B','12B','13B','14B','15B','16B','17B','18B','19B','20B',
+                 '21B','22B','23B','24B','25B','26B','27B','28B'];
+
+var MAIN_TRADES = ['1. Structure','2. Structure Paint','3. Envelope','4. Unit Paint',
+  '5. Internal Systems Rough-In','6. Electrical','7. Final QC','8. Final Touchups'];
+
+var INTERNAL_SUBS = ['ELECTRICAL','BATTERY CABINETS','IOs/POWER CABINETS','SWITCH GEAR',
+  'PANELS & CABLE','CONDUIT','LIGHTING','CLOSEOUT'];
+
+var SUB_DISPLAY = {
+  'ELECTRICAL':'5.1 Electrical','BATTERY CABINETS':'5.2 Battery Cabinets',
+  'IOs/POWER CABINETS':'5.3 IOs/Power Cabinets','SWITCH GEAR':'5.4 Switch Gear',
+  'PANELS & CABLE':'5.5 Panels & Cable','CONDUIT':'5.6 Conduit (Batt/IO/SwGr)',
+  'LIGHTING':'5.7 Lighting','CLOSEOUT':'5.8 Closeout'
+};
+
+// Chart series: Structure + individual internal subtrades (5.1-5.8)
+var CHART_SERIES = ['1. Structure','ELECTRICAL','BATTERY CABINETS','IOs/POWER CABINETS',
+  'SWITCH GEAR','PANELS & CABLE','CONDUIT','LIGHTING','CLOSEOUT'];
+var CHART_SHORT  = ['Structure','Electrical','Batt Cabinets','IOs/Power',
+  'Switch Gear','Panels & Cable','Conduit','Lighting','Closeout'];
+var CHART_COLORS = ['#22c55e','#a855f7','#3b82f6','#06b6d4',
+  '#f97316','#eab308','#ef4444','#ec4899','#64748b'];
+
+function chartSeriesPct(series, tradesMap){
+  if(series==='1. Structure') return mainTradePct(series, tradesMap);
+  return subCatPct(series, tradesMap);
 }
+
+var CAT_TOTALS = {
+  '1. Structure':13,'ELECTRICAL':7,'BATTERY CABINETS':10,'IOs/POWER CABINETS':9,
+  'SWITCH GEAR':7,'PANELS & CABLE':6,'CONDUIT':8,
+  'LIGHTING':2,'CLOSEOUT':7,'5. Internal Systems Rough-In':56
+};
+
+var KNOWN_SUBS = {
+  '1. Structure':['C Channel / Holes Templates','Weld 4 I Beams (10" I Beams)',
+    'C Channels 12" Weld To Enclose Frame','Square The Frame','Inside C Channels/Square',
+    'Nuts Inside C Channel','Floor Plate (Pull, Cut, Weld)',
+    'Square Tube Halo (Pull, Cut, Grind, Weld)','I Beam On Halo Stand Up Posts',
+    'Square Halo And Weld To Post','Square Tubes For Doors','Ground Plates',
+    'Weld Floor Plates Together'],
+  'ELECTRICAL':['Ground Bar','Wall/Ceiling Boxes & Conduit','H2 Control Box & Conduit',
+    'HVAC Control Box & Conduit','Exhaust Fan Control Box & Conduit','PLC & Conduit','Wall/Ceiling Conduit'],
+  'BATTERY CABINETS':['Place Inside Building','Unpack Units','Unpalletize Units',
+    'Position Units In Place','Uninstall Plates','Install Pucks','Put In Covers',
+    'Fans','KO Plates','Cover W/ Drop Cloth'],
+  'IOs/POWER CABINETS':['Unload From Truck','Unpack Units','Unpalletize Units',
+    'Position Units In Place','Uninstall Plates','Install Bars','Put In Covers',
+    'KO Plates','Cover W/ Drop Cloth'],
+  'SWITCH GEAR':['Place Inside Building','Unpack Units','Unpalletize Units',
+    'Bus Bar','ATS Plate @ SwGr #2 To #3','Top Hats','KO Plates'],
+  'PANELS & CABLE':['Panels/Transformers & Conduit','Cable Tray Supports (Struts)',
+    '24" Cable Tray','30" Cable Tray','24" Step Down Tray','18" Battery Tray'],
+  'CONDUIT':['Battery To Battery','Battery To SwGr #4','IO To IO','IO To Batteries',
+    'IO To SwGr #4','Battery Cabinet Conduit','Batt To SwGr #4 Comm Conduit','2" EMT @ SwGr #4'],
+  'LIGHTING':['Lighting & Lamps','Lighting & Conduit'],
+  'CLOSEOUT':['Cut Down All Thread','Cap All Thread','Caulk Screw Holes','Clean Up',
+    'Final Walk Through','Check All Boxes For Bushings',
+    'Check Conduit/Unistrut/All Thread Level & Plumb']
+};
+
+var currentUnit = null;
+var allProgress = {};
+var mbrMap = {};
 
 function pctColor(v) {
-  if (v === null || v === undefined) return '#64748b';
+  if (v === null || v === undefined) return '#6b7280';
   if (v >= 0.9) return '#22c55e';
   if (v >= 0.5) return '#f59e0b';
-  return '#ef4444';
+  if (v > 0)    return '#ef4444';
+  return '#4a5568';
 }
-
 function fmtPct(v) {
-  if (v === null || v === undefined) return '—';
-  return (v * 100).toFixed(0) + '%';
+  if (v === null || v === undefined) return '--';
+  return Math.round(v * 100) + '%';
 }
 
-async function loadData() {
-  document.getElementById('loading').style.display = 'block';
-  document.getElementById('error-msg').style.display = 'none';
-  ['kpi-strip','row1','row2','row3'].forEach(id => {
-    document.getElementById(id).style.display = 'none';
+/* ---- BUILD CHICLETS ---- */
+function makeChiclet(unit, pct) {
+  var hasData = (pct !== undefined && pct !== null);
+  var pctNum = hasData ? Math.round(pct * 100) : null;
+  var color = hasData ? pctColor(pct) : '#4a5568';
+  var div = document.createElement('div');
+  div.className = 'chiclet' + (unit === currentUnit ? ' active' : '');
+  div.id = 'chk-' + unit;
+  div.onclick = (function(u){ return function(){ selectUnit(u); }; })(unit);
+  div.innerHTML =
+    '<div class="c-unit">' + unit + (mbrMap[unit] ? ' <span class="c-mbr">– ' + mbrMap[unit] + '</span>' : '') + '</div>' +
+    (hasData
+      ? '<div class="c-pct" style="color:' + color + '">' + pctNum + '%</div>' +
+        '<div class="c-bar"><div class="c-bar-fill" style="width:' + pctNum + '%;background:' + color + '"></div></div>'
+      : '<div class="c-nodata">--</div>');
+  return div;
+}
+
+function buildGrid(gridId, units, progressMap) {
+  var grid = document.getElementById(gridId);
+  grid.innerHTML = '';
+  units.forEach(function(unit) {
+    grid.appendChild(makeChiclet(unit, progressMap[unit]));
+  });
+}
+
+function buildChiclets(progressMap) {
+  buildGrid('gridA', SECTION_A, progressMap);
+  buildGrid('gridB', SECTION_B, progressMap);
+}
+
+function updateChiclet(unit, pct) {
+  allProgress[unit] = pct;
+  var el = document.getElementById('chk-' + unit);
+  if (!el) return;
+  var hasData = (pct !== undefined && pct !== null);
+  var pctNum = hasData ? Math.round(pct * 100) : null;
+  var color = hasData ? pctColor(pct) : '#4a5568';
+  el.innerHTML =
+    '<div class="c-unit">' + unit + (mbrMap[unit] ? ' <span class="c-mbr">– ' + mbrMap[unit] + '</span>' : '') + '</div>' +
+    (hasData
+      ? '<div class="c-pct" style="color:' + color + '">' + pctNum + '%</div>' +
+        '<div class="c-bar"><div class="c-bar-fill" style="width:' + pctNum + '%;background:' + color + '"></div></div>'
+      : '<div class="c-nodata">--</div>');
+}
+
+/* ---- SELECTION ---- */
+function selectUnit(unit) {
+  localStorage.setItem('lastUnit', unit);
+  if (currentUnit) {
+    var prev = document.getElementById('chk-' + currentUnit);
+    if (prev) prev.classList.remove('active');
+  }
+  currentUnit = unit;
+  var el = document.getElementById('chk-' + unit);
+  if (el) el.classList.add('active');
+  document.getElementById('activeUnitVal').textContent = unit;
+  loadUnit(unit);
+}
+
+function reloadUnit() { if (currentUnit) loadUnit(currentUnit); }
+
+/* ---- LOAD UNIT ---- */
+function loadUnit(unit) {
+  hideAll(['metaBar','kpiRow','tradeRow','chartCard','logCard','emptyState']);
+  show('loadingMsg');
+  var upDone = false, logDone = false, upData = null, logData = null;
+
+  function tryRender() {
+    if (!upDone || !logDone) return;
+    hide('loadingMsg');
+    if (!upData || upData.error) { show('emptyState'); return; }
+    var tradesMap = upData.trades || {};
+    var meta = upData.meta || {};
+    var records = Array.isArray(logData) ? logData : [];
+    var pcts = [];
+    var sumAll8 = 0;
+    MAIN_TRADES.forEach(function(t){ var p=mainTradePct(t,tradesMap); if(p!==null)pcts.push(p); sumAll8+=(p!==null?p:0); });
+    var overall = pcts.length ? sumAll8/8 : null;  // always divide by 8
+    updateChiclet(unit, overall);
+    renderMeta(unit, meta, records);
+    renderKPI(tradesMap, records, pcts);
+    renderTradeBars(tradesMap);
+    renderInternalSubs(tradesMap);
+    renderLog(records);
+    show('metaBar'); show('kpiRow'); show('tradeRow'); show('chartCard');
+  }
+
+  fetch('/unit-progress/' + unit)
+    .then(function(r){return r.json();})
+    .then(function(d){upData=d;upDone=true;tryRender();})
+    .catch(function(){upData={error:true};upDone=true;tryRender();});
+
+  fetch('/unit-log/' + unit)
+    .then(function(r){return r.json();})
+    .then(function(d){logData=d;logDone=true;tryRender();})
+    .catch(function(){logData=[];logDone=true;tryRender();});
+}
+
+/* ---- TRADE CALC ---- */
+function mainTradePct(tradeName, tradesMap) {
+  var catOnly=['2. Structure Paint','3. Envelope','4. Unit Paint','6. Electrical','7. Final QC','8. Final Touchups'];
+  if(catOnly.indexOf(tradeName)>=0) return (tradesMap[tradeName]!==undefined)?tradesMap[tradeName]:null;
+  if(tradeName==='5. Internal Systems Rough-In'){
+    var sum=0,has=false;
+    INTERNAL_SUBS.forEach(function(sub){
+      (KNOWN_SUBS[sub]||[]).forEach(function(act){
+        var v=tradesMap[sub+' > '+act]; if(v!==undefined&&v!==null){sum+=v;has=true;}
+      });
+    });
+    // Fallback: use direct category value if no sub-tasks found
+    if(!has && tradesMap['5. Internal Systems Rough-In']!==undefined)
+      return tradesMap['5. Internal Systems Rough-In'];
+    return has?sum/56:null;
+  }
+  var acts=KNOWN_SUBS[tradeName]||[]; if(!acts.length)return null;
+  var sum2=0,has2=false;
+  acts.forEach(function(act){
+    var v=tradesMap[tradeName+' > '+act]; if(v!==undefined&&v!==null){sum2+=v;has2=true;}
+  });
+  // Fallback: if sub-tasks not found, use direct category value
+  if(!has2 && tradesMap[tradeName]!==undefined) return tradesMap[tradeName];
+  return has2?sum2/(CAT_TOTALS[tradeName]||acts.length):null;
+}
+
+function subCatPct(subName, tradesMap) {
+  var acts=KNOWN_SUBS[subName]||[]; if(!acts.length)return null;
+  var sum=0,has=false;
+  acts.forEach(function(act){
+    var v=tradesMap[subName+' > '+act]; if(v!==undefined&&v!==null){sum+=v;has=true;}
+  });
+  return has?sum/(CAT_TOTALS[subName]||acts.length):null;
+}
+
+/* ---- HELPERS ---- */
+function show(id){var e=document.getElementById(id);if(e)e.style.display='';}
+function hide(id){var e=document.getElementById(id);if(e)e.style.display='none';}
+function hideAll(ids){ids.forEach(function(id){hide(id);});}
+
+/* ---- RENDER ---- */
+function renderMeta(unit,meta,records){
+  var lastDate=records.length?records[0].date:'--';
+  document.getElementById('metaBar').innerHTML=
+    '<div class="meta-item"><span class="ml">Unit</span><span class="mv accent">'+unit+'</span></div>'+
+    '<div class="meta-item"><span class="ml">TDG #</span><span class="mv">'+(meta.tdg_number||'--')+'</span></div>'+
+    '<div class="meta-item"><span class="ml">MBR #</span><span class="mv">'+(meta.mbr_number||'--')+'</span></div>'+
+    '<div class="meta-item"><span class="ml">Fase</span><span class="mv">'+(meta.fase||'--')+'</span></div>'+
+    '<div class="meta-item"><span class="ml">Building</span><span class="mv">'+(meta.building_no||'--')+'</span></div>'+
+    '<div class="meta-item"><span class="ml">Skid By</span><span class="mv">'+(meta.skid_by||'--')+'</span></div>'+
+    '<div class="meta-item"><span class="ml">Last Activity</span><span class="mv">'+lastDate+'</span></div>'+
+    '<div class="meta-item"><span class="ml">Log Entries</span><span class="mv">'+records.length+'</span></div>';
+}
+
+function renderKPI(tradesMap,records,mainPcts){
+  var kpiSum=0; MAIN_TRADES.forEach(function(t){var p=mainTradePct(t,tradesMap);kpiSum+=(p!==null?p:0);});
+  var overall=mainPcts.length?kpiSum/8:null;  // always divide by 8
+  var totalHours=0; records.forEach(function(r){if(r.workers)totalHours+=r.workers*(r.period==='AM'?6:5);});
+  var completed=0; MAIN_TRADES.forEach(function(t){var p=mainTradePct(t,tradesMap);if(p!==null&&p>=1.0)completed++;});
+  var dates={}; records.forEach(function(r){if(r.date)dates[r.date]=1;});
+  var row=document.getElementById('kpiRow'); row.innerHTML='';
+  row.appendChild(makeKPI('Overall Progress',overall,mainPcts.length+' of 8 trades logged'));
+  row.appendChild(makeKPINum('Man-Hours',totalHours||'--',totalHours?'logged':'no workers data'));
+  row.appendChild(makeKPINum('Trades Complete',completed+'/8','at 100%'));
+  row.appendChild(makeKPINum('Days Active',Object.keys(dates).length,'unique days'));
+}
+
+function makeKPI(label,value,sub){
+  var color=pctColor(value);var pct=value!==null?(value*100):0;
+  var div=document.createElement('div');div.className='kpi';
+  div.innerHTML='<div class="kl">'+label+'</div><div class="kv" style="color:'+color+'">'+fmtPct(value)+'</div>'+
+    '<div class="ks">'+sub+'</div><div class="kpi-bar"><div class="kpi-bar-fill" style="width:'+pct+'%;background:'+color+'"></div></div>';
+  return div;
+}
+function makeKPINum(label,value,sub){
+  var div=document.createElement('div');div.className='kpi';
+  div.innerHTML='<div class="kl">'+label+'</div><div class="kv" style="color:var(--accent)">'+value+'</div><div class="ks">'+sub+'</div>';
+  return div;
+}
+
+function renderTradeBars(tradesMap){
+  var c=document.getElementById('tradeBars');c.innerHTML='';
+  MAIN_TRADES.forEach(function(trade){
+    var pct=mainTradePct(trade,tradesMap);var color=pctColor(pct);var pctNum=pct!==null?Math.round(pct*100):null;
+    var row=document.createElement('div');row.className='trade-bar-row';
+    row.innerHTML=pct!==null
+      ?'<div class="trade-bar-label"><span>'+trade+'</span><span class="pct" style="color:'+color+'">'+pctNum+'%</span></div>'+
+        '<div class="bar-track"><div class="bar-fill" style="width:'+pctNum+'%;background:'+color+'"></div></div>'
+      :'<div class="trade-bar-label"><span style="color:var(--muted)">'+trade+'</span><span class="pct" style="color:var(--muted)">--</span></div>'+
+        '<div class="bar-no-data"></div>';
+    c.appendChild(row);
+  });
+}
+
+function renderInternalSubs(tradesMap){
+  var grid=document.getElementById('subGrid');grid.innerHTML='';
+  INTERNAL_SUBS.forEach(function(sub){
+    var pct=subCatPct(sub,tradesMap);var color=pctColor(pct);var pctNum=pct!==null?Math.round(pct*100):null;
+    var cell=document.createElement('div');cell.className='sub-cell';
+    var bar=pct!==null?'<div class="sbf" style="width:'+pctNum+'%;background:'+color+'"></div>':'';
+    cell.innerHTML='<div class="sn">'+(SUB_DISPLAY[sub]||sub)+'</div>'+
+      '<div class="sp" style="color:'+(pct!==null?color:'var(--muted)')+'">'+
+      (pct!==null?pctNum+'%':'--')+'</div><div class="sb">'+bar+'</div>';
+    grid.appendChild(cell);
+  });
+}
+
+function renderLog(records){
+  // ---- Build Trade Progress by Shift chart ----
+  //  Colors: Structure=green, StrPaint=blue, Envelope=red, UnitPaint=electric-cyan,
+  //          Internal=orange, Electrical=purple, FinalQC=white, Touchups=dark-blue
+  var TRADE_COLORS = CHART_COLORS;
+  var TRADE_SHORT  = CHART_SHORT;
+  var MONTHS = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // Sort records: date asc → period asc (AM < PM) → created_at asc (newest overwrites)
+  var sortedRecs = records.slice().sort(function(a,b){
+    var da=(a.date||''), db=(b.date||'');
+    if(da!==db) return da.localeCompare(db);
+    var pa=(a.period||''), pb=(b.period||'');
+    if(pa!==pb) return pa.localeCompare(pb);
+    return (a.created_at||'').localeCompare(b.created_at||'');
   });
 
-  try {
-    const res = await fetch('/api/data');
-    if (!res.ok) throw new Error(`Server error ${res.status}`);
-    const d = await res.json();
-    render(d);
-    document.getElementById('last-updated').textContent =
-      'Updated ' + new Date().toLocaleTimeString();
-  } catch (e) {
-    const el = document.getElementById('error-msg');
-    el.textContent = 'Could not load data: ' + e.message;
-    el.style.display = 'block';
-  } finally {
-    document.getElementById('loading').style.display = 'none';
+  // Collect unique shifts in order: "2026-06-22_AM", "2026-06-22_PM", ...
+  var shiftsSeen = {}, shiftOrder = [];
+  sortedRecs.forEach(function(r){
+    if(!r.date || !r.period) return;
+    var key = r.date+'_'+r.period;
+    if(!shiftsSeen[key]){ shiftsSeen[key]={date:r.date,period:r.period}; shiftOrder.push(key); }
+  });
+
+  // Cumulative running map — process records shift by shift
+  var tradeDataArrays = CHART_SERIES.map(function(){ return []; });
+  var running = {};
+  var ri = 0;
+  shiftOrder.forEach(function(shiftKey){
+    while(ri < sortedRecs.length){
+      var r = sortedRecs[ri];
+      var rKey = (r.date||'')+'_'+(r.period||'');
+      if(rKey > shiftKey) break;
+      if(r.area_phase && r.progress_pct !== null) running[r.area_phase] = r.progress_pct;
+      ri++;
+    }
+    CHART_SERIES.forEach(function(trade, i){
+      var p = chartSeriesPct(trade, running);
+      var arr = tradeDataArrays[i];
+      var prevVal = arr.length ? arr[arr.length-1] : null;
+      if(prevVal === 100){
+        // Trade completed — stop the line (null breaks line with spanGaps:false)
+        arr.push(null);
+      } else if(p !== null){
+        arr.push(Math.round(p*100));
+      } else {
+        // No new data this shift — carry forward last known value for a continuous line
+        arr.push(prevVal);
+      }
+    });
+  });
+
+  // Extend to today if unit hasn't been updated today
+  if (shiftOrder.length > 0) {
+    var todayStr = new Date().toISOString().slice(0,10);
+    var lastDate = shiftsSeen[shiftOrder[shiftOrder.length-1]].date;
+    if (lastDate < todayStr) {
+      var todayKey = todayStr + '_AM';
+      if (!shiftsSeen[todayKey]) {
+        shiftsSeen[todayKey] = {date: todayStr, period: 'AM'};
+        shiftOrder.push(todayKey);
+        // Carry forward last known values (arrays already built above, just push last values)
+        CHART_SERIES.forEach(function(trade, i){
+          var arr = tradeDataArrays[i];
+          arr.push(arr.length ? arr[arr.length-1] : null);
+        });
+      }
+    }
+  }
+
+  // Labels: "Jun 22 AM", "Jun 22 PM"
+  var labels = shiftOrder.map(function(key){
+    var sh = shiftsSeen[key];
+    var parts = sh.date.split('-');
+    return MONTHS[parseInt(parts[1],10)]+' '+parseInt(parts[2],10)+' '+sh.period;
+  });
+
+  // All 8 trades always in datasets (legend shows even without data)
+  // Trades with no data: dashed border, low opacity
+  var datasets = MAIN_TRADES.map(function(trade, i){
+    var hasData = tradeDataArrays[i].some(function(v){ return v !== null; });
+    return {
+      label: TRADE_SHORT[i],
+      data: tradeDataArrays[i],
+      borderColor: TRADE_COLORS[i],
+      backgroundColor: 'transparent',
+      tension: 0.3, spanGaps: false,
+      pointRadius: hasData ? 4 : 0,
+      pointHoverRadius: hasData ? 7 : 0,
+      borderWidth: hasData ? 2 : 1,
+      borderDash: hasData ? [] : [4, 4],
+      borderOpacity: hasData ? 1 : 0.4
+    };
+  });
+
+  // Workers-per-day table (by shift)
+  var wkMap = {};
+  records.forEach(function(r){
+    if(!r.date) return;
+    if(!wkMap[r.date]) wkMap[r.date]={am:0,pm:0,crew:{}};
+    var w = r.workers || 0;
+    if(r.period==='AM') wkMap[r.date].am = Math.max(wkMap[r.date].am, w);
+    else                wkMap[r.date].pm = Math.max(wkMap[r.date].pm, w);
+    if(r.crew){r.crew.split(',').forEach(function(c){var t=c.trim();if(t)wkMap[r.date].crew[t]=1;});}
+  });
+  var tbodyHTML = '', hasWorkers = false;
+  Object.keys(wkMap).sort().forEach(function(d){
+    var am=wkMap[d].am, pm=wkMap[d].pm;
+    if(am||pm) hasWorkers=true;
+    var hrs=am*6+pm*5, dp=d.split('-');
+    var lbl=MONTHS[parseInt(dp[1],10)]+' '+parseInt(dp[2],10);
+    var crewList=Object.keys(wkMap[d].crew).join(', ');
+    tbodyHTML+='<tr><td style="padding:4px 8px;color:#94a3b8;border-bottom:1px solid #111d2b">'+lbl+'</td>'+
+      '<td style="text-align:center;padding:4px 8px;color:#3b82f6;border-bottom:1px solid #111d2b">'+(am||'—')+'</td>'+
+      '<td style="text-align:center;padding:4px 8px;color:#f59e0b;border-bottom:1px solid #111d2b">'+(pm||'—')+'</td>'+
+      '<td style="text-align:center;padding:4px 8px;color:#22c55e;border-bottom:1px solid #111d2b">'+(hrs||'—')+'</td>'+
+      '<td style="padding:4px 8px;color:#64748b;border-bottom:1px solid #111d2b;font-size:11px">'+(crewList||'—')+'</td></tr>';
+  });
+  document.getElementById('workersTbody').innerHTML = tbodyHTML;
+  document.getElementById('workersTable').style.display = hasWorkers ? 'block' : 'none';
+
+  // ── Trade Timeline ─────────────────────────────────────────────
+  // For each CHART_SERIES trade: first date with progress>0, days active, completion date
+  var tlMap = {}; // {tradeName: {start, end, lastPct}}
+  // Sort records ascending by date+period for correct chronology
+  var sortedRecs = records.slice().sort(function(a,b){
+    var ak=(a.date||'')+(a.period==='AM'?'_1':'_2');
+    var bk=(b.date||'')+(b.period==='AM'?'_1':'_2');
+    return ak<bk?-1:ak>bk?1:0;
+  });
+  // Build running trade map per shift to get per-trade pct over time
+  var runningTL = {};
+  var datesSeen = {};
+  sortedRecs.forEach(function(r){
+    if(!r.date) return;
+    if(r.area_phase && r.progress_pct !== null) runningTL[r.area_phase] = r.progress_pct;
+    datesSeen[r.date] = 1;
+    // Check each chart series
+    CHART_SERIES.forEach(function(series){
+      var p = chartSeriesPct(series, runningTL);
+      if(p === null) return;
+      if(!tlMap[series]) tlMap[series] = {start:null, end:null, lastPct:0};
+      if(p > 0 && !tlMap[series].start) tlMap[series].start = r.date;
+      if(p >= 1.0 && !tlMap[series].end) tlMap[series].end = r.date;
+      tlMap[series].lastPct = Math.round(p*100);
+    });
+  });
+
+  function daysBetween(d1, d2){
+    var a=new Date(d1), b=new Date(d2);
+    return Math.round(Math.abs(b-a)/(1000*60*60*24));
+  }
+  var today = new Date().toISOString().slice(0,10);
+  var SERIES_SHORT = {
+    '1. Structure':'1. Structure',
+    'ELECTRICAL':'5.1 Electrical','BATTERY CABINETS':'5.2 Battery Cabinets',
+    'IOs/POWER CABINETS':'5.3 IOs/Power Cabinets','SWITCH GEAR':'5.4 Switch Gear',
+    'PANELS & CABLE':'5.5 Panels & Cable','CONDUIT':'5.6 Conduit (Batt/IO/SwGr)',
+    'LIGHTING':'5.7 Lighting','CLOSEOUT':'5.8 Closeout'
+  };
+  var tlHTML='', hasTimeline=false;
+  CHART_SERIES.forEach(function(series, i){
+    var t=tlMap[series];
+    if(!t||!t.start) return;
+    hasTimeline=true;
+    var endDate = t.end || today;
+    var days = daysBetween(t.start, endDate);
+    var dp=t.start.split('-');
+    var startLbl=MONTHS[parseInt(dp[1],10)]+' '+parseInt(dp[2],10)+', '+dp[0];
+    var statusLbl, statusColor;
+    if(t.end){
+      var dp2=t.end.split('-');
+      statusLbl=MONTHS[parseInt(dp2[1],10)]+' '+parseInt(dp2[2],10);
+      statusColor='#22c55e';
+    } else {
+      statusLbl='—';
+      statusColor='#475569';
+    }
+    var pctColor2=t.lastPct>=100?'#22c55e':t.lastPct>=50?'#f97316':'#ef4444';
+    tlHTML+='<tr>'+
+      '<td style="padding:5px 8px;color:#e2e8f0;border-bottom:1px solid #111d2b;font-size:11px;font-weight:600">'+
+        (SERIES_SHORT[series]||series)+'</td>'+
+      '<td style="text-align:center;padding:5px 8px;color:#94a3b8;border-bottom:1px solid #111d2b;font-size:11px">'+startLbl+'</td>'+
+      '<td style="text-align:center;padding:5px 8px;color:#64748b;border-bottom:1px solid #111d2b;font-size:11px">'+days+' d</td>'+
+      '<td style="text-align:center;padding:5px 8px;color:'+pctColor2+';border-bottom:1px solid #111d2b;font-size:12px;font-weight:700">'+t.lastPct+'%</td>'+
+      '<td style="text-align:center;padding:5px 8px;color:'+statusColor+';border-bottom:1px solid #111d2b;font-size:11px">'+statusLbl+'</td>'+
+    '</tr>';
+  });
+  document.getElementById('timelineTbody').innerHTML = tlHTML || '<tr><td colspan="5" style="padding:12px;color:#475569;text-align:center">No trade progress logged yet</td></tr>';
+  document.getElementById('tradeTimeline').style.display = hasTimeline ? 'block' : 'none';
+
+  var ctx = document.getElementById('laborChart').getContext('2d');
+  if(window._laborChart) { window._laborChart.destroy(); }
+  window._laborChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: labels, datasets: datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      layout: { padding: { top: 12, right: 8 } },
+      plugins: {
+        legend: { labels: { color: '#94a3b8', font: { size: 10 }, boxWidth: 10, padding: 8,
+          generateLabels: function(chart) {
+            return chart.data.datasets.map(function(ds, i) {
+              return { text: ds.label, fillStyle: 'transparent', strokeStyle: ds.borderColor,
+                lineWidth: 2, hidden: false, index: i,
+                fontColor: ds.borderDash && ds.borderDash.length ? '#475569' : '#94a3b8' };
+            });
+          }
+        } },
+        tooltip: { callbacks: { label: function(c){
+          return ' ' + c.dataset.label + ': ' + (c.parsed.y !== null ? c.parsed.y + '%' : '--');
+        }}}
+      },
+      scales: {
+        x: { ticks: { color: '#64748b', font: { size: 10 }, maxRotation: 35 }, grid: { color: '#1a2535' } },
+        y: { min: 0, max: 110,
+             ticks: { color: '#64748b', font: { size: 10 },
+               callback: function(v){ return v <= 100 ? v+'%' : ''; } },
+             grid: { color: function(ctx){ return ctx.tick.value > 100 ? '#1a1d27' : '#1a2535'; } },
+             title: { display: true, text: '% Complete', color: '#64748b', font: { size: 10 } } }
+      }
+    }
+  });
+
+  // ---- Build Day-by-Day (hidden, toggled) ----
+  var container = document.getElementById('dayLog');
+  if(!records.length){ container.innerHTML='<p style="color:var(--muted);font-size:12px;padding:8px 0">No records yet.</p>'; return; }
+  var grouped = {};
+  var order = [];
+  records.forEach(function(r){
+    var d = r.date || 'Unknown';
+    if(!grouped[d]){ grouped[d]=[]; order.push(d); }
+    grouped[d].push(r);
+  });
+  var html2 = '';
+  order.forEach(function(date, di){
+    var rows = grouped[date];
+    var totalW=0, amH=0, pmH=0;
+    rows.forEach(function(r){
+      if(r.workers){ totalW=Math.max(totalW,r.workers);
+        if(r.period==='AM') amH+=r.workers*6; else pmH+=r.workers*5; }
+    });
+    var statsStr = (totalW?totalW+' workers':'') + (amH?' · AM '+amH+'h':'') + (pmH?' · PM '+pmH+'h':'');
+    var bodyId='day-body-'+di;
+    var chevId='day-chev-'+di;
+    html2+='<div class="day-card">';
+    html2+='<div class="day-header" data-body="'+bodyId+'" data-chev="'+chevId+'">';
+    html2+='<div class="dh-left"><span class="day-date">'+date+'</span><span class="day-stats">'+statsStr+'</span></div>';
+    html2+='<span class="day-chevron" id="'+chevId+'">'+(di===0?'&#9650;':'&#9660;')+'</span>';
+    html2+='</div>';
+    html2+='<div class="day-body'+(di===0?'':' collapsed')+'" id="'+bodyId+'">';
+    var amRows=rows.filter(function(r){return r.period==='AM';});
+    var pmRows=rows.filter(function(r){return r.period==='PM';});
+    function renderShiftRows(shiftRows, period) {
+      if(!shiftRows.length) return '';
+      var labelCls = period==='AM'?'badge badge-am':'badge badge-pm';
+      var s = '<div class="shift-section"><div class="shift-label"><span class="'+labelCls+' slb">'+period+'</span></div>';
+      shiftRows.forEach(function(r){
+        var v=r.progress_pct;
+        var color=pctColor(v);
+        var pctHtml=(v!==null&&v!==undefined)
+          ?'<span class="act-pct" style="color:'+color+'">'+fmtPct(v)+'</span>'
+          :'<span class="act-pct" style="color:var(--muted)">--</span>';
+        var trade=r.area_phase||'--';
+        var tradeShort=trade.length>38?trade.slice(0,36)+'...':trade;
+        var hasPct=(v!==null&&v!==undefined);
+        s+='<div class="act-row">';
+        s+='<div class="act-name'+(hasPct?' has-pct':'')+'" title="'+trade+'">'+tradeShort+'</div>';
+        s+=pctHtml;
+        if(r.crew) s+='<div class="act-crew">'+r.crew+'</div>';
+        s+='</div>';
+      });
+      s+='</div>';
+      return s;
+    }
+    html2 += renderShiftRows(amRows, 'AM');
+    html2 += renderShiftRows(pmRows, 'PM');
+    html2+='</div></div>';
+  });
+  container.innerHTML = html2;
+  container.querySelectorAll('.day-header').forEach(function(el){
+    el.addEventListener('click', function(){
+      toggleDay(el.getAttribute('data-body'), el.getAttribute('data-chev'));
+    });
+  });
+}
+
+function toggleDay(bodyId, chevId) {
+  var body=document.getElementById(bodyId);
+  var chev=document.getElementById(chevId);
+  if(!body) return;
+  var collapsed=body.classList.contains('collapsed');
+  body.classList.toggle('collapsed',!collapsed);
+  if(chev){ chev.classList.toggle('open',collapsed); chev.innerHTML=collapsed?'&#9650;':'&#9660;'; }
+}
+
+
+/* ---- DAY LOG TOGGLE ---- */
+function toggleDayLog() {
+  var log = document.getElementById('logCard');
+  var btn = document.getElementById('dayByDayBtn');
+  if (!log) return;
+  var shown = log.style.display !== 'none';
+  log.style.display = shown ? 'none' : 'block';
+  if (btn) btn.style.color = shown ? 'var(--muted)' : '#7db4ff';
+}
+
+/* ---- INIT ---- */
+document.addEventListener('DOMContentLoaded', function(){
+  buildChiclets({});
+  show('emptyState');
+  Promise.all([
+    fetch('/all-progress').then(function(r){return r.json();}),
+    fetch('/all-mbr-numbers').then(function(r){return r.json();}).catch(function(){return {};})
+  ]).then(function(results){
+    var data = results[0];
+    mbrMap = results[1] || {};
+    allProgress=data;
+    buildChiclets(data);
+    // Auto-load: last viewed unit, or first unit with data
+    var lastUnit=localStorage.getItem('lastUnit');
+    if(lastUnit){
+      selectUnit(lastUnit);
+    } else {
+      var allUnits=SECTION_A.concat(SECTION_B);
+      for(var i=0;i<allUnits.length;i++){
+        var d=data[allUnits[i]];
+        if(d!==undefined && d!==null){selectUnit(allUnits[i]);break;}
+      }
+    }
+  }).catch(function(){});
+});
+</script>
+<script>
+// ── Auth gate (cross-page via localStorage) ──────────────────────
+(function(){
+  var AUTH_KEY='mbrAuth';
+  var stored=localStorage.getItem(AUTH_KEY);
+  if(stored){ return; }          // already authed — show page normally
+  // Hide page body, show gate
+  document.body.style.overflow='hidden';
+  document.getElementById('authGate').style.display='flex';
+})();
+
+
+// ── Urgency Order View ────────────────────────────────────────────
+var urgencyInterval = null;
+
+function switchView(view){
+  document.getElementById('tab-full').classList.toggle('active', view==='full');
+  document.getElementById('tab-urgency').classList.toggle('active', view==='urgency');
+  document.getElementById('full-dashboard').style.display = view==='full' ? '' : 'none';
+  document.getElementById('urgency-panel').classList.toggle('visible', view==='urgency');
+  if(view==='urgency'){
+    loadUrgency();
+    if(!urgencyInterval) urgencyInterval = setInterval(loadUrgency, 120000);
+  } else {
+    clearInterval(urgencyInterval); urgencyInterval=null;
   }
 }
 
-function render(d) {
-  renderKPI(d.unit_progress);
-  renderMainTrade(d.main_trade_pct);
-  renderTrade(d.unit_trade_pct);
-  renderHistory(d.records);
-  renderMatrix(d.unit_trade_pct);
-  renderAttendance(d.records);
-
-  ['kpi-strip','row1','row2','row3'].forEach(id => {
-    document.getElementById(id).style.display = '';
-  });
-  document.getElementById('row1').style.display = 'grid';
-  document.getElementById('row2').style.display = 'grid';
+function shortTrade(ap){
+  // Strip category prefix for readability
+  var parts = ap.split(' > ');
+  return parts.length > 1 ? parts[parts.length-1] : ap;
 }
 
-/* ── KPI Cards ── */
-function renderKPI(unitProgress) {
-  const strip = document.getElementById('kpi-strip');
-  strip.innerHTML = '';
+async function loadUrgency(){
+  try{
+    var r = await fetch('/api/urgency-report');
+    var units = await r.json();
+    var grid = document.getElementById('urg-grid');
+    if(!units.length){ grid.innerHTML='<div class="urg-empty">No units with MBR numbers found.</div>'; return; }
+    var html = '';
+    units.forEach(function(u){
+      html += '<div class="urg-card">';
 
-  const units = Object.keys(unitProgress).sort();
-  if (!units.length) {
-    strip.innerHTML = '<p style="color:var(--muted)">No unit data yet.</p>';
+      // Header: MBR# | sec5 bar | position
+      html += '<div class="urg-header"><span class="urg-mbr">MBR #'+u.mbr_no+'</span><span class="urg-pos">'+u.position+'</span></div>';
+
+      // Section 5 progress bar
+      var s5 = u.sec5_pct || 0;
+      html += '<div class="urg-sec5">';
+      html += '<span class="urg-sec5-label">Sec. 5</span>';
+      html += '<div class="urg-sec5-bar"><div class="urg-sec5-fill" style="width:'+s5+'%"></div></div>';
+      html += '<span class="urg-sec5-pct">'+s5+'%</span>';
+      html += '</div>';
+
+      // Last Updated
+      html += '<div class="urg-section">✅ Last Completed (100%)</div>';
+      if(u.last_updated && u.last_updated.length){
+        u.last_updated.forEach(function(t){
+          var pctClr = t.pct>=100 ? 'done' : 'prog';
+          var dotClr = t.pct>=100 ? 'done' : 'prog';
+          html += '<div class="urg-item"><span class="urg-dot '+dotClr+'"></span><span class="urg-trade">'+shortTrade(t.trade)+'</span>';
+          html += '<span class="urg-lu-meta">'+t.date+' '+t.period+'</span>';
+          html += '<span class="urg-pct '+pctClr+'">'+t.pct+'%</span></div>';
+        });
+      } else {
+        html += '<div class="urg-item" style="color:#94a3b8;font-size:12px">— No entries yet</div>';
+      }
+
+      html += '<div class="urg-section">⚡ In Progress — Lowest %</div>';
+      if(u.in_progress.length){
+        u.in_progress.forEach(function(t){
+          html += '<div class="urg-item"><span class="urg-dot prog"></span><span class="urg-trade">'+shortTrade(t.trade)+'</span><span class="urg-pct">'+t.pct+'%</span></div>';
+        });
+      } else {
+        html += '<div class="urg-item" style="color:#94a3b8;font-size:12px">— None in progress</div>';
+      }
+
+      html += '<div class="urg-section">⭕ Not Started</div>';
+      if(u.not_started.length){
+        u.not_started.forEach(function(t){
+          html += '<div class="urg-item"><span class="urg-dot none"></span><span class="urg-trade" style="color:#64748b">'+shortTrade(t.trade)+'</span></div>';
+        });
+      } else {
+        html += '<div class="urg-item" style="color:#94a3b8;font-size:12px">— All tasks started</div>';
+      }
+
+      html += '</div>';
+    });
+    grid.innerHTML = html;
+    document.getElementById('urg-refresh-label').textContent = 'Last updated: '+new Date().toLocaleTimeString()+' — auto-refreshes every 2 min';
+  } catch(e){
+    document.getElementById('urg-grid').innerHTML='<div class="urg-empty">Error loading urgency data.</div>';
+  }
+}
+
+var _agUser='',_agBuf='',_agNew=false,_agFirst='';
+
+function agSelName(n){
+  _agUser=n;_agBuf='';_agNew=false;_agFirst='';
+  document.getElementById('agPinTitle').textContent='Hello, '+n+'!';
+  document.getElementById('agPinSub').textContent='Enter your 4-digit PIN';
+  document.getElementById('agErr').textContent='';
+  agDots();
+  fetch('/api/users/has-pin?name='+encodeURIComponent(n))
+    .then(function(r){return r.json();})
+    .then(function(d){ if(!d.has_pin){_agNew=true;document.getElementById('agPinSub').textContent='Create a new 4-digit PIN';} })
+    .catch(function(){});
+  document.getElementById('ag1').style.display='none';
+  document.getElementById('ag2').style.display='block';
+}
+function agBack(){
+  document.getElementById('ag2').style.display='none';
+  document.getElementById('ag1').style.display='block';
+  _agBuf='';_agNew=false;_agFirst='';
+}
+function agDots(){
+  for(var i=0;i<4;i++){
+    var d=document.getElementById('agd'+i);
+    if(d)d.className='ag-dot'+(i<_agBuf.length?' on':'');
+  }
+}
+function agPk(k){
+  if(k==='C'){if(_agBuf.length>0){_agBuf=_agBuf.slice(0,-1);agDots();}return;}
+  if(_agBuf.length>=4)return;
+  _agBuf+=k;agDots();
+  if(_agBuf.length===4)setTimeout(agProc,110);
+}
+function agProc(){
+  if(_agNew&&!_agFirst){_agFirst=_agBuf;_agBuf='';document.getElementById('agPinSub').textContent='Confirm your PIN';agDots();return;}
+  if(_agNew&&_agFirst){
+    if(_agBuf!==_agFirst){document.getElementById('agErr').textContent='PINs do not match.';_agBuf='';_agFirst='';agDots();return;}
+    fetch('/api/users/set-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:_agUser,pin:_agBuf})})
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(d.ok){
+          var body='MBR Texas Timesheet%0A%0APIN Set For: '+encodeURIComponent(_agUser)+'%0APIN: '+_agBuf+'%0ADate: '+new Date().toLocaleDateString();
+          window.open('mailto:dshidalgop@gmail.com?subject='+encodeURIComponent('PIN – '+_agUser)+'&body='+body,'_blank');
+          localStorage.setItem('mbrAuth',_agUser);
+          document.getElementById('authGate').style.display='none';
+          document.body.style.overflow='';
+        }else{document.getElementById('agErr').textContent='Error: '+(d.error||'try again');}
+      }).catch(function(){document.getElementById('agErr').textContent='Network error.';});
     return;
   }
-
-  // Overall card
-  const overall = units.reduce((s, u) => s + unitProgress[u], 0) / units.length;
-  strip.appendChild(makeKPI('Overall Progress', overall, `${units.length} units tracked`));
-
-  units.forEach(u => {
-    strip.appendChild(makeKPI(`Unit ${u}`, unitProgress[u], 'avg of latest trades'));
-  });
+  fetch('/api/users/verify-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:_agUser,pin:_agBuf})})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){
+        localStorage.setItem('mbrAuth',_agUser);
+        document.getElementById('authGate').style.display='none';
+        document.body.style.overflow='';
+      }else{document.getElementById('agErr').textContent='Incorrect PIN.';_agBuf='';agDots();}
+    }).catch(function(){document.getElementById('agErr').textContent='Network error.';});
 }
+</script>
+<!-- GNAV -->
 
-function makeKPI(label, value, sub) {
-  const pct = value * 100;
-  const color = pctColor(value);
-  const card = document.createElement('div');
-  card.className = 'kpi-card';
-  card.innerHTML = `
-    <div class="label">${label}</div>
-    <div class="value" style="color:${color}">${fmtPct(value)}</div>
-    <div class="sub">${sub}</div>
-    <div class="kpi-bar"><div class="kpi-bar-fill" style="width:${pct}%;background:${color}"></div></div>
-  `;
-  return card;
-}
+</div><!-- /full-dashboard -->
 
-/* ── Main Trade Bar Chart ── */
-function renderMainTrade(mainTradePct) {
-  destroyChart('main-trade');
-  const labels = Object.keys(mainTradePct).sort();
-  const values = labels.map(k => +(mainTradePct[k] * 100).toFixed(1));
-
-  charts['main-trade'] = new Chart(document.getElementById('chart-main-trade'), {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        data: values,
-        backgroundColor: labels.map((_, i) => COLORS[i % COLORS.length] + 'cc'),
-        borderColor: labels.map((_, i) => COLORS[i % COLORS.length]),
-        borderWidth: 1,
-        borderRadius: 4,
-      }]
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false },
-        tooltip: { callbacks: { label: ctx => ' ' + ctx.raw.toFixed(1) + '%' } }
-      },
-      scales: {
-        x: { min: 0, max: 100, ticks: { color: '#64748b', callback: v => v + '%' }, grid: { color: '#2a2d3e' } },
-        y: { ticks: { color: '#e2e8f0', font: { size: 11 } }, grid: { display: false } }
-      }
-    }
-  });
-}
-
-/* ── Individual Trade Bar Chart ── */
-function renderTrade(unitTradePct) {
-  destroyChart('trade');
-  // Flatten all (trade, latest_pct) — average across units
-  const tradeMap = {};
-  Object.values(unitTradePct).forEach(trades => {
-    Object.entries(trades).forEach(([trade, pct]) => {
-      if (!tradeMap[trade]) tradeMap[trade] = [];
-      tradeMap[trade].push(pct);
-    });
-  });
-  const labels = Object.keys(tradeMap).sort();
-  const values = labels.map(k => +(tradeMap[k].reduce((a,b)=>a+b,0)/tradeMap[k].length*100).toFixed(1));
-
-  charts['trade'] = new Chart(document.getElementById('chart-trade'), {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        data: values,
-        backgroundColor: labels.map((_, i) => COLORS[i % COLORS.length] + 'bb'),
-        borderColor: labels.map((_, i) => COLORS[i % COLORS.length]),
-        borderWidth: 1,
-        borderRadius: 4,
-      }]
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false },
-        tooltip: { callbacks: { label: ctx => ' ' + ctx.raw.toFixed(1) + '%' } }
-      },
-      scales: {
-        x: { min: 0, max: 100, ticks: { color: '#64748b', callback: v => v + '%' }, grid: { color: '#2a2d3e' } },
-        y: { ticks: { color: '#e2e8f0', font: { size: 10 } }, grid: { display: false } }
-      }
-    }
-  });
-}
-
-/* ── Day-by-Day Line Chart ── */
-function renderHistory(records) {
-  destroyChart('history');
-
-  // Group by date + area_phase → average progress_pct
-  const byDateTrade = {};
-  const allTrades = new Set();
-  const allDates = new Set();
-
-  records.forEach(r => {
-    if (r.progress_pct === null || r.progress_pct === undefined) return;
-    const key = r.date + '|' + r.area_phase;
-    if (!byDateTrade[key]) byDateTrade[key] = [];
-    byDateTrade[key].push(r.progress_pct);
-    allTrades.add(r.area_phase);
-    allDates.add(r.date);
-  });
-
-  const dates = [...allDates].sort();
-  const trades = [...allTrades].sort();
-
-  const datasets = trades.map((trade, i) => ({
-    label: trade,
-    data: dates.map(date => {
-      const k = date + '|' + trade;
-      if (!byDateTrade[k]) return null;
-      const vals = byDateTrade[k];
-      return +(vals.reduce((a,b)=>a+b,0)/vals.length * 100).toFixed(1);
-    }),
-    borderColor: COLORS[i % COLORS.length],
-    backgroundColor: COLORS[i % COLORS.length] + '22',
-    tension: 0.3,
-    pointRadius: 4,
-    spanGaps: true,
-  }));
-
-  charts['history'] = new Chart(document.getElementById('chart-history'), {
-    type: 'line',
-    data: { labels: dates, datasets },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { labels: { color: '#94a3b8', font: { size: 10 }, boxWidth: 12 } },
-        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.raw}%` } }
-      },
-      scales: {
-        x: { ticks: { color: '#64748b', font: { size: 11 } }, grid: { color: '#2a2d3e' } },
-        y: { min: 0, max: 100, ticks: { color: '#64748b', callback: v => v + '%' }, grid: { color: '#2a2d3e' } }
-      }
-    }
-  });
-}
-
-/* ── Unit × Trade Matrix ── */
-function renderMatrix(unitTradePct) {
-  const units = Object.keys(unitTradePct).sort();
-  if (!units.length) { document.getElementById('matrix-container').innerHTML = '<p style="color:var(--muted)">No data.</p>'; return; }
-
-  // All trades across all units
-  const tradeSet = new Set();
-  units.forEach(u => Object.keys(unitTradePct[u]).forEach(t => tradeSet.add(t)));
-  const trades = [...tradeSet].sort();
-
-  let html = '<table class="matrix-table"><thead><tr><th>Unit</th>';
-  trades.forEach(t => {
-    const short = t.length > 22 ? t.slice(0, 20) + '…' : t;
-    html += `<th title="${t}">${short}</th>`;
-  });
-  html += '</tr></thead><tbody>';
-
-  units.forEach(u => {
-    html += `<tr><td class="row-header">${u}</td>`;
-    trades.forEach(t => {
-      const v = unitTradePct[u][t];
-      if (v === undefined) {
-        html += '<td class="matrix-cell" style="color:var(--muted)">—</td>';
-      } else {
-        const color = pctColor(v);
-        html += `<td class="matrix-cell pct-pill" style="color:${color}">${fmtPct(v)}</td>`;
-      }
-    });
-    html += '</tr>';
-  });
-
-  html += '</tbody></table>';
-  document.getElementById('matrix-container').innerHTML = html;
-}
-
-/* ── Attendance Log ── */
-function renderAttendance(records) {
-  const body = document.getElementById('attendance-body');
-  const sorted = [...records].sort((a,b) => {
-    if (a.date < b.date) return 1;
-    if (a.date > b.date) return -1;
-    return 0;
-  });
-  body.innerHTML = sorted.slice(0, 200).map(r => {
-    const v = r.progress_pct;
-    const pctDisplay = v !== null && v !== undefined
-      ? `<span class="pct-pill" style="background:${pctColor(v)}22;color:${pctColor(v)}">${fmtPct(v)}</span>`
-      : '—';
-    const shiftBadge = r.period === 'AM'
-      ? `<span class="badge badge-am">AM</span>`
-      : `<span class="badge badge-pm">PM</span>`;
-    return `<tr>
-      <td>${r.date}</td>
-      <td><strong>${r.position || '—'}</strong></td>
-      <td>${shiftBadge}</td>
-      <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${r.area_phase||''}">${r.area_phase || '—'}</td>
-      <td>${pctDisplay}</td>
-      <td>${r.crew || '—'}</td>
-      <td style="color:var(--muted);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.notes || ''}</td>
-    </tr>`;
-  }).join('');
-}
-
-// Load on page open
-loadData();
+<nav class="gnav" id="gnav">
+  <a href="/" class="gnav-link"><span class="gi">🏠</span>Home</a>
+  <a href="/log" class="gnav-link"><span class="gi">📋</span>Log</a>
+  <a href="/dashboard" class="gnav-link"><span class="gi">📊</span>Dashboard</a>
+  <a href="/timesheet" class="gnav-link"><span class="gi">🕐</span>Timesheet</a>
+  <a href="/inventory" class="gnav-link"><span class="gi">📦</span>Inventory</a>
+  <a href="/issues-log" class="gnav-link"><span class="gi">⚠️</span>Issues</a>
+  <a href="/settings" class="gnav-link"><span class="gi">⚙️</span>Settings</a>
+</nav>
+<script>
+(function(){var p=location.pathname;document.querySelectorAll('.gnav-link').forEach(function(a){var h=a.getAttribute('href');if(h==='/'?p===h:p===h||p.startsWith(h))a.classList.add('gna');});})();
+(function(){var r=localStorage.getItem('mbrRole')||'worker';var lv={admin:5,boss:4,inventory:3,lead:2,worker:1}[r]||1;var rules={'/log':2,'/dashboard':4,'/inventory':2,'/issues-log':2,'/settings':4};document.querySelectorAll('.gnav-link').forEach(function(a){var h=a.getAttribute('href');if(rules[h]&&lv<rules[h]){a.href='/home';a.style.opacity='0.45';}});})();
 </script>
 </body>
 </html>

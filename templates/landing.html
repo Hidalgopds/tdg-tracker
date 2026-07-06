@@ -7,135 +7,445 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; }
-
-  body {
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    background: #0f1117;
-    color: #e2e8f0;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* ── Header ── */
-  header {
-    padding: 20px 32px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    border-bottom: 1px solid #1e2533;
-  }
-  .logo-badge {
-    width: 42px; height: 42px;
-    background: linear-gradient(135deg, #1a6bc4, #4f8ef7);
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 13px; color: #fff; letter-spacing: .5px;
-    flex-shrink: 0;
-  }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; display: flex; flex-direction: column; }
+  header { padding: 20px 32px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid #1e2533; }
+  .logo-badge { width: 42px; height: 42px; background: linear-gradient(135deg, #1a6bc4, #4f8ef7); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; color: #fff; letter-spacing: .5px; flex-shrink: 0; }
   .header-text h1 { font-size: 17px; font-weight: 700; }
   .header-text p { font-size: 12px; color: #64748b; margin-top: 1px; }
-
-  /* ── Main ── */
-  main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 48px 24px;
-  }
-
+  main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 24px; }
   .hero { text-align: center; margin-bottom: 48px; }
   .hero h2 { font-size: 28px; font-weight: 700; letter-spacing: -.3px; }
   .hero p { color: #64748b; margin-top: 8px; font-size: 15px; }
-
-  /* ── Cards ── */
-  .cards {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-    max-width: 780px;
-    width: 100%;
-  }
-
-  .card {
-    flex: 1 1 300px;
-    max-width: 340px;
-    background: #1a1d27;
-    border: 1px solid #2a2d3e;
-    border-radius: 16px;
-    padding: 28px 24px 24px;
-    text-decoration: none;
-    color: inherit;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    transition: border-color .15s, transform .12s, box-shadow .15s;
-    cursor: pointer;
-  }
-  .card:hover {
-    border-color: #4f8ef7;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 32px rgba(79, 142, 247, .15);
-  }
-
-  .card-icon {
-    width: 48px; height: 48px;
-    border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px;
-    flex-shrink: 0;
-  }
-  .icon-log { background: rgba(34, 197, 94, .12); }
-  .icon-dash { background: rgba(79, 142, 247, .12); }
-
+  .cards { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; max-width: 1200px; width: 100%; }
+  .card { flex: 1 1 240px; max-width: 270px; background: #1a1d27; border: 1px solid #2a2d3e; border-radius: 16px; padding: 28px 24px 24px; text-decoration: none; color: inherit; display: flex; flex-direction: column; gap: 14px; transition: border-color .15s, transform .12s, box-shadow .15s; cursor: pointer; }
+  .card:hover { border-color: #4f8ef7; transform: translateY(-2px); box-shadow: 0 8px 32px rgba(79,142,247,.15); }
+  .card-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+  .icon-log  { background: rgba(34,197,94,.12); }
+  .icon-dash { background: rgba(79,142,247,.12); }
+  .icon-inv  { background: rgba(245,158,11,.12); }
+  .icon-ts   { background: rgba(168,85,247,.12); }
   .card-body h3 { font-size: 17px; font-weight: 700; }
   .card-body p { font-size: 13px; color: #64748b; margin-top: 5px; line-height: 1.5; }
-
-  .card-footer {
-    margin-top: auto;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-top: 14px;
-    border-top: 1px solid #2a2d3e;
-  }
-  .card-footer .tag {
-    font-size: 11px; font-weight: 600;
-    padding: 3px 10px; border-radius: 20px;
-    text-transform: uppercase; letter-spacing: .5px;
-  }
+  .card-footer { margin-top: auto; display: flex; align-items: center; justify-content: space-between; padding-top: 14px; border-top: 1px solid #2a2d3e; }
+  .card-footer .tag { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: .5px; }
   .tag-crew { background: rgba(34,197,94,.12); color: #22c55e; }
   .tag-mgmt { background: rgba(79,142,247,.12); color: #4f8ef7; }
+  .tag-inv  { background: rgba(245,158,11,.12); color: #f59e0b; }
+  .tag-ts   { background: rgba(168,85,247,.12); color: #a855f7; }
   .card-arrow { color: #4f8ef7; font-size: 18px; }
-
-  /* ── Footer ── */
-  footer {
-    text-align: center;
-    padding: 20px;
-    color: #334155;
-    font-size: 12px;
-    border-top: 1px solid #1e2533;
-  }
-
-  @media (max-width: 480px) {
-    .hero h2 { font-size: 22px; }
-    .cards { gap: 14px; }
-    .card { padding: 22px 18px 18px; }
-  }
+  footer { text-align: center; padding: 20px; color: #334155; font-size: 12px; border-top: 1px solid #1e2533; }
+  @media (max-width: 600px) { .hero h2 { font-size: 22px; } .cards { gap: 14px; } .card { padding: 22px 18px 18px; max-width: 100%; } }
 </style>
+
+<style id="gnav-style">
+.gnav{position:fixed;bottom:0;left:0;right:0;height:54px;background:#060c18;border-top:1px solid #1a2535;display:flex;justify-content:space-around;align-items:center;z-index:9999;box-shadow:0 -4px 24px rgba(0,0,0,.5);}
+.gnav a{display:flex;flex-direction:column;align-items:center;gap:1px;text-decoration:none;color:#475569;padding:0 8px;font-size:10px;font-weight:500;transition:.15s;min-width:44px;}
+.gnav a:hover,.gnav a.gna{color:#a855f7;}
+.gnav a .gi{font-size:19px;line-height:1.2;}
+body{padding-bottom:60px !important;}
+</style>
+<!-- LIGHT-THEME -->
+
+<style id="light-theme">
+/* ============================================
+   MBR TEXAS — LIGHT CORPORATE THEME
+   High-contrast for outdoor / sunlight use
+   ============================================ */
+:root{
+  --bg:#f0f4f8;--card:#ffffff;--border:#cbd5e1;
+  --text:#0f172a;--muted:#475569;
+  --accent:#1a6bc4;--green:#15803d;
+  --red:#b91c1c;--yellow:#92400e;--purple:#6d28d9;
+}
+html,body{background:#f0f4f8 !important;color:#0f172a !important;}
+
+/* ── Headers: stay dark blue (brand + readable with sunglasses) ── */
+.header,.topbar,header,#app-header{
+  background:#1e3a5f !important;color:#e2e8f0 !important;
+  border-bottom-color:#0f2d52 !important;
+}
+.hlogo{color:#60a5fa !important;}
+.back-btn,.topbar a,.header a{color:#93c5fd !important;}
+
+/* ── Gate / auth area ── */
+.gate{background:#f0f4f8 !important;}
+.gate-card{background:#ffffff !important;border-color:#e2e8f0 !important;
+  box-shadow:0 4px 24px rgba(0,0,0,.08) !important;}
+.gate-card h2{color:#0f172a !important;}
+.gate-card p{color:#475569 !important;}
+
+/* ── Name / user buttons ── */
+.name-btn,.user-btn{
+  background:#f1f5f9 !important;border-color:#e2e8f0 !important;color:#0f172a !important;
+}
+.name-btn:hover,.name-btn:active,.user-btn.active,.user-btn:hover{
+  background:#1a6bc4 !important;color:#ffffff !important;border-color:#1a6bc4 !important;
+}
+
+/* ── PIN pad ── */
+.pin-dot,.dot{background:#e2e8f0 !important;border-color:#cbd5e1 !important;}
+.pin-dot.on,.dot.filled{background:#1a6bc4 !important;border-color:#1a6bc4 !important;}
+.pk,.numpad button{
+  background:#f1f5f9 !important;border-color:#e2e8f0 !important;color:#0f172a !important;
+}
+.pk:active,.numpad button:hover{background:#dbeafe !important;}
+.pin-err,.pinErr,#pinErr{color:#b91c1c !important;}
+
+/* ── Tabs ── */
+.tabs{border-bottom-color:#e2e8f0 !important;}
+.tab-btn{color:#475569 !important;}
+.tab-btn:hover{color:#0f172a !important;}
+.tab-btn.active{color:#1a6bc4 !important;border-bottom-color:#1a6bc4 !important;}
+.tab-btn.active,.tab-btn:hover{background:none !important;}
+
+/* ── Inputs / selects / textareas ── */
+input,select,textarea,.sm-search{
+  background:#ffffff !important;border-color:#cbd5e1 !important;
+  color:#0f172a !important;
+}
+input:focus,select:focus,textarea:focus,.sm-search:focus{
+  border-color:#1a6bc4 !important;outline:none;
+}
+input::placeholder,.sm-search::placeholder{color:#94a3b8 !important;}
+
+/* ── Buttons ── */
+.btn-ghost,.tool-btn,.eb,.btn-s{
+  background:#f1f5f9 !important;border-color:#e2e8f0 !important;color:#1e293b !important;
+}
+.btn-ghost:hover,.tool-btn:hover{background:#e2e8f0 !important;}
+.tool-btn.active{background:#dbeafe !important;border-color:#1a6bc4 !important;color:#1a6bc4 !important;}
+.eb-edit{border-color:#3b82f6 !important;color:#1d4ed8 !important;}
+.eb-edit:hover{background:#dbeafe !important;}
+.eb-del{border-color:#ef4444 !important;color:#b91c1c !important;}
+.eb-del:hover{background:#fee2e2 !important;}
+
+/* ── Cards / panels ── */
+.section-card,.card,.modal,.gate-card,
+[class*="-card"]:not(.worker-card):not(.name-btn):not(.user-btn){
+  background:#ffffff !important;border-color:#e2e8f0 !important;
+}
+.content{background:#f0f4f8 !important;}
+
+/* ── Worker attendance cards ── */
+.worker-card{background:#ffffff !important;border-color:#e2e8f0 !important;}
+.worker-card.present{background:#dcfce7 !important;border-color:#16a34a !important;}
+.wc-name{color:#475569 !important;}
+.worker-card.present .wc-name{color:#0f172a !important;}
+.wc-time{color:#94a3b8 !important;}
+.worker-card.present .wc-time{color:#15803d !important;}
+.worker-card.edit-card{background:#f8fafc !important;border-color:#bfdbfe !important;}
+
+/* ── Phase banners ── */
+.phase-banner.meeting{background:#ede9fe !important;border-color:#c4b5fd !important;color:#6d28d9 !important;}
+.phase-banner.signin{background:#dcfce7 !important;border-color:#86efac !important;color:#15803d !important;}
+.phase-banner.saved{background:#dbeafe !important;border-color:#93c5fd !important;color:#1d4ed8 !important;}
+
+/* ── User pill ── */
+.user-pill{background:#ede9fe !important;border-color:#a78bfa !important;color:#6d28d9 !important;}
+
+/* ── Info bars ── */
+.info-bar{background:#dbeafe !important;border-color:#93c5fd !important;color:#1e40af !important;}
+.info-bar strong{color:#1d4ed8 !important;}
+
+/* ── Tables ── */
+table{background:transparent !important;}
+th{background:#f8fafc !important;color:#475569 !important;border-bottom-color:#e2e8f0 !important;}
+td{border-bottom-color:#f1f5f9 !important;color:#0f172a;}
+tr:hover td{background:#f8fafc !important;}
+
+/* ── Summary / stat cards ── */
+.summary-card,.summary-row .summary-card{
+  background:#ffffff !important;border-color:#e2e8f0 !important;
+  box-shadow:0 1px 4px rgba(0,0,0,.06) !important;
+}
+.summary-card .val{color:#1a6bc4 !important;}
+.summary-card .lbl{color:#475569 !important;}
+
+/* ── Badges ── */
+.badge-admin{background:#ede9fe !important;color:#5b21b6 !important;}
+.badge-lead,.badge-editor{background:#dbeafe !important;color:#1e40af !important;}
+.badge-worker,.badge-active{background:#dcfce7 !important;color:#15803d !important;}
+.badge-inactive{background:#f1f5f9 !important;color:#64748b !important;}
+
+/* ── Role access matrix ── */
+.role-matrix th{background:#f8fafc !important;border-bottom-color:#e2e8f0 !important;}
+.role-matrix th.admin-h{color:#5b21b6 !important;}
+.role-matrix th.lead-h{color:#1e40af !important;}
+.role-matrix th.worker-h{color:#15803d !important;}
+.role-matrix tr.sub-row{background:#fafafa !important;}
+.toggle-cell.on{background:#dcfce7 !important;color:#15803d !important;}
+.toggle-cell.off{background:#f1f5f9 !important;color:#94a3b8 !important;}
+
+/* ── Modal overlay ── */
+.modal-overlay.open{background:rgba(15,23,42,0.55) !important;}
+.modal{background:#ffffff !important;box-shadow:0 20px 60px rgba(0,0,0,.18) !important;}
+
+/* ── Global nav stays dark ── */
+.gnav{background:#1e3a5f !important;border-top-color:#0f2d52 !important;}
+.gnav a{color:#94a3b8 !important;}
+.gnav a:hover,.gnav a.gna{color:#60a5fa !important;}
+
+/* ── Toast ── */
+#toast{background:#1e293b !important;color:#e2e8f0 !important;}
+#toast.err{border-color:#b91c1c !important;color:#fca5a5 !important;}
+
+/* ── Scrollbars ── */
+::-webkit-scrollbar{width:6px;height:6px;background:#f1f5f9;}
+::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px;}
+
+/* ── Log out / utility bars ── */
+.log-out-bar,.logout-area{background:#1e3a5f !important;}
+
+/* ── SM section ── */
+.sm-item{background:#ffffff !important;border-color:#e2e8f0 !important;}
+.sm-date,.sm-counter span{color:#475569 !important;}
+
+/* ── Landing page cards ── */
+.card{background:#ffffff !important;border-color:#e2e8f0 !important;}
+.card:hover{border-color:#1a6bc4 !important;box-shadow:0 8px 32px rgba(26,107,196,.12) !important;}
+.card-body p{color:#475569 !important;}
+footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
+
+/* ── Dashboard ── */
+.unit-progress-card,.kpi-card,.chart-card{background:#ffffff !important;border-color:#e2e8f0 !important;}
+
+/* ── Week picker ── */
+.week-picker input{background:#ffffff !important;color:#0f172a !important;border-color:#cbd5e1 !important;}
+
+/* ── Roles grid (old) ── */
+.roles-grid{border-color:#e2e8f0 !important;}
+.rg-header{background:#f8fafc !important;color:#475569 !important;}
+.rg-cell{border-top-color:#f1f5f9 !important;}
+</style>
+
 </head>
 <body>
 
-<header>
-  <div class="logo-badge">MBR</div>
-  <div class="header-text">
-    <h1>MBR Texas — TDG Operations</h1>
-    <p>Data Center Project Tracking System</p>
+<style>
+#mbr-status-bar{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 20px;background:#1e3a5f;border-bottom:1px solid rgba(255,255,255,0.1);height:56px;}
+#mbr-checkin-chip{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px;cursor:default;transition:.3s;}
+.chip-in{background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);}
+.chip-out{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.45);border:1px solid rgba(255,255,255,0.1);}
+.chip-dot{width:6px;height:6px;border-radius:50%;}
+.dot-in{background:#22c55e;}
+.dot-out{background:rgba(255,255,255,0.25);}
+#mbr-bell-btn{position:relative;background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.5);font-size:18px;padding:2px 4px;transition:.2s;}
+#mbr-bell-btn:hover{color:#fff;}
+#mbr-bell-badge{position:absolute;top:-2px;right:-2px;background:#ef4444;color:#fff;font-size:9px;font-weight:700;min-width:15px;height:15px;border-radius:999px;display:none;align-items:center;justify-content:center;padding:0 3px;}
+#mbr-notif-panel{position:fixed;top:36px;right:0;width:320px;max-height:420px;overflow-y:auto;background:#0f1e35;border:1px solid rgba(255,255,255,0.1);border-top:none;border-radius:0 0 0 12px;z-index:499;display:none;box-shadow:0 8px 32px rgba(0,0,0,0.4);}
+#mbr-notif-panel .np-header{padding:10px 14px;font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;justify-content:space-between;align-items:center;}
+.np-item{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.06);cursor:pointer;transition:.15s;}
+.np-item:hover{background:rgba(255,255,255,0.04);}
+.np-item.unread{border-left:3px solid #0ea5e9;}
+.np-item.read{border-left:3px solid transparent;opacity:.65;}
+.np-title{font-size:13px;font-weight:600;color:#fff;margin-bottom:3px;}
+.np-body{font-size:12px;color:rgba(255,255,255,0.5);line-height:1.4;}
+.np-time{font-size:10px;color:rgba(255,255,255,0.3);margin-top:5px;}
+.np-empty{padding:24px;text-align:center;font-size:12px;color:rgba(255,255,255,0.3);}
+body{padding-top:56px!important;}
+</style>
+<div id="mbr-status-bar">
+  <!-- Left: logo + branding -->
+  <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
+    <div style="width:36px;height:36px;background:#1a6bc4;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;">MBR</div>
+    <div style="min-width:0;">
+      <div style="font-size:14px;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">MBR Texas — TDG Operations</div>
+      <div style="font-size:10px;color:#64748b;white-space:nowrap;">Data Center Project Tracking System</div>
+    </div>
   </div>
-</header>
+  <!-- Right: status + user + bell -->
+  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+    <div id="mbr-loc-chip" style="font-size:11px;font-weight:600;color:#7a9cc4;padding:2px 8px;display:none;">📍 <span id="loc-chip-text"></span></div>
+    <div id="mbr-checkin-chip" class="chip-out">
+      <span class="chip-dot dot-out" id="chip-dot"></span>
+      <span id="chip-label">Not Checked In</span>
+    </div>
+    <span id="role-badge" style="font-size:12px;color:#64748b;"></span>
+    <button id="logout-btn" style="background:#1e2d45;color:#94a3b8;border:1px solid #2d3f57;padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;">Sign Out</button>
+    <button id="mbr-bell-btn" onclick="toggleNotifPanel()" title="Notifications" style="position:relative;background:none;border:none;cursor:pointer;font-size:16px;padding:4px;color:#94a3b8;line-height:1;">🔔<div id="mbr-bell-badge"></div></button>
+  </div>
+</div>
+<div id="mbr-notif-panel">
+  <div class="np-header">
+    <span>Notifications</span>
+    <span id="np-mark-all" onclick="markAllRead()" style="cursor:pointer;color:#0ea5e9;font-size:10px;text-transform:none;letter-spacing:0;">Mark all read</span>
+  </div>
+  <div id="np-list"></div>
+</div>
+<script>
+(function(){
+  var auth = localStorage.getItem('mbrAuth')||'';
+  if(!auth) return;
+  // Check-in status
+  function refreshCheckInStatus(){
+    fetch('/api/contractor/status?name='+encodeURIComponent(auth))
+      .then(function(r){return r.json();})
+      .then(function(d){
+        var chip=document.getElementById('mbr-checkin-chip');
+        var dot=document.getElementById('chip-dot');
+        var lbl=document.getElementById('chip-label');
+        if(!chip||!dot||!lbl) return;
+        if(d.checked_in){
+          chip.style.background='rgba(34,197,94,0.15)';chip.style.color='#16a34a';chip.style.border='1px solid rgba(34,197,94,0.3)';
+          dot.style.background='#22c55e';
+          lbl.textContent=d.since?'Checked In · '+d.since:'Checked In';
+        } else {
+          chip.style.background='rgba(100,116,139,0.15)';chip.style.color='#94a3b8';chip.style.border='1px solid rgba(100,116,139,0.2)';
+          dot.style.background='#64748b';
+          lbl.textContent='Not Checked In';
+        }
+      }).catch(function(){ setTimeout(refreshCheckInStatus, 5000); });
+  }
+  window.refreshCheckInStatus = refreshCheckInStatus;
+  refreshCheckInStatus();
+  setInterval(refreshCheckInStatus, 60000);
+
+  // Location chip
+  var unit = localStorage.getItem('mbrUnit');
+  if(unit){
+    var lc = document.getElementById('mbr-loc-chip');
+    var lt = document.getElementById('loc-chip-text');
+    if(lc && lt){ lt.textContent = 'Unit ' + unit; lc.style.display = 'block'; }
+  }
+
+  // Notifications
+  loadNotifications();
+})();
+
+var _notifPanel = false;
+function toggleNotifPanel(){
+  _notifPanel = !_notifPanel;
+  document.getElementById('mbr-notif-panel').style.display = _notifPanel ? 'block' : 'none';
+  if(_notifPanel) loadNotifications();
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('#mbr-bell-btn') && !e.target.closest('#mbr-notif-panel')){
+    document.getElementById('mbr-notif-panel').style.display='none';
+    _notifPanel=false;
+  }
+});
+function loadNotifications(){
+  var auth = localStorage.getItem('mbrAuth')||'';
+  fetch('/api/notifications?name='+encodeURIComponent(auth))
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var list = document.getElementById('np-list');
+      var badge = document.getElementById('mbr-bell-badge');
+      if(!d.ok||!d.notifications) return;
+      var notifs = d.notifications;
+      var unread = notifs.filter(function(n){return !n.read;}).length;
+      if(unread>0){badge.style.display='flex';badge.textContent=unread>9?'9+':unread;}
+      else{badge.style.display='none';}
+      if(notifs.length===0){list.innerHTML='<div class="np-empty">No notifications</div>';return;}
+      list.innerHTML = notifs.map(function(n){
+        var ago = timeAgo(n.created_at);
+        return '<div class="np-item '+(n.read?'read':'unread')+'" onclick="markRead(''+n.id+'')">'
+          +'<div class="np-title">'+escHtml(n.title)+'</div>'
+          +(n.body?'<div class="np-body">'+escHtml(n.body)+'</div>':'')
+          +'<div class="np-time">'+ago+'</div></div>';
+      }).join('');
+    }).catch(function(){});
+}
+function markRead(id){
+  var auth = localStorage.getItem('mbrAuth')||'';
+  fetch('/api/notifications/'+id+'/read',{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:auth})})
+    .then(function(){loadNotifications();});
+}
+function markAllRead(){
+  var auth = localStorage.getItem('mbrAuth')||'';
+  var items = document.querySelectorAll('.np-item.unread');
+  var ids = [];
+  items.forEach(function(el){
+    var m = el.getAttribute('onclick').match(/'([^']+)'/);
+    if(m) ids.push(m[1]);
+  });
+  Promise.all(ids.map(function(id){
+    return fetch('/api/notifications/'+id+'/read',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:auth})});
+  })).then(function(){loadNotifications();});
+}
+function escHtml(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function timeAgo(iso){
+  if(!iso) return '';
+  var d=new Date(iso), now=new Date();
+  var mins=Math.floor((now-d)/60000);
+  if(mins<1) return 'Just now';
+  if(mins<60) return mins+'m ago';
+  var hrs=Math.floor(mins/60);
+  if(hrs<24) return hrs+'h ago';
+  return Math.floor(hrs/24)+'d ago';
+}
+</script>
+
+<script>
+(function(){
+  var auth = localStorage.getItem('mbrAuth');
+  var role = localStorage.getItem('mbrRole') || 'worker';
+  if (!auth) { location.replace('/login'); return; }
+  // Role-based card visibility
+  var roleLevel = {admin:5, boss:4, inventory:3, lead:2, worker:1};
+  var level = roleLevel[role] || 1;
+  
+  // Session version check — force logout if admin invalidated sessions
+  (async function(){
+    try {
+      var r = await fetch('/api/session-version');
+      var d = await r.json();
+      var sv = localStorage.getItem('mbr_sv');
+      if(!sv){
+        localStorage.setItem('mbr_sv', d.version);
+      } else if(sv !== d.version){
+        localStorage.removeItem('mbrAuth');
+        localStorage.removeItem('mbrRole');
+        localStorage.removeItem('mbr_sv');
+        localStorage.removeItem('mbrPinRequired');
+        location.href = '/login';
+      }
+    } catch(e){}
+  })();
+
+  document.addEventListener('DOMContentLoaded', function() {
+    // Show role name in header
+    var badge = document.getElementById('role-badge');
+    if (badge) { badge.textContent = auth + ' · ' + role.charAt(0).toUpperCase()+role.slice(1); }
+    // Hide cards based on role
+    if (level < 2) {
+      // Worker: only Timesheet visible
+      document.querySelectorAll('.card-log,.card-inv,.card-mgmt,.card-issues').forEach(function(el){el.style.display='none';});
+    }
+    if (level >= 2 && level < 3) {
+      // Lead: hide dashboard, settings
+      document.querySelectorAll('.card-mgmt').forEach(function(el){el.style.display='none';});
+    }
+
+    if (level === 3) {
+      // Inventory role: hide log, issues, dashboard — show tablet kiosk
+      document.querySelectorAll('.card-log,.card-mgmt,.card-issues').forEach(function(el){el.style.display='none';});
+      document.querySelectorAll('.card-tablet').forEach(function(el){el.style.display='flex';});
+    }
+    if (level >= 5) {
+      // Admin: also show tablet kiosk card
+      document.querySelectorAll('.card-tablet').forEach(function(el){el.style.display='flex';});
+    }
+
+
+    // Logout button
+    var logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+      logoutBtn.onclick = function() {
+        localStorage.removeItem('mbrAuth');
+        localStorage.removeItem('mbrRole');
+        location.href = '/login';
+      };
+    }
+  });
+})();
+</script>
+
+
 
 <main>
   <div class="hero">
@@ -144,9 +454,14 @@
   </div>
 
   <div class="cards">
+  <!-- First-login PIN banner -->
+  <div id="pin-required-banner" style="display:none;width:100%;max-width:640px;background:linear-gradient(135deg,#7c3aed22,#1e40af22);border:1px solid #7c3aed66;border-radius:12px;padding:14px 18px;margin-bottom:16px;cursor:pointer;" onclick="window.location='/settings?tab=contractor'">
+    <div style="font-size:14px;font-weight:700;color:#a78bfa;">📟 Acción requerida: configura tu PIN de check-in</div>
+    <div style="font-size:12px;color:#64748b;margin-top:3px;">Toca aquí para ir a <b>Mi Perfil</b> en Settings y establecer tu PIN de 4 dígitos.</div>
+  </div>
 
-    <!-- Daily Log -->
-    <a class="card" href="/log">
+
+    <a class="card card-log" href="/log">
       <div class="card-icon icon-log">📋</div>
       <div class="card-body">
         <h3>Daily Field Log</h3>
@@ -158,12 +473,36 @@
       </div>
     </a>
 
-    <!-- Dashboard -->
-    <a class="card" href="/dashboard">
+    <a class="card card-inv" href="/inventory">
+      <div class="card-icon icon-inv">📦</div>
+      <div class="card-body">
+        <h3>Inventory</h3>
+        <p>View stock levels, search materials, and submit material requests. Editors can update quantities and approve requests.</p>
+      </div>
+      <div class="card-footer">
+        <span class="tag tag-inv">All Crew</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <a class="card" href="/timesheet">
+      <div class="card-icon icon-ts">📍</div>
+      <div class="card-body">
+        <h3>On-Site Timesheet</h3>
+        <p>Safety meeting attendance, QR check-in by unit, and days off notification.</p>
+      </div>
+      <div class="card-footer">
+        <span class="tag tag-ts">Contractors</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+
+    <a class="card card-mgmt" href="/dashboard">
       <div class="card-icon icon-dash">📊</div>
       <div class="card-body">
         <h3>Operations Dashboard</h3>
-        <p>Live progress by unit and trade, attendance log, day-by-day history, and unit × trade matrix.</p>
+        <p>Live progress by unit and trade, day-by-day history, and AM/PM labor chart.</p>
       </div>
       <div class="card-footer">
         <span class="tag tag-mgmt">Management</span>
@@ -171,12 +510,106 @@
       </div>
     </a>
 
+    <a class="card card-settings" href="/settings">
+      <div class="card-icon" style="background:rgba(99,102,241,.12)">⚙️</div>
+      <div class="card-body">
+        <h3>Settings</h3>
+        <p>Users, roles, contacts &amp; crew management.</p>
+      </div>
+      <div class="card-footer">
+        <span class="tag" style="background:rgba(99,102,241,.12);color:#6366f1">ADMIN</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <a class="card card-tablet" href="/tablet" style="border-color:#0ea5e9;display:none;">
+      <div class="card-icon" style="background:rgba(14,165,233,.12)">📟</div>
+      <div class="card-body">
+        <h3>Check-In / Check-Out</h3>
+        <p>Kiosk de entrada y salida. Los trabajadores ingresan su PIN de 4 dígitos al llegar y al salir.</p>
+      </div>
+      <div class="card-footer">
+        <span class="tag" style="background:rgba(14,165,233,.12);color:#0ea5e9">KIOSK</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <a class="card card-issues" href="/issues-log" style="border-color:#ef4444">
+      <div class="card-icon" style="background:#ef4444;color:#fff">⚠</div>
+      <div class="card-body">
+        <h3>Issues Log</h3>
+        <p>All open issues across every unit. Filter by unit, status, or category. Printable for site meetings with Steven.</p>
+      </div>
+      <div class="card-footer">
+        <span class="card-link">View Issues →</span>
+      </div>
+    </a>
+
   </div>
 </main>
 
-<footer>
-  MBR Texas · TDG Data Center Projects · All data live from Supabase
-</footer>
+<footer>MBR Texas · TDG Data Center Projects · All data live from Supabase</footer>
 
+<!-- GNAV -->
+
+<nav class="gnav" id="gnav"></nav>
+<script>
+(function(){
+  var role = localStorage.getItem('mbrRole') || 'worker';
+  var lvl  = {admin:5,boss:4,inventory:3,lead:2,worker:1}[role] || 1;
+  var all = [
+    {h:'/home',  icon:'🏠', label:'Home'},
+    {h:'/log',   icon:'📋', label:'Log', min:2},
+    {h:'/dashboard', icon:'📊', label:'Dashboard', min:4},
+    {h:'/timesheet', icon:'🕐', label:'Timesheet'},
+    {h:'/inventory', icon:'📦', label:'Inventory', min:2},
+    {h:'/issues-log',icon:'⚠️', label:'Issues', min:2},
+    {h:'/settings',  icon:'⚙️', label:'Settings', min:4}
+  ];
+  var p = location.pathname;
+  var nav = document.getElementById('gnav');
+  all.forEach(function(item){
+    if(item.min && lvl < item.min) return;
+    var a = document.createElement('a');
+    a.href = item.h; a.className = 'gnav-link';
+    var active = item.h==='/'?p===item.h:p===item.h||p.startsWith(item.h);
+    if(active) a.classList.add('gna');
+    a.innerHTML = '<span class="gi">'+item.icon+'</span>'+item.label;
+    nav.appendChild(a);
+  });
+})();
+</script>
+
+
+<script>
+/* DOMContentLoaded check-in chip — same pattern that works on settings/inventory/dashboard */
+(function(){
+  var _a=localStorage.getItem('mbrAuth')||'';
+  if(!_a)return;
+  function _upd(){
+    fetch('/api/contractor/status?name='+encodeURIComponent(_a))
+      .then(function(r){return r.json();})
+      .then(function(d){
+        var bc=document.getElementById('mbr-checkin-chip');
+        var bd=document.getElementById('chip-dot');
+        var bl=document.getElementById('chip-label');
+        if(!bc||!bd||!bl)return;
+        if(d.checked_in){
+          bc.style.background='rgba(34,197,94,0.15)';bc.style.color='#16a34a';bc.style.border='1px solid rgba(34,197,94,0.3)';
+          bd.style.background='#22c55e';
+          bl.textContent=d.since?'Checked In · '+d.since:'Checked In';
+        }else{
+          bc.style.background='rgba(100,116,139,0.15)';bc.style.color='#94a3b8';bc.style.border='1px solid rgba(100,116,139,0.2)';
+          bd.style.background='#64748b';
+          bl.textContent='Not Checked In';
+        }
+      }).catch(function(){setTimeout(_upd,5000);});
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',_upd);
+  }else{_upd();}
+  setInterval(_upd,60000);
+})();
+</script>
 </body>
 </html>

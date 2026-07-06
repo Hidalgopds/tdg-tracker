@@ -7,197 +7,469 @@
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; overflow: hidden; }
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: #0f1923; color: #e8edf2;
-  display: flex; flex-direction: column;
-}
-
-/* ── Top bar ── */
-.top-bar {
-  background: #162030;
-  border-bottom: 2px solid #1e2d3d;
-  padding: 8px 12px;
-  flex-shrink: 0;
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-}
-
-.logo {
-  width: 32px; height: 32px; background: #1a6bc4; border-radius: 7px;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 800; font-size: 11px; color: white; flex-shrink: 0;
-}
-
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1923; color: #e8edf2; display: flex; flex-direction: column; }
+.top-bar { background: #162030; border-bottom: 2px solid #1e2d3d; padding: 8px 12px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.home-btn { width: 32px; height: 32px; background: #1a6bc4; border-radius: 7px; display: flex; align-items: center; justify-content: center; text-decoration: none; color: white; font-size: 16px; flex-shrink: 0; }
+.home-btn:hover { background: #1558a0; }
 .ctrl-group { display: flex; align-items: center; gap: 5px; }
-
-.ctrl-label {
-  font-size: 9px; font-weight: 700; color: #6b7f94;
-  text-transform: uppercase; letter-spacing: 0.6px; white-space: nowrap;
-}
-
-select.ctrl, input.ctrl {
-  background: #0f1923; border: 1px solid #2a3d52;
-  border-radius: 6px; color: #e8edf2;
-  font-size: 13px; padding: 5px 8px;
-  outline: none; -webkit-appearance: none; height: 32px;
-}
+.ctrl-label { font-size: 9px; font-weight: 700; color: #6b7f94; text-transform: uppercase; letter-spacing: 0.6px; white-space: nowrap; }
+select.ctrl, input.ctrl { background: #0f1923; border: 1px solid #2a3d52; border-radius: 6px; color: #e8edf2; font-size: 13px; padding: 5px 8px; outline: none; -webkit-appearance: none; height: 32px; }
 select.ctrl:focus, input.ctrl:focus { border-color: #1a6bc4; }
-
 .period-row { display: flex; gap: 3px; }
-.period-btn {
-  height: 32px; padding: 0 12px;
-  border: 1px solid #2a3d52; border-radius: 6px;
-  background: #0f1923; color: #6b7f94;
-  font-size: 12px; font-weight: 700; cursor: pointer;
-}
+.period-btn { height: 32px; padding: 0 12px; border: 1px solid #2a3d52; border-radius: 6px; background: #0f1923; color: #6b7f94; font-size: 12px; font-weight: 700; cursor: pointer; }
 .period-btn.active { background: #1a3a5c; border-color: #1a6bc4; color: #4da3ff; }
-
-/* Skid checkbox group */
-.skid-group {
-  display: flex; align-items: center; gap: 6px;
-  background: #0f1923; border: 1px solid #2a3d52;
-  border-radius: 6px; padding: 4px 10px; height: 32px;
-}
+.skid-group { display: flex; align-items: center; gap: 6px; background: #0f1923; border: 1px solid #2a3d52; border-radius: 6px; padding: 4px 10px; height: 32px; }
 .skid-group label { font-size: 12px; color: #8fa3b5; cursor: pointer; white-space: nowrap; }
 .skid-group input[type="checkbox"] { width: 14px; height: 14px; cursor: pointer; accent-color: #1a6bc4; }
 #skidRefWrap { display: none; }
-#skidRef {
-  background: #0f1923; border: 1px solid #1a6bc4;
-  border-radius: 5px; color: #4da3ff;
-  font-size: 12px; padding: 3px 8px; outline: none;
-  width: 80px; height: 28px;
-}
-
+#skidRef { background: #0f1923; border: 1px solid #1a6bc4; border-radius: 5px; color: #4da3ff; font-size: 12px; padding: 3px 8px; outline: none; width: 80px; height: 28px; }
 .divider { width: 1px; height: 24px; background: #1e2d3d; flex-shrink: 0; }
-
-.submit-btn {
-  margin-left: auto; height: 32px; padding: 0 18px;
-  background: #1a6bc4; border: none; border-radius: 7px;
-  color: white; font-size: 13px; font-weight: 700;
-  cursor: pointer; white-space: nowrap;
-}
+.submit-btn { margin-left: auto; height: 32px; padding: 0 18px; background: #1a6bc4; border: none; border-radius: 7px; color: white; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
 .submit-btn:active { background: #1558a0; }
 .submit-btn:disabled { background: #1e2d3d; color: #4a5568; cursor: not-allowed; }
-
-/* ── Table ── */
-.table-wrap {
-  flex: 1; overflow-y: auto; overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  position: relative;
-}
-
-table {
-  width: 100%; min-width: 600px;
-  border-collapse: collapse; table-layout: fixed;
-}
-
-col.c-trade { width: 200px; }
-col.c-prev  { width: 68px; }
-col.c-pct   { width: 72px; }
-col.c-resp  { width: 130px; }
-col.c-notes { min-width: 160px; }
-
-/* Frozen header */
-thead th {
-  background: #0d1520; color: #4a6380;
-  font-size: 10px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 0.8px;
-  padding: 8px 7px; border-bottom: 2px solid #1e2d3d;
-  white-space: nowrap; text-align: left;
-  position: sticky; top: 0; z-index: 20;
-}
+.table-wrap { flex: 1; overflow-y: auto; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { width: 100%; min-width: 680px; border-collapse: collapse; table-layout: fixed; }
+col.c-trade   { width: 220px; }
+col.c-prev    { width: 62px; }
+col.c-pct     { width: 68px; }
+col.c-notes   { min-width: 210px; }
+thead th { background: #0d1520; color: #4a6380; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; padding: 8px 5px; border-bottom: 2px solid #1e2d3d; white-space: nowrap; text-align: left; position: sticky; top: 0; z-index: 20; }
 thead th:first-child { position: sticky; left: 0; top: 0; z-index: 30; background: #0d1520; }
+th.h-prev    { background: #0a1e30; color: #2a6a9a; text-align: center; }
 
-/* Prev % column header — distinct color */
-th.h-prev { background: #0a1e30; color: #2a6a9a; text-align: center; }
-
-/* Category rows */
-tr.cat-row td {
-  background: #111d2b; color: #1a6bc4;
-  font-size: 10px; font-weight: 800;
-  text-transform: uppercase; letter-spacing: 1px;
-  padding: 6px 10px;
-  border-top: 2px solid #1e2d3d; border-bottom: 1px solid #1e2d3d;
-}
-tr.cat-row td:first-child { position: sticky; left: 0; z-index: 5; background: #111d2b; }
-
-/* Trade rows */
-tr.trade-row td {
-  padding: 3px 5px; border-bottom: 1px solid #131f2d;
-  vertical-align: middle; background: #0f1923;
-}
+tr.main-cat-row td { background: #111d2b; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; border-top: 2px solid #1e2d3d; border-bottom: 1px solid #263d52; }
+tr.main-cat-row td:first-child { position: sticky; left: 0; z-index: 5; background: #111d2b; color: #1a6bc4; padding: 7px 12px; }
+tr.main-cat-row.cat-data.has-data td             { background: #0d1e2f; }
+tr.main-cat-row.cat-data.has-data td:first-child { background: #0d1e2f; }
+tr.sub-cat-row td { background: #0d1c2c; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; border-top: 1px solid #192840; border-bottom: 1px solid #192840; }
+tr.sub-cat-row td:first-child { position: sticky; left: 0; z-index: 5; background: #0d1c2c; color: #3d8cc4; padding: 5px 12px 5px 20px; }
+td.cat-prev { background: #0a1c2e !important; text-align: center; font-size: 12px; font-weight: 700; color: #2e6a9a; border-left: 2px solid #0d2235; border-right: 2px solid #0d2235; }
+td.cat-prev.has-val { color: #4da3ff; }
+td.fill-btn-cell { padding: 3px 5px; vertical-align: middle; }
+button.fill-all-btn { background: #0d2035; border: 1px solid #1a4a6a; border-radius: 5px; color: #3a8abf; font-size: 10px; font-weight: 700; padding: 2px 7px; cursor: pointer; }
+button.fill-all-btn:hover { background: #142840; color: #4da3ff; }
+tr.trade-row td { padding: 3px 5px; border-bottom: 1px solid #131f2d; vertical-align: middle; background: #0f1923; }
 tr.trade-row:hover td { background: #132030; }
-tr.trade-row td:first-child {
-  position: sticky; left: 0; z-index: 4; background: #0f1923;
-  font-size: 12px; color: #8fa3b5;
-  padding-left: 18px; overflow: hidden;
-  text-overflow: ellipsis; white-space: nowrap;
-}
+tr.trade-row td:first-child { position: sticky; left: 0; z-index: 4; background: #0f1923; font-size: 12px; color: #8fa3b5; padding-left: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 tr.trade-row:hover td:first-child { background: #132030; }
 tr.trade-row.has-data td             { background: #0e1d2e; }
 tr.trade-row.has-data td:first-child { background: #0e1d2e; color: #e8edf2; }
-
-/* Prev % cell — always distinct background */
-td.prev-cell {
-  background: #091520 !important;
-  text-align: center;
-  font-size: 13px; font-weight: 600;
-  color: #2e6a9a;
-  border-left: 2px solid #0d2235;
-  border-right: 2px solid #0d2235;
-}
+tr.sub-trade-row td:first-child { padding-left: 28px; }
+td.prev-cell { background: #091520 !important; text-align: center; font-size: 13px; font-weight: 600; color: #2e6a9a; border-left: 2px solid #0d2235; border-right: 2px solid #0d2235; }
 td.prev-cell.has-val { color: #4da3ff; }
 
-/* Inputs */
-input.t-pct {
-  width: 58px; background: #0a1420; border: 1px solid #1e2d3d;
-  border-radius: 5px; color: #e8edf2;
-  font-size: 13px; font-weight: 600;
-  padding: 4px 5px; text-align: center; outline: none;
-}
+input.t-pct { width: 56px; background: #0a1420; border: 1px solid #1e2d3d; border-radius: 5px; color: #e8edf2; font-size: 13px; font-weight: 600; padding: 4px 4px; text-align: center; outline: none; }
 input.t-pct:focus { border-color: #1a6bc4; }
-
-input.t-text {
-  width: 100%; background: #0a1420; border: 1px solid #1e2d3d;
-  border-radius: 5px; color: #e8edf2;
-  font-size: 12px; padding: 4px 7px;
-  outline: none; height: 28px;
-}
+input.t-workers { width: 40px; background: #091a0a; border: 1px solid #1a3a1a; border-radius: 5px; color: #6fcf7f; font-size: 12px; font-weight: 600; padding: 3px 4px; text-align: center; outline: none; }
+input.t-workers:focus { border-color: #2a8a3a; }
+.wrk-crew-row { display: flex; align-items: center; gap: 5px; margin-top: 3px; }
+.wrk-crew-row .wlbl { font-size: 9px; font-weight: 700; color: #2a7a3a; text-transform: uppercase; letter-spacing: .4px; }
+.wrk-crew-row .crew-inp { flex: 1; min-width: 70px; }
+input.t-text { width: 100%; background: #0a1420; border: 1px solid #1e2d3d; border-radius: 5px; color: #e8edf2; font-size: 12px; padding: 4px 7px; outline: none; height: 28px; }
 input.t-text:focus { border-color: #1a6bc4; }
-
-/* Status */
-.status-bar {
-  flex-shrink: 0; text-align: center; padding: 7px 16px;
-  font-size: 11px; color: #3d5470;
-  border-top: 1px solid #131f2d; background: #0f1923;
-}
-
-/* Toast */
-.toast {
-  display: none; position: fixed; top: 68px; left: 50%;
-  transform: translateX(-50%);
-  background: #16a34a; color: white;
-  padding: 10px 22px; border-radius: 100px;
-  font-size: 13px; font-weight: 700; z-index: 999;
-  white-space: nowrap; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-}
+input.t-text.prefilled { color: #5a8aa8; font-style: italic; border-color: #1a3a52; }
+.status-bar { flex-shrink: 0; text-align: center; padding: 7px 16px; font-size: 11px; color: #3d5470; border-top: 1px solid #131f2d; background: #0f1923; }
+.toast { display: none; position: fixed; top: 68px; left: 50%; transform: translateX(-50%); background: #16a34a; color: white; padding: 10px 22px; border-radius: 100px; font-size: 13px; font-weight: 700; z-index: 999; white-space: nowrap; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
 .toast.error { background: #dc2626; }
+
+.summary-strip { flex-shrink: 0; background: #0d1520; border-bottom: 2px solid #1e2d3d; padding: 6px 12px; display: none; overflow-x: auto; }
+.st-item { display: inline-flex; flex-direction: column; align-items: center; min-width: 72px; flex-shrink: 0; background: #111d2b; border: 1px solid #1e2d3d; border-radius: 7px; padding: 5px 8px; gap: 2px; margin-right: 6px; vertical-align: top; }
+.st-item .stn { font-size: 9px; color: #4a6380; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; max-width: 66px; overflow: hidden; text-overflow: ellipsis; }
+.st-item .stp { font-size: 15px; font-weight: 800; }
+.st-item .stb { width: 100%; height: 3px; background: #1e2d3d; border-radius: 2px; }
+.st-item .stbf { height: 3px; border-radius: 2px; }
+
+.issue-btn {
+  height: 32px; padding: 0 13px; background: #7f1d1d; border: 1px solid #ef4444;
+  border-radius: 7px; color: #fca5a5; font-size: 12px; font-weight: 700;
+  cursor: pointer; white-space: nowrap;
+}
+.issue-btn:hover { background: #991b1b; color: #fecaca; }
+
+.float-submit {
+  position: fixed;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 500;
+  height: 44px;
+  padding: 0 18px;
+  background: #1a6bc4;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(26,107,196,0.45);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.float-submit:hover { background: #1558a0; }
+.float-submit:active { background: #0f4a8a; }
+.float-submit:disabled { background: #94a3b8; box-shadow: none; cursor: not-allowed; }
+
+/* ── Auth gate overlay ── */
+#authGate{position:fixed;inset:0;background:#0a0f16;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
+.ag-card{background:#111d2b;border:1px solid #1e2d3d;border-radius:16px;padding:32px 28px;width:100%;max-width:340px;text-align:center}
+.ag-icon{font-size:36px;margin-bottom:8px}
+.ag-title{font-size:17px;font-weight:800;color:#e8edf2;margin-bottom:4px}
+.ag-sub{font-size:12px;color:#4a6380;margin-bottom:20px}
+.ag-name-btn{display:block;width:100%;margin-bottom:8px;height:40px;background:#162030;border:1px solid #1e2d3d;border-radius:8px;color:#e8edf2;font-size:14px;font-weight:600;cursor:pointer;transition:background .12s}
+.ag-name-btn:hover{background:#1a3a5c;border-color:#1a6bc4}
+.ag-back{display:block;width:100%;margin-top:8px;height:36px;background:none;border:1px solid #1e2d3d;border-radius:8px;color:#4a6380;font-size:13px;cursor:pointer}
+.ag-pin-dots{display:flex;gap:12px;justify-content:center;margin:14px 0}
+.ag-dot{width:15px;height:15px;border-radius:50%;border:2px solid #2a3d52}
+.ag-dot.on{background:#1a6bc4;border-color:#1a6bc4}
+.ag-pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:240px;margin:0 auto}
+.ag-pk{height:44px;background:#162030;border:1px solid #1e2d3d;border-radius:8px;color:#e8edf2;font-size:18px;font-weight:700;cursor:pointer}
+.ag-pk:hover{background:#1a3a5c}
+.ag-err{color:#ef4444;font-size:12px;min-height:16px;margin-top:6px}
+
 </style>
+
+<style id="gnav-style">
+.gnav{position:fixed;bottom:0;left:0;right:0;height:54px;background:#060c18;border-top:1px solid #1a2535;display:flex;justify-content:space-around;align-items:center;z-index:9999;box-shadow:0 -4px 24px rgba(0,0,0,.5);}
+.gnav a{display:flex;flex-direction:column;align-items:center;gap:1px;text-decoration:none;color:#475569;padding:0 8px;font-size:10px;font-weight:500;transition:.15s;min-width:44px;}
+.gnav a:hover,.gnav a.gna{color:#a855f7;}
+.gnav a .gi{font-size:19px;line-height:1.2;}
+body{padding-bottom:60px !important;}
+</style>
+<!-- LIGHT-THEME -->
+
+<style id="light-theme">
+/* ============================================
+   MBR TEXAS — LIGHT CORPORATE THEME
+   High-contrast for outdoor / sunlight use
+   ============================================ */
+:root{
+  --bg:#f0f4f8;--card:#ffffff;--border:#cbd5e1;
+  --text:#0f172a;--muted:#475569;
+  --accent:#1a6bc4;--green:#15803d;
+  --red:#b91c1c;--yellow:#92400e;--purple:#6d28d9;
+}
+html,body{background:#f0f4f8 !important;color:#0f172a !important;}
+
+/* ── Headers: stay dark blue (brand + readable with sunglasses) ── */
+.header,.topbar,header,#app-header{
+  background:#1e3a5f !important;color:#e2e8f0 !important;
+  border-bottom-color:#0f2d52 !important;
+}
+.hlogo{color:#60a5fa !important;}
+.back-btn,.topbar a,.header a{color:#93c5fd !important;}
+
+/* ── Gate / auth area ── */
+.gate{background:#f0f4f8 !important;}
+.gate-card{background:#ffffff !important;border-color:#e2e8f0 !important;
+  box-shadow:0 4px 24px rgba(0,0,0,.08) !important;}
+.gate-card h2{color:#0f172a !important;}
+.gate-card p{color:#475569 !important;}
+
+/* ── Name / user buttons ── */
+.name-btn,.user-btn{
+  background:#f1f5f9 !important;border-color:#e2e8f0 !important;color:#0f172a !important;
+}
+.name-btn:hover,.name-btn:active,.user-btn.active,.user-btn:hover{
+  background:#1a6bc4 !important;color:#ffffff !important;border-color:#1a6bc4 !important;
+}
+
+/* ── PIN pad ── */
+.pin-dot,.dot{background:#e2e8f0 !important;border-color:#cbd5e1 !important;}
+.pin-dot.on,.dot.filled{background:#1a6bc4 !important;border-color:#1a6bc4 !important;}
+.pk,.numpad button{
+  background:#f1f5f9 !important;border-color:#e2e8f0 !important;color:#0f172a !important;
+}
+.pk:active,.numpad button:hover{background:#dbeafe !important;}
+.pin-err,.pinErr,#pinErr{color:#b91c1c !important;}
+
+/* ── Tabs ── */
+.tabs{border-bottom-color:#e2e8f0 !important;}
+.tab-btn{color:#475569 !important;}
+.tab-btn:hover{color:#0f172a !important;}
+.tab-btn.active{color:#1a6bc4 !important;border-bottom-color:#1a6bc4 !important;}
+.tab-btn.active,.tab-btn:hover{background:none !important;}
+
+/* ── Inputs / selects / textareas ── */
+input,select,textarea,.sm-search{
+  background:#ffffff !important;border-color:#cbd5e1 !important;
+  color:#0f172a !important;
+}
+input:focus,select:focus,textarea:focus,.sm-search:focus{
+  border-color:#1a6bc4 !important;outline:none;
+}
+input::placeholder,.sm-search::placeholder{color:#94a3b8 !important;}
+
+/* ── Buttons ── */
+.btn-ghost,.tool-btn,.eb,.btn-s{
+  background:#f1f5f9 !important;border-color:#e2e8f0 !important;color:#1e293b !important;
+}
+.btn-ghost:hover,.tool-btn:hover{background:#e2e8f0 !important;}
+.tool-btn.active{background:#dbeafe !important;border-color:#1a6bc4 !important;color:#1a6bc4 !important;}
+.eb-edit{border-color:#3b82f6 !important;color:#1d4ed8 !important;}
+.eb-edit:hover{background:#dbeafe !important;}
+.eb-del{border-color:#ef4444 !important;color:#b91c1c !important;}
+.eb-del:hover{background:#fee2e2 !important;}
+
+/* ── Cards / panels ── */
+.section-card,.card,.modal,.gate-card,
+[class*="-card"]:not(.worker-card):not(.name-btn):not(.user-btn){
+  background:#ffffff !important;border-color:#e2e8f0 !important;
+}
+.content{background:#f0f4f8 !important;}
+
+/* ── Worker attendance cards ── */
+.worker-card{background:#ffffff !important;border-color:#e2e8f0 !important;}
+.worker-card.present{background:#dcfce7 !important;border-color:#16a34a !important;}
+.wc-name{color:#475569 !important;}
+.worker-card.present .wc-name{color:#0f172a !important;}
+.wc-time{color:#94a3b8 !important;}
+.worker-card.present .wc-time{color:#15803d !important;}
+.worker-card.edit-card{background:#f8fafc !important;border-color:#bfdbfe !important;}
+
+/* ── Phase banners ── */
+.phase-banner.meeting{background:#ede9fe !important;border-color:#c4b5fd !important;color:#6d28d9 !important;}
+.phase-banner.signin{background:#dcfce7 !important;border-color:#86efac !important;color:#15803d !important;}
+.phase-banner.saved{background:#dbeafe !important;border-color:#93c5fd !important;color:#1d4ed8 !important;}
+
+/* ── User pill ── */
+.user-pill{background:#ede9fe !important;border-color:#a78bfa !important;color:#6d28d9 !important;}
+
+/* ── Info bars ── */
+.info-bar{background:#dbeafe !important;border-color:#93c5fd !important;color:#1e40af !important;}
+.info-bar strong{color:#1d4ed8 !important;}
+
+/* ── Tables ── */
+table{background:transparent !important;}
+th{background:#f8fafc !important;color:#475569 !important;border-bottom-color:#e2e8f0 !important;}
+td{border-bottom-color:#f1f5f9 !important;color:#0f172a;}
+tr:hover td{background:#f8fafc !important;}
+
+/* ── Summary / stat cards ── */
+.summary-card,.summary-row .summary-card{
+  background:#ffffff !important;border-color:#e2e8f0 !important;
+  box-shadow:0 1px 4px rgba(0,0,0,.06) !important;
+}
+.summary-card .val{color:#1a6bc4 !important;}
+.summary-card .lbl{color:#475569 !important;}
+
+/* ── Badges ── */
+.badge-admin{background:#ede9fe !important;color:#5b21b6 !important;}
+.badge-lead,.badge-editor{background:#dbeafe !important;color:#1e40af !important;}
+.badge-worker,.badge-active{background:#dcfce7 !important;color:#15803d !important;}
+.badge-inactive{background:#f1f5f9 !important;color:#64748b !important;}
+
+/* ── Role access matrix ── */
+.role-matrix th{background:#f8fafc !important;border-bottom-color:#e2e8f0 !important;}
+.role-matrix th.admin-h{color:#5b21b6 !important;}
+.role-matrix th.lead-h{color:#1e40af !important;}
+.role-matrix th.worker-h{color:#15803d !important;}
+.role-matrix tr.sub-row{background:#fafafa !important;}
+.toggle-cell.on{background:#dcfce7 !important;color:#15803d !important;}
+.toggle-cell.off{background:#f1f5f9 !important;color:#94a3b8 !important;}
+
+/* ── Modal overlay ── */
+.modal-overlay.open{background:rgba(15,23,42,0.55) !important;}
+.modal{background:#ffffff !important;box-shadow:0 20px 60px rgba(0,0,0,.18) !important;}
+
+/* ── Global nav stays dark ── */
+.gnav{background:#1e3a5f !important;border-top-color:#0f2d52 !important;}
+.gnav a{color:#94a3b8 !important;}
+.gnav a:hover,.gnav a.gna{color:#60a5fa !important;}
+
+/* ── Toast ── */
+#toast{background:#1e293b !important;color:#e2e8f0 !important;}
+#toast.err{border-color:#b91c1c !important;color:#fca5a5 !important;}
+
+/* ── Scrollbars ── */
+::-webkit-scrollbar{width:6px;height:6px;background:#f1f5f9;}
+::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px;}
+
+/* ── Log out / utility bars ── */
+.log-out-bar,.logout-area{background:#1e3a5f !important;}
+
+/* ── SM section ── */
+.sm-item{background:#ffffff !important;border-color:#e2e8f0 !important;}
+.sm-date,.sm-counter span{color:#475569 !important;}
+
+/* ── Landing page cards ── */
+.card{background:#ffffff !important;border-color:#e2e8f0 !important;}
+.card:hover{border-color:#1a6bc4 !important;box-shadow:0 8px 32px rgba(26,107,196,.12) !important;}
+.card-body p{color:#475569 !important;}
+footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
+
+/* ── Dashboard ── */
+.unit-progress-card,.kpi-card,.chart-card{background:#ffffff !important;border-color:#e2e8f0 !important;}
+
+/* ── Week picker ── */
+.week-picker input{background:#ffffff !important;color:#0f172a !important;border-color:#cbd5e1 !important;}
+
+/* ── Roles grid (old) ── */
+.roles-grid{border-color:#e2e8f0 !important;}
+.rg-header{background:#f8fafc !important;color:#475569 !important;}
+.rg-cell{border-top-color:#f1f5f9 !important;}
+</style>
+
+<!-- LOG-LIGHT-FIX -->
+
+<style id="log-light-fix">
+/* Log page — light theme, readable outdoors */
+body{background:#f0f4f8 !important;color:#0f172a !important;}
+/* TOP BAR: white background, dark text — maximum outdoor readability */
+.top-bar{
+  background:#ffffff !important;
+  border-bottom:2px solid #cbd5e1 !important;
+  padding:10px 14px !important;
+  gap:10px !important;
+}
+.ctrl-label{color:#475569 !important;font-size:10px !important;}
+select.ctrl,input.ctrl{
+  background:#f8fafc !important;border-color:#cbd5e1 !important;
+  color:#0f172a !important;font-size:14px !important;
+  height:38px !important;padding:6px 10px !important;
+}
+#skidRef{
+  background:#f8fafc !important;border-color:#1a6bc4 !important;
+  color:#0f172a !important;height:34px !important;font-size:13px !important;
+}
+.period-btn{
+  background:#f1f5f9 !important;border-color:#cbd5e1 !important;
+  color:#475569 !important;height:38px !important;font-size:13px !important;
+}
+.period-btn.active{
+  background:#1a6bc4 !important;border-color:#1a6bc4 !important;
+  color:#ffffff !important;
+}
+.skid-group{
+  background:#f8fafc !important;border-color:#cbd5e1 !important;
+  height:38px !important;
+}
+.skid-group label{color:#0f172a !important;font-size:13px !important;}
+.divider{background:#e2e8f0 !important;}
+.submit-btn{height:38px !important;font-size:14px !important;}
+.issue-btn{height:38px !important;font-size:13px !important;}
+.home-btn{width:38px !important;height:38px !important;}
+/* Table area */
+table{background:transparent !important;}
+thead th{
+  background:#334155 !important;color:#f8fafc !important;
+  border-bottom-color:#475569 !important;
+}
+thead th:first-child{background:#334155 !important;}
+th.h-prev{background:#1e293b !important;color:#94a3b8 !important;}
+/* Main category rows (1. STRUCTURE, 5. INTERNAL SYSTEMS) */
+tr.main-cat-row td{
+  background:#1e293b !important;
+  border-top-color:#334155 !important;border-bottom-color:#334155 !important;
+}
+tr.main-cat-row td:first-child{background:#1e293b !important;color:#f1f5f9 !important;}
+tr.main-cat-row.cat-data.has-data td{background:#14532d !important;}
+tr.main-cat-row.cat-data.has-data td:first-child{background:#14532d !important;color:#bbf7d0 !important;}
+/* Sub category rows (5.1 ELECTRICAL etc.) — light blue */
+tr.sub-cat-row td{
+  background:#e0f2fe !important;
+  border-top-color:#bae6fd !important;border-bottom-color:#bae6fd !important;
+}
+tr.sub-cat-row td:first-child{background:#e0f2fe !important;color:#0369a1 !important;}
+/* Data rows */
+tr.data-row td{background:#ffffff !important;}
+tr.data-row:hover td{background:#f8fafc !important;}
+tr.data-row td:first-child{background:#ffffff !important;color:#0f172a !important;}
+/* Trade rows — fix dark-theme color leaking through */
+tr.trade-row td{background:#ffffff !important;color:#0f172a !important;}
+tr.trade-row td:first-child{background:#ffffff !important;color:#374151 !important;}
+tr.trade-row:hover td{background:#f8fafc !important;}
+tr.trade-row:hover td:first-child{background:#f8fafc !important;color:#374151 !important;}
+/* has-data rows — light green tint, dark readable text */
+tr.trade-row.has-data td{background:#f0fdf4 !important;color:#0f172a !important;}
+tr.trade-row.has-data td:first-child{background:#f0fdf4 !important;color:#166534 !important;}
+tr.main-cat-row.cat-wrk.has-data td{background:#14532d !important;}
+/* Notes input */
+input[type="text"].notes-inp,textarea.notes-inp{
+  background:#ffffff !important;color:#0f172a !important;border-color:#e2e8f0 !important;
+}
+/* % inputs */
+input.pct-inp{background:#ffffff !important;color:#0f172a !important;}
+/* ── TABLET-FRIENDLY: bigger rows and fonts ── */
+tr.trade-row td{padding:7px 6px !important;font-size:13px !important;}
+tr.trade-row td:first-child{font-size:13px !important;padding-left:16px !important;}
+tr.main-cat-row td:first-child{padding:9px 12px !important;font-size:12px !important;}
+tr.sub-cat-row td:first-child{font-size:11px !important;padding:7px 12px 7px 22px !important;}
+thead th{font-size:11px !important;padding:10px 6px !important;}
+input.t-pct{height:34px !important;font-size:14px !important;width:58px !important;}
+input.t-workers{height:34px !important;font-size:13px !important;}
+input.t-text{height:34px !important;font-size:13px !important;}
+td.prev-cell{font-size:14px !important;}
+td.cat-prev{font-size:13px !important;}
+button.fill-all-btn{height:28px !important;font-size:11px !important;padding:3px 9px !important;}
+.summary-strip{padding:8px 14px !important;}
+.st-item{padding:7px 10px !important;}
+.st-item .stp{font-size:17px !important;}
+
+/* ── Unit Sent button ── */
+.sent-btn { height: 32px; padding: 0 16px; background: #15803d; border: none; border-radius: 7px; color: white; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; margin-left: 6px; }
+.sent-btn:hover { background: #166534; }
+.sent-btn:disabled { background: #4b5563; color: #9ca3af; cursor: not-allowed; }
+</style>
+
 </head>
 <body>
+<div style="display:flex;align-items:center;padding:8px 16px;background:#060c18;border-bottom:1px solid #1a2535;"><a href="/" style="color:#94a3b8;text-decoration:none;font-size:13px;">← Home</a><div id="headerUser" style="display:flex;align-items:center;gap:8px;margin-left:auto;"></div></div>
+<script>(function(){var n=localStorage.getItem('mbrAuth')||'';var r=localStorage.getItem('mbrRole')||'';var el=document.getElementById('headerUser');if(!el||!n)return;var cap=r?r.charAt(0).toUpperCase()+r.slice(1):'';el.innerHTML='<span style="font-size:12px;font-weight:700;color:#94a3b8;">'+n+(cap?' &middot; '+cap:'')+' </span>'+'<button onclick="localStorage.removeItem(\'mbrAuth\');localStorage.removeItem(\'mbrRole\');location.href=\'/login\';" '+'style="padding:5px 12px;background:#1e2d45;border:1px solid #2d3f57;border-radius:8px;color:#94a3b8;font-size:12px;cursor:pointer;">Sign Out</button>';})();</script>
+<script>
+(function(){
+  var role = localStorage.getItem('mbrRole') || '';
+  var name = localStorage.getItem('mbrAuth') || '';
+  var allowed = ['admin','boss','inventory','lead'];
+  if(!name || allowed.indexOf(role) < 0){ location.href='/home'; }
+})();
+</script>
+
+<!-- ── Auth Gate ── -->
+<div id="authGate" style="display:none">
+  <div class="ag-card">
+    <div id="ag1">
+      <div class="ag-icon">🔒</div>
+      <div class="ag-title">Supervisor Access</div>
+      <div class="ag-sub">Select your name to continue</div>
+      <button class="ag-name-btn" onclick="agSelName('John G.')">John G.</button>
+      <button class="ag-name-btn" onclick="agSelName('Mike G.')">Mike G.</button>
+      <button class="ag-name-btn" onclick="agSelName('Jason R.')">Jason R.</button>
+      <button class="ag-name-btn" onclick="agSelName('Daniel H.')">Daniel H.</button>
+      <button class="ag-back" onclick="history.back()">← Back</button>
+    </div>
+    <div id="ag2" style="display:none">
+      <div class="ag-title" id="agPinTitle">Enter PIN</div>
+      <div style="font-size:12px;color:#4a6380;margin-top:4px" id="agPinSub">4-digit PIN</div>
+      <div class="ag-pin-dots">
+        <div class="ag-dot" id="agd0"></div><div class="ag-dot" id="agd1"></div>
+        <div class="ag-dot" id="agd2"></div><div class="ag-dot" id="agd3"></div>
+      </div>
+      <div class="ag-err" id="agErr"></div>
+      <div class="ag-pin-grid">
+        <button class="ag-pk" onclick="agPk('1')">1</button><button class="ag-pk" onclick="agPk('2')">2</button><button class="ag-pk" onclick="agPk('3')">3</button>
+        <button class="ag-pk" onclick="agPk('4')">4</button><button class="ag-pk" onclick="agPk('5')">5</button><button class="ag-pk" onclick="agPk('6')">6</button>
+        <button class="ag-pk" onclick="agPk('7')">7</button><button class="ag-pk" onclick="agPk('8')">8</button><button class="ag-pk" onclick="agPk('9')">9</button>
+        <button class="ag-pk" onclick="agPk('C')" style="color:#6b7f94;font-size:18px">⌫</button>
+        <button class="ag-pk" onclick="agPk('0')">0</button>
+        <button class="ag-pk" onclick="agBack()" style="color:#ef4444;font-size:13px">✕</button>
+      </div>
+      <button class="ag-back" onclick="agBack()">← Back</button>
+    </div>
+  </div>
+</div>
 
 <div class="top-bar">
-  <div class="logo">TDG</div>
-
+  <a href="/" class="home-btn" title="Home">&#127968;</a>
   <div class="ctrl-group">
     <span class="ctrl-label">Unit</span>
     <select class="ctrl" id="unit" style="width:76px" onchange="loadPrevious()">
-      <option value="">—</option>
+      <option value="">-</option>
       <optgroup label="A Series">
         <option>01A</option><option>02A</option><option>03A</option>
         <option>04A</option><option>05A</option><option>06A</option>
-        <option>07A</option><option>08A</option><option>09A</option>
+        <option>07A</option><option>08A</option><option>09A</option><option>10A</option>
       </optgroup>
       <optgroup label="B Series">
         <option>01B</option><option>02B</option><option>03B</option>
@@ -213,12 +485,10 @@ input.t-text:focus { border-color: #1a6bc4; }
       </optgroup>
     </select>
   </div>
-
   <div class="ctrl-group">
     <span class="ctrl-label">Date</span>
     <input type="date" class="ctrl" id="date" value="{{ today }}" style="width:136px">
   </div>
-
   <div class="ctrl-group">
     <span class="ctrl-label">Shift</span>
     <div class="period-row">
@@ -226,92 +496,748 @@ input.t-text:focus { border-color: #1a6bc4; }
       <button class="period-btn"        data-val="PM" onclick="setPeriod(this)">PM</button>
     </div>
   </div>
-
   <div class="divider"></div>
-
   <div class="ctrl-group">
     <span class="ctrl-label">TDG No</span>
     <input type="text" class="ctrl" id="tdgNumber" placeholder="e.g. 14949-52-TX" style="width:130px">
   </div>
-
   <div class="ctrl-group">
     <span class="ctrl-label">MBR No</span>
     <input type="number" class="ctrl" id="mbrNumber" placeholder="#" style="width:60px" min="1">
   </div>
-
   <div class="skid-group">
     <input type="checkbox" id="mbrSkid" onchange="toggleSkid(this)">
     <label for="mbrSkid">MBR Skid</label>
-    <span id="skidRefWrap">
-      <input type="text" id="skidRef" placeholder="Skid #">
-    </span>
+    <span id="skidRefWrap"><input type="text" id="skidRef" placeholder="Skid #"></span>
   </div>
-
+  <div class="ctrl-group">
+    <span class="ctrl-label">Fase</span>
+    <input type="text" class="ctrl" id="fase" placeholder="A" style="width:55px">
+  </div>
+  <div class="ctrl-group">
+    <span class="ctrl-label">Building No</span>
+    <input type="text" class="ctrl" id="buildingNo" placeholder="#" style="width:65px">
+  </div>
+  <button class="issue-btn" id="issueBtn" onclick="openIssues()" title="Log an issue for this unit">&#9888; Create Issue</button>
+  <a href="/migrate" class="issue-btn" title="Migrate unit A→B" style="text-decoration:none;display:inline-flex;align-items:center">&#8644; Migrate</a>
   <button class="submit-btn" id="submitBtn" onclick="submitAll()">Submit Update</button>
+  <button class="submit-btn" id="repeatBtn" onclick="repeatLastReport()" style="background:#0f766e;margin-left:6px;" title="Copy previous % values into inputs">📋 Repeat Last</button>
+  <button class="sent-btn" id="sentBtn" onclick="markUnitSent()" title="Archive this unit and download report">✓ Unit Sent</button>
 </div>
 
+<div class="summary-strip" id="summaryStrip"></div>
 <div class="table-wrap">
   <table>
     <colgroup>
-      <col class="c-trade">
-      <col class="c-prev">
-      <col class="c-pct">
-      <col class="c-resp">
-      <col class="c-notes">
+      <col class="c-trade"><col class="c-prev"><col class="c-pct"><col class="c-notes">
     </colgroup>
     <thead>
       <tr>
         <th>Trade / Activity</th>
         <th class="h-prev" style="text-align:center">Prev %</th>
         <th style="text-align:center">% Done</th>
-        <th>Responsible</th>
-        <th>Notes / Flags</th>
+        <th>Notes / Flags &nbsp;<span style="font-size:9px;color:#2a7a3a;font-weight:700">[WRK + Crew inline for Trades 1 &amp; 5]</span></th>
       </tr>
     </thead>
     <tbody id="tbody"></tbody>
   </table>
 </div>
-
 <div class="status-bar" id="statusBar">Select a unit to load previous progress, fill active trades, then Submit.</div>
+<button class="float-submit" id="floatSubmitBtn" onclick="submitAll()">&#10003; Submit</button>
 <div class="toast" id="toast"></div>
 
 <script>
-const TRADES = [
+var CAT_CONTRACTOR = {
+  '2. Structure Paint':  'J&J',
+  '3. Envelope':        'RV Solutions',
+  '4. Unit Paint':      'J&J',
+  '6. Electrical':      'C.U.R',
+  '7. Final QC':        'TDG',
+  '8. Final Touchups':  'J&J'
+};
+
+var TRADES = [
   { cat: '1. Structure', subs: [
-    'C Channel / Holes Templates','Weld 4 I beams (10" I beams)',
-    'C Channels 12" weld to enclose frame','Square the frame',
-    'Inside C Channels/Square','Nuts inside C Channel',
-    'Floor plate (Pull, Cut, Weld)','Square tube Halo (Pull, Cut, Grind, Weld)',
-    'I beam on halo stand up Posts','Square halo and weld to post',
-    'Square tubes for doors','Ground plates','Weld floor plates together'
+    'C Channel / Holes Templates','Weld 4 I Beams (10" I Beams)',
+    'C Channels 12" Weld To Enclose Frame','Square The Frame',
+    'Inside C Channels/Square','Nuts Inside C Channel',
+    'Floor Plate (Pull, Cut, Weld)','Square Tube Halo (Pull, Cut, Grind, Weld)',
+    'I Beam On Halo Stand Up Posts','Square Halo And Weld To Post',
+    'Square Tubes For Doors','Ground Plates','Weld Floor Plates Together'
   ]},
-  { cat: '2. Structure Paint', subs: [] },
-  { cat: '3. Envelope',        subs: [] },
-  { cat: '4. Unit Paint',      subs: [] },
-  { cat: '5. Internal Systems Rough-In', subs: [] },
-  { cat: 'ELECTRICAL', subs: [
+  { cat: '2. Structure Paint',  catOnly: true, subs: [] },
+  { cat: '3. Envelope',         catOnly: true, subs: [] },
+  { cat: '4. Unit Paint',       catOnly: true, subs: [] },
+  { cat: '5. Internal Systems Rough-In', type: 'parent', subs: [] },
+  { cat: 'ELECTRICAL', parent: '5', subs: [
     'Ground Bar','Wall/Ceiling Boxes & Conduit','H2 Control Box & Conduit',
     'HVAC Control Box & Conduit','Exhaust Fan Control Box & Conduit',
     'PLC & Conduit','Wall/Ceiling Conduit'
   ]},
-  { cat: 'BATTERY CABINETS', subs: [
-    'Unload from truck','Unpack units','Unpalletize units',
-    'Position units in place','Uninstall plates','Install Pucks',
-    'Put in covers','Fans','KO Plates','Cover w/ Drop Cloth'
+  { cat: 'BATTERY CABINETS', parent: '5', subs: [
+    'Place Inside Building','Unpack Units','Unpalletize Units',
+    'Position Units In Place','Uninstall Plates','Install Pucks',
+    'Put In Covers','Fans','KO Plates','Cover W/ Drop Cloth'
   ]},
-  { cat: 'IOs/POWER CABINETS', subs: [
-    'Unload from truck','Unpack units','Unpalletize units',
-    'Position units in place','Uninstall plates','Install Bars',
-    'Put in covers','KO Plates','Cover w/ Drop Cloth'
+  { cat: 'IOs/POWER CABINETS', parent: '5', subs: [
+    'Unload From Truck','Unpack Units','Unpalletize Units',
+    'Position Units In Place','Uninstall Plates','Install Bars',
+    'Put In Covers','KO Plates','Cover W/ Drop Cloth'
   ]},
-  { cat: 'SWITCH GEAR', subs: [
-    'Bus Bar','ATS Plate @ SwGr #2 to #3','Top Hats','KO Plates','2" EMT @ SwGr #4'
+  { cat: 'SWITCH GEAR', parent: '5', subs: [
+    'Place Inside Building','Unpack Units','Unpalletize Units',
+    'Bus Bar','ATS Plate @ SwGr #2 To #3','Top Hats','KO Plates'
   ]},
-  { cat: 'PANELS & CABLE', subs: [
+  { cat: 'PANELS & CABLE', parent: '5', subs: [
     'Panels/Transformers & Conduit','Cable Tray Supports (Struts)',
-    '24" Cable Tray','30" Cable Tray','24" Step Down Tray',
-    'Battery to Battery Conduit','Batt to SwGr #4 Comm Conduit',
-    '18" Battery Tray','Battery Cabinet Conduit'
+    '24" Cable Tray','30" Cable Tray','24" Step Down Tray','18" Battery Tray'
   ]},
-  { cat: 'BATTERY CONNECTIONS', subs: [
-    'Battery
+  { cat: 'CONDUIT', parent: '5', subs: [
+    'Battery To Battery','Battery To SwGr #4','IO To IO','IO To Batteries',
+    'IO To SwGr #4','Battery Cabinet Conduit','Batt To SwGr #4 Comm Conduit','2" EMT @ SwGr #4'
+  ]},
+  { cat: 'LIGHTING', parent: '5', subs: ['Lighting & Lamps','Lighting & Conduit'] },
+  { cat: 'CLOSEOUT', parent: '5', subs: [
+    'Cut Down All Thread','Cap All Thread','Caulk Screw Holes','Clean Up',
+    'Final Walk Through','Check All Boxes For Bushings',
+    'Check Conduit/Unistrut/All Thread Level & Plumb'
+  ]},
+  { cat: '6. Electrical',     catOnly: true, subs: [] },
+  { cat: '7. Final QC',       catOnly: true, subs: [] },
+  { cat: '8. Final Touchups', catOnly: true, subs: [] }
+];
+
+var SUB_CAT_DISPLAY = {
+  'ELECTRICAL':'Electrical','BATTERY CABINETS':'Battery Cabinets',
+  'IOs/POWER CABINETS':'IOs/Power Cabinets','SWITCH GEAR':'Switch Gear',
+  'PANELS & CABLE':'Panels & Cable','CONDUIT':'Conduit (Batt/IO/SwGr)',
+  'LIGHTING':'Lighting','CLOSEOUT':'Closeout'
+};
+
+var CAT_TOTALS = {
+  '1. Structure': 13,
+  'ELECTRICAL': 7, 'BATTERY CABINETS': 10, 'IOs/POWER CABINETS': 9,
+  'SWITCH GEAR': 7, 'PANELS & CABLE': 6, 'CONDUIT': 8,
+  'LIGHTING': 2, 'CLOSEOUT': 7,
+  '5. Internal Systems Rough-In': 56
+};
+
+var INTERNAL_SUB_CATS = ['ELECTRICAL','BATTERY CABINETS','IOs/POWER CABINETS',
+  'SWITCH GEAR','PANELS & CABLE','CONDUIT','LIGHTING','CLOSEOUT'];
+
+var selectedPeriod = 'AM';
+
+function setPeriod(btn) {
+  document.querySelectorAll('.period-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active'); selectedPeriod = btn.dataset.val;
+}
+
+function toggleSkid(cb) {
+  document.getElementById('skidRefWrap').style.display = cb.checked ? 'inline' : 'none';
+  var contractor = cb.checked ? 'MBR Texas' : 'RV Solutions';
+  document.querySelectorAll('tr.trade-row:not(.sub-trade-row)').forEach(function(tr) {
+    if (tr.dataset.trade && tr.dataset.trade.indexOf('1. Structure > ') === 0) {
+      var inp = tr.querySelector('[data-field="resp"]');
+      if (inp && inp.classList.contains('prefilled')) { inp.value = contractor; }
+    }
+  });
+}
+
+function fillAll(catName, pct) {
+  document.querySelectorAll('tr.trade-row').forEach(function(tr) {
+    if (tr.dataset.trade && tr.dataset.trade.indexOf(catName + ' > ') === 0) {
+      var inp = tr.querySelector('[data-field="pct"]');
+      if (inp) { inp.value = pct; markDirty(tr); }
+    }
+  });
+}
+
+function markDirty(tr) {
+  var vals = Array.from(tr.querySelectorAll('[data-field]')).map(function(i){ return i.value; }).join('');
+  tr.classList.toggle('has-data', vals.trim() !== '');
+}
+
+function refillContractors() {
+  document.querySelectorAll('tr.main-cat-row.cat-data').forEach(function(tr) {
+    var contractor = CAT_CONTRACTOR[tr.dataset.trade];
+    if (contractor) {
+      var inp = tr.querySelector('[data-field="resp"]');
+      if (inp) { inp.value = contractor; inp.classList.add('prefilled'); }
+    }
+  });
+  var isMbr = document.getElementById('mbrSkid').checked;
+  var structureContractor = isMbr ? 'MBR Texas' : 'RV Solutions';
+  document.querySelectorAll('tr.trade-row:not(.sub-trade-row)').forEach(function(tr) {
+    if (tr.dataset.trade && tr.dataset.trade.indexOf('1. Structure > ') === 0) {
+      var inp = tr.querySelector('[data-field="resp"]');
+      if (inp) { inp.value = structureContractor; inp.classList.add('prefilled'); }
+    }
+  });
+}
+
+function makeMainCatHeader(group, label, hasWrk) {
+  var tr = document.createElement('tr');
+  tr.className = 'main-cat-row' + (hasWrk ? ' cat-wrk' : ''); tr.dataset.cat = group.cat;
+  if (hasWrk) tr.dataset.trade = group.cat; // allow collectRow to pick it up
+  var td1 = document.createElement('td'); td1.textContent = label; tr.appendChild(td1);
+  var tdPrev = document.createElement('td'); tdPrev.className = 'cat-prev'; tdPrev.textContent = '-'; tr.appendChild(tdPrev);
+  var tdBtn = document.createElement('td'); tdBtn.className = 'fill-btn-cell';
+  var btn = document.createElement('button'); btn.className = 'fill-all-btn'; btn.textContent = 'Fill';
+  btn.onclick = (function(cat, cell){ return function(){
+    var p = parseInt(cell.textContent); if (!isNaN(p)) fillAll(cat, p);
+  }; })(group.cat, tdPrev);
+  tdBtn.appendChild(btn); tr.appendChild(tdBtn);
+  var tdR = document.createElement('td');
+  if (hasWrk) {
+    var wrkRow = document.createElement('div'); wrkRow.className='wrk-crew-row';
+    var lw = document.createElement('span'); lw.className='wlbl'; lw.textContent='WRK'; wrkRow.appendChild(lw);
+    var inpW = document.createElement('input'); inpW.className='t-workers'; inpW.type='number'; inpW.min='0'; inpW.max='99'; inpW.placeholder='-'; inpW.setAttribute('data-field','workers'); inpW.oninput=function(){ markDirty(tr); }; wrkRow.appendChild(inpW);
+    var lc = document.createElement('span'); lc.className='wlbl'; lc.style.color='#3d6aaa'; lc.textContent='Crew'; wrkRow.appendChild(lc);
+    var inpR = document.createElement('input'); inpR.className='t-text crew-inp'; inpR.type='text'; inpR.placeholder='Name...'; inpR.setAttribute('data-field','resp'); inpR.oninput=function(){ markDirty(tr); inpR.classList.remove('prefilled'); }; wrkRow.appendChild(inpR);
+    tdR.appendChild(wrkRow);
+  }
+  tr.appendChild(tdR);
+  return tr;
+}
+
+function makeMainCatDataRow(group, label) {
+  var tr = document.createElement('tr');
+  tr.className = 'main-cat-row cat-data'; tr.dataset.trade = group.cat;
+  var td1 = document.createElement('td'); td1.textContent = label; tr.appendChild(td1);
+  var td2 = document.createElement('td'); td2.className = 'prev-cell'; td2.textContent = '-'; tr.appendChild(td2);
+  var td3 = document.createElement('td'); td3.style.textAlign = 'center';
+  var inpP = document.createElement('input'); inpP.className='t-pct'; inpP.type='number'; inpP.min='0'; inpP.max='100'; inpP.placeholder='%'; inpP.setAttribute('data-field','pct'); inpP.oninput=function(){ markDirty(tr); }; td3.appendChild(inpP); tr.appendChild(td3);
+  var td4 = document.createElement('td');
+  var inpN = document.createElement('input'); inpN.className='t-text'; inpN.type='text'; inpN.placeholder='Notes...'; inpN.setAttribute('data-field','notes'); inpN.oninput=function(){ markDirty(tr); }; td4.appendChild(inpN); tr.appendChild(td4);
+  return tr;
+}
+
+function makeSubCatHeader(group, label) {
+  var tr = document.createElement('tr');
+  tr.className = 'sub-cat-row'; tr.dataset.cat = group.cat;
+  // Also mark as data-trade so collectRow can pick up WRK+Crew
+  tr.dataset.trade = group.cat;
+  var td1 = document.createElement('td'); td1.textContent = label; tr.appendChild(td1);
+  var tdPrev = document.createElement('td'); tdPrev.className = 'cat-prev'; tdPrev.textContent = '-'; tr.appendChild(tdPrev);
+  var tdBtn = document.createElement('td'); tdBtn.className = 'fill-btn-cell';
+  var btn = document.createElement('button'); btn.className = 'fill-all-btn'; btn.textContent = 'Fill';
+  btn.onclick = (function(cat, cell){ return function(){
+    var p = parseInt(cell.textContent); if (!isNaN(p)) fillAll(cat, p);
+  }; })(group.cat, tdPrev);
+  tdBtn.appendChild(btn); tr.appendChild(tdBtn);
+  // Inline WRK + Crew for trade-5 sub-categories
+  var tdR = document.createElement('td');
+  var wrkRow = document.createElement('div'); wrkRow.className = 'wrk-crew-row';
+  var lw = document.createElement('span'); lw.className='wlbl'; lw.textContent='WRK'; wrkRow.appendChild(lw);
+  var inpW = document.createElement('input'); inpW.className='t-workers'; inpW.type='number'; inpW.min='0'; inpW.max='99'; inpW.placeholder='-'; inpW.setAttribute('data-field','workers'); inpW.oninput=function(){ markDirty(tr); }; wrkRow.appendChild(inpW);
+  var lc = document.createElement('span'); lc.className='wlbl'; lc.style.color='#3d6aaa'; lc.textContent='Crew'; wrkRow.appendChild(lc);
+  var inpR = document.createElement('input'); inpR.className='t-text crew-inp'; inpR.type='text'; inpR.placeholder='Name...'; inpR.setAttribute('data-field','resp'); inpR.oninput=function(){ markDirty(tr); inpR.classList.remove('prefilled'); }; wrkRow.appendChild(inpR);
+  tdR.appendChild(wrkRow);
+  tr.appendChild(tdR);
+  return tr;
+}
+
+function makeActivityRow(tradeKey, label, isSub, hasWrk) {
+  var tr = document.createElement('tr');
+  tr.className = 'trade-row' + (isSub ? ' sub-trade-row' : ''); tr.dataset.trade = tradeKey;
+  var td1 = document.createElement('td'); td1.title=label; td1.textContent=label; tr.appendChild(td1);
+  var td2 = document.createElement('td'); td2.className='prev-cell'; td2.textContent='-'; tr.appendChild(td2);
+  var td3 = document.createElement('td'); td3.style.textAlign='center';
+  var inpP = document.createElement('input'); inpP.className='t-pct'; inpP.type='number'; inpP.min='0'; inpP.max='100'; inpP.placeholder='-'; inpP.setAttribute('data-field','pct'); inpP.oninput=function(){ markDirty(tr); }; td3.appendChild(inpP); tr.appendChild(td3);
+  var td4 = document.createElement('td');
+  // Notes input (always present)
+  var inpN = document.createElement('input'); inpN.className='t-text'; inpN.type='text'; inpN.placeholder='Notes...'; inpN.setAttribute('data-field','notes'); inpN.oninput=function(){ markDirty(tr); }; td4.appendChild(inpN);
+  if (hasWrk) {
+    // Inline WRK + Crew row below notes (Trade 1 subtasks)
+    var wrkRow = document.createElement('div'); wrkRow.className='wrk-crew-row';
+    var lw = document.createElement('span'); lw.className='wlbl'; lw.textContent='WRK'; wrkRow.appendChild(lw);
+    var inpW = document.createElement('input'); inpW.className='t-workers'; inpW.type='number'; inpW.min='0'; inpW.max='99'; inpW.placeholder='-'; inpW.setAttribute('data-field','workers'); inpW.oninput=function(){ markDirty(tr); }; wrkRow.appendChild(inpW);
+    var lc = document.createElement('span'); lc.className='wlbl'; lc.style.color='#3d6aaa'; lc.textContent='Crew'; wrkRow.appendChild(lc);
+    var inpR = document.createElement('input'); inpR.className='t-text crew-inp'; inpR.type='text'; inpR.placeholder='Name...'; inpR.setAttribute('data-field','resp'); inpR.oninput=function(){ markDirty(tr); inpR.classList.remove('prefilled'); }; wrkRow.appendChild(inpR);
+    td4.appendChild(wrkRow);
+  }
+  tr.appendChild(td4);
+  return tr;
+}
+
+function buildTable() {
+  var tbody = document.getElementById('tbody'); tbody.innerHTML = '';
+  var subCatIdx = 0;
+  TRADES.forEach(function(group) {
+    var mainNum = parseInt(group.cat);
+    var isSub   = !!group.parent;
+    if (group.type === 'parent') {
+      subCatIdx = 0;
+      tbody.appendChild(makeMainCatHeader(group, group.cat));
+    } else if (group.catOnly) {
+      tbody.appendChild(makeMainCatDataRow(group, group.cat));
+    } else if (isSub) {
+      subCatIdx++;
+      var subPrefix = '5.' + subCatIdx;
+      var subLabel  = subPrefix + ' ' + (SUB_CAT_DISPLAY[group.cat] || group.cat);
+      tbody.appendChild(makeSubCatHeader(group, subLabel));
+      group.subs.forEach(function(sub, i) {
+        tbody.appendChild(makeActivityRow(group.cat + ' > ' + sub, subPrefix + '.' + (i+1) + ' ' + sub, true));
+      });
+    } else if (group.subs.length > 0) {
+      var isTrade1 = (group.cat === '1. Structure');
+      tbody.appendChild(makeMainCatHeader(group, group.cat, isTrade1));
+      group.subs.forEach(function(sub, i) {
+        tbody.appendChild(makeActivityRow(group.cat + ' > ' + sub, mainNum + '.' + (i+1) + ' ' + sub, false, false));
+      });
+    }
+  });
+  refillContractors();
+}
+
+function catAggregatePct(catName, data) {
+  var total = CAT_TOTALS[catName];
+
+  if (catName === '5. Internal Systems Rough-In') {
+    var sum = 0, hasAny = false;
+    TRADES.filter(function(t){ return t.parent === '5'; }).forEach(function(subGroup) {
+      subGroup.subs.forEach(function(act) {
+        var v = data[subGroup.cat + ' > ' + act];
+        if (v !== undefined && v !== null) { sum += v; hasAny = true; }
+      });
+    });
+    return hasAny ? Math.round((sum / (total || 54)) * 100) : null;
+  }
+
+  if (INTERNAL_SUB_CATS.indexOf(catName) >= 0) {
+    var subGroup = TRADES.filter(function(t){ return t.cat === catName; })[0];
+    if (!subGroup) return null;
+    var sum2 = 0, hasAny2 = false;
+    subGroup.subs.forEach(function(act) {
+      var v = data[catName + ' > ' + act];
+      if (v !== undefined && v !== null) { sum2 += v; hasAny2 = true; }
+    });
+    return hasAny2 ? Math.round((sum2 / (total || subGroup.subs.length)) * 100) : null;
+  }
+
+  var group = TRADES.filter(function(t){ return t.cat === catName; })[0];
+  if (!group || !group.subs.length) return null;
+  var sum3 = 0, hasAny3 = false;
+  group.subs.forEach(function(act) {
+    var v = data[catName + ' > ' + act];
+    if (v !== undefined && v !== null) { sum3 += v; hasAny3 = true; }
+  });
+  return hasAny3 ? Math.round((sum3 / (total || group.subs.length)) * 100) : null;
+}
+
+async function loadPrevious() {
+  var unit = document.getElementById('unit').value;
+  fetchSummary(unit);
+  document.querySelectorAll('tr.trade-row input, tr.main-cat-row.cat-data input').forEach(function(el){ el.value=''; el.classList.remove('prefilled'); });
+  document.querySelectorAll('tr.trade-row, tr.main-cat-row.cat-data, tr.main-cat-row.cat-wrk, tr.sub-cat-row').forEach(function(tr){ tr.classList.remove('has-data'); });
+  document.querySelectorAll('td.prev-cell').forEach(function(td){ td.textContent='-'; td.classList.remove('has-val'); });
+  document.querySelectorAll('td.cat-prev').forEach(function(td){ td.textContent='-'; td.classList.remove('has-val'); });
+  ['tdgNumber','mbrNumber','fase','buildingNo','skidRef'].forEach(function(id){ document.getElementById(id).value=''; });
+  document.getElementById('mbrSkid').checked=false;
+  document.getElementById('skidRefWrap').style.display='none';
+  refillContractors();
+
+  if (!unit) { document.getElementById('statusBar').textContent='Select a unit to load previous progress.'; return; }
+  document.getElementById('statusBar').textContent='Loading...';
+  try {
+    var res  = await fetch('/unit-progress/' + unit);
+    var json = await res.json();
+    var data = json.trades !== undefined ? json.trades : json;
+    var meta = json.meta || {};
+    document.getElementById('tdgNumber').value  = meta.tdg_number  || '';
+    document.getElementById('mbrNumber').value  = meta.mbr_number  || '';
+    var isMbrSkid = (meta.skid_by||'').toLowerCase().indexOf('mbr')>=0;
+    document.getElementById('mbrSkid').checked  = isMbrSkid;
+    document.getElementById('skidRef').value    = meta.skid_ref    || '';
+    document.getElementById('skidRefWrap').style.display = isMbrSkid ? 'inline-flex' : 'none';
+    document.getElementById('fase').value       = meta.fase        || '';
+    document.getElementById('buildingNo').value = meta.building_no || '';
+    refillContractors();
+
+    var filled = 0;
+    document.querySelectorAll('tr.trade-row').forEach(function(tr) {
+      var pct = data[tr.dataset.trade];
+      if (pct !== undefined && pct !== null) {
+        var cell = tr.querySelector('td.prev-cell');
+        cell.textContent=Math.round(pct*100)+'%'; cell.classList.add('has-val'); filled++;
+      }
+    });
+    document.querySelectorAll('tr.main-cat-row.cat-data').forEach(function(tr) {
+      var pct = data[tr.dataset.trade];
+      if (pct !== undefined && pct !== null) {
+        var cell = tr.querySelector('td.prev-cell');
+        cell.textContent=Math.round(pct*100)+'%'; cell.classList.add('has-val'); filled++;
+      }
+    });
+    document.querySelectorAll('tr.main-cat-row[data-cat], tr.sub-cat-row[data-cat]').forEach(function(tr) {
+      var cat = tr.dataset.cat; if (!cat) return;
+      var pct = catAggregatePct(cat, data);
+      if (pct !== null) { var cell=tr.querySelector('td.cat-prev'); if (cell){ cell.textContent=pct+'%'; cell.classList.add('has-val'); } }
+    });
+    document.getElementById('statusBar').textContent='Unit '+unit+' loaded - '+filled+' trades with previous data.';
+  } catch(e) { document.getElementById('statusBar').textContent='Error: '+e.message; }
+}
+
+function repeatLastReport() {
+  var filled = 0;
+  document.querySelectorAll('tr.trade-row, tr.main-cat-row.cat-data').forEach(function(tr) {
+    var cell = tr.querySelector('td.prev-cell');
+    var inp  = tr.querySelector('[data-field="pct"]');
+    if (cell && inp && cell.classList.contains('has-val')) {
+      var txt = cell.textContent.replace('%','').trim();
+      if (txt !== '' && txt !== '-') { inp.value = txt; markDirty(tr); filled++; }
+    }
+  });
+  showToast(filled ? '📋 ' + filled + ' values copied from last report — review and submit.' : 'No previous data loaded yet. Select a unit first.', filled===0);
+}
+
+
+async function markUnitSent() {
+  var unit = (document.getElementById('unit').value || '').trim().toUpperCase();
+  if (!unit) { showToast('Select a unit first', true); return; }
+  var editorName = localStorage.getItem('mbrAuth') || '';
+  if (!editorName) { showToast('Log in first', true); return; }
+  var ok = confirm('Mark ' + unit + ' as SENT?\n\nThis will:\n• Archive all progress data for ' + unit + '\n• Delete its daily log entries\n• Download a CSV report\n\nThis cannot be undone.');
+  if (!ok) return;
+  var btn = document.getElementById('sentBtn');
+  btn.disabled = true; btn.textContent = '⏳ Archiving...';
+  try {
+    var payload = {
+      editor: editorName,
+      tdg_number: (document.getElementById('tdgNumber')||{value:''}).value.trim(),
+      mbr_number: (document.getElementById('mbrNumber')||{value:''}).value.trim(),
+      mbr_skid: (function(){ var el=document.getElementById('skidRef'); return el?el.value.trim():''; })(),
+      fase: (document.getElementById('fase')||{value:''}).value.trim(),
+      building_no: (document.getElementById('buildingNo')||{value:''}).value.trim()
+    };
+    var r = await fetch('/api/unit-sent/' + encodeURIComponent(unit), {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    if (!r.ok) { var e = await r.json(); showToast('Error: '+(e.error||r.status), true); return; }
+    var blob = await r.blob();
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = unit + '_sent_' + new Date().toISOString().slice(0,10) + '.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    // Clear the unit selector
+    document.getElementById('unit').value = '';
+    // Explicitly clear all header fields
+    ['tdgNumber','mbrNumber','fase','buildingNo','skidRef'].forEach(function(id){
+      var el = document.getElementById(id); if(el) el.value = '';
+    });
+    document.getElementById('mbrSkid').checked = false;
+    document.getElementById('skidRefWrap').style.display = 'none';
+    // Clear all trade row inputs and has-data state
+    document.querySelectorAll('tr.trade-row input, tr.main-cat-row.cat-data input').forEach(function(el){
+      el.value = ''; el.classList.remove('prefilled');
+    });
+    document.querySelectorAll('tr.trade-row, tr.main-cat-row, tr.sub-cat-row').forEach(function(tr){
+      tr.classList.remove('has-data');
+    });
+    document.querySelectorAll('td.prev-cell, td.cat-prev').forEach(function(td){
+      td.textContent = '-'; td.classList.remove('has-val');
+    });
+    // Reset status bar
+    var sb = document.getElementById('statusBar');
+    if(sb) sb.textContent = 'Select a unit to load previous progress.';
+    showToast('\u2713 ' + unit + ' archived and report downloaded!');
+  } catch(e2) { showToast('Error: ' + e2.message, true); }
+  finally { btn.disabled = false; btn.textContent = '\u2713 Unit Sent'; }
+}
+
+async function submitAll() {
+  var unit=document.getElementById('unit').value, dt=document.getElementById('date').value;
+  if (!unit||!dt) { showToast('Select unit and date first',true); return; }
+  var tdgNumber=document.getElementById('tdgNumber').value.trim();
+  var mbrNumber=document.getElementById('mbrNumber').value.trim();
+  var skidBy=document.getElementById('mbrSkid').checked?'MBR':'';
+  var skidRef_=document.getElementById('skidRef').value.trim();
+  var fase=document.getElementById('fase').value.trim();
+  var buildingNo=document.getElementById('buildingNo').value.trim();
+  var entries=[];
+  var collectRow=function(tr){
+    var pctEl=tr.querySelector('[data-field="pct"]'), wrkEl=tr.querySelector('[data-field="workers"]');
+    var respEl=tr.querySelector('[data-field="resp"]'), noteEl=tr.querySelector('[data-field="notes"]');
+    var pct=pctEl?pctEl.value.trim():'', wrk=wrkEl?wrkEl.value.trim():'';
+    var resp=respEl?respEl.value.trim():'', note=noteEl?noteEl.value.trim():'';
+    if (pct===''&&wrk===''&&resp===''&&note==='') return;
+    if (resp==='' && respEl && respEl.classList.contains('prefilled')) resp=respEl.value.trim();
+    entries.push({
+      date:dt, period:selectedPeriod, position:unit, trade:tr.dataset.trade,
+      progress_pct:pct!==''?parseFloat(pct):null,
+      workers:wrk!==''?parseInt(wrk):null,
+      responsible:resp, notes:note,
+      tdg_number:tdgNumber, mbr_number:mbrNumber,
+      skid_by:skidBy, skid_ref:skidRef_, fase:fase, building_no:buildingNo
+    });
+  };
+  document.querySelectorAll('tr.trade-row').forEach(collectRow);
+  document.querySelectorAll('tr.main-cat-row.cat-data').forEach(collectRow);
+  document.querySelectorAll('tr.sub-cat-row[data-trade]').forEach(collectRow);
+  document.querySelectorAll('tr.main-cat-row.cat-wrk[data-trade]').forEach(collectRow);
+  // If no trade rows filled → auto-fill from prev cells (unit already loaded)
+  var isCarryForward = false;
+  if (!entries.length) {
+    var hasPrev = false;
+    document.querySelectorAll('tr.trade-row, tr.main-cat-row.cat-data').forEach(function(tr) {
+      var prevCell = tr.querySelector('td.prev-cell');
+      var inp = tr.querySelector('[data-field="pct"]');
+      if (prevCell && prevCell.classList.contains('has-val') && inp) {
+        var txt = prevCell.textContent.replace('%','').trim();
+        if (txt && txt !== '-') { inp.value = txt; markDirty(tr); hasPrev = true; }
+      }
+    });
+    if (hasPrev) {
+      isCarryForward = true;
+      document.querySelectorAll('tr.trade-row').forEach(collectRow);
+      document.querySelectorAll('tr.main-cat-row.cat-data').forEach(collectRow);
+      document.querySelectorAll('tr.sub-cat-row[data-trade]').forEach(collectRow);
+      document.querySelectorAll('tr.main-cat-row.cat-wrk[data-trade]').forEach(collectRow);
+    }
+  }
+  if (!entries.length) { showToast('No hay datos — selecciona una unidad primero.',true); return; }
+  // Validation: require at least 1 WRK value and 1 Crew/Resp value
+  // WRK/Crew only required for real edits on Trade 1 or 5 (not carry-forward metadata updates)
+  if (!isCarryForward) {
+    var needsWrk = entries.some(function(e){
+      var t = e.trade || '';
+      return t.indexOf('1. Structure >') === 0 || t === '1. Structure' ||
+             ['ELECTRICAL','BATTERY CABINETS','IOs/POWER CABINETS','SWITCH GEAR',
+              'PANELS & CABLE','CONDUIT','LIGHTING','CLOSEOUT'].some(function(s){
+                return t.indexOf(s) === 0;
+              });
+    });
+    if (needsWrk) {
+      var hasWrk  = entries.some(function(e){ return e.workers !== null && e.workers > 0; });
+      var hasCrew = entries.some(function(e){ return e.responsible && e.responsible.trim() !== ''; });
+      if (!hasWrk)  { showToast('Falta #WRK — llena al menos 1 celda de trabajadores',true); return; }
+      if (!hasCrew) { showToast('Falta Crew — llena al menos 1 nombre de contratista/crew',true); return; }
+    }
+  }
+  var btn=document.getElementById('submitBtn'); var fbtn=document.getElementById('floatSubmitBtn');
+  btn.disabled=true; fbtn.disabled=true; btn.textContent='Saving '+entries.length+'...'; fbtn.textContent='Saving...';
+  try {
+    var res=await fetch('/submit-batch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(entries)});
+    var d=await res.json();
+    if (d.ok) {
+      showToast('Done - '+d.saved+' trades saved');
+      document.querySelectorAll('tr.trade-row, tr.main-cat-row.cat-data, tr.main-cat-row.cat-wrk, tr.sub-cat-row').forEach(function(tr){
+        var pi=tr.querySelector('[data-field="pct"]'), pc=tr.querySelector('td.prev-cell');
+        if (pi&&pi.value.trim()!=='') { pc.textContent=pi.value+'%'; pc.classList.add('has-val'); }
+        tr.querySelectorAll('[data-field]').forEach(function(el){ el.value=''; el.classList.remove('prefilled'); });
+        tr.classList.remove('has-data');
+      });
+      ['tdgNumber','mbrNumber','fase','buildingNo','skidRef'].forEach(function(id){ document.getElementById(id).value=''; });
+      document.getElementById('mbrSkid').checked=false;
+      document.getElementById('skidRefWrap').style.display='none';
+      // Clear unit selector and reset table for next unit
+      document.getElementById('unit').value = '';
+      document.querySelectorAll('td.prev-cell').forEach(function(c){ c.textContent='—'; c.classList.remove('has-val'); });
+      document.getElementById('statusBar').textContent = 'Submitted ✓ — select next unit to continue.';
+      refillContractors();
+    } else { showToast('Error: '+JSON.stringify(d.errors),true); }
+  } catch(e) { showToast('Network error: '+e.message,true); }
+  finally { btn.disabled=false; fbtn.disabled=false; btn.textContent='Submit Update'; fbtn.innerHTML='&#10003; Submit'; }
+}
+
+function showToast(msg,isError) {
+  var t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast'+(isError?' error':''); t.style.display='block';
+  setTimeout(function(){ t.style.display='none'; },3500);
+}
+
+var SUMMARY_TRADES = [
+  {key:'1. Structure', label:'1. Structure'},
+  {key:'2. Structure Paint', label:'2. Str Paint'},
+  {key:'3. Envelope', label:'3. Envelope'},
+  {key:'4. Unit Paint', label:'4. Unit Paint'},
+  {key:'5. Internal Systems Rough-In', label:'5. Internal'},
+  {key:'6. Electrical', label:'6. Electrical'},
+  {key:'7. Final QC', label:'7. Final QC'},
+  {key:'8. Final Touchups', label:'8. Touchups'}
+];
+var CATONLY = ['2. Structure Paint','3. Envelope','4. Unit Paint','6. Electrical','7. Final QC','8. Final Touchups'];
+var DASH_KNOWN = {
+  '1. Structure':['C Channel / Holes Templates','Weld 4 I Beams (10\" I Beams)','C Channels 12\" Weld To Enclose Frame','Square The Frame','Inside C Channels/Square','Nuts Inside C Channel','Floor Plate (Pull, Cut, Weld)','Square Tube Halo (Pull, Cut, Grind, Weld)','I Beam On Halo Stand Up Posts','Square Halo And Weld To Post','Square Tubes For Doors','Ground Plates','Weld Floor Plates Together'],
+  'ELECTRICAL':['Ground Bar','Wall/Ceiling Boxes & Conduit','H2 Control Box & Conduit','HVAC Control Box & Conduit','Exhaust Fan Control Box & Conduit','PLC & Conduit','Wall/Ceiling Conduit'],
+  'BATTERY CABINETS':['Place Inside Building','Unpack Units','Unpalletize Units','Position Units In Place','Uninstall Plates','Install Pucks','Put In Covers','Fans','KO Plates','Cover W/ Drop Cloth'],
+  'IOs/POWER CABINETS':['Place Inside Building','Unpack Units','Unpalletize Units','Position Units In Place','Uninstall Plates','Install Bars','Put In Covers','KO Plates','Cover W/ Drop Cloth'],
+  'SWITCH GEAR':['Place Inside Building','Unpack Units','Unpalletize Units','Bus Bar','ATS Plate @ SwGr #2 To #3','Top Hats','KO Plates'],
+  'PANELS & CABLE':['Panels/Transformers & Conduit','Cable Tray Supports (Struts)','24\" Cable Tray','30\" Cable Tray','24\" Step Down Tray','18\" Battery Tray'],
+  'CONDUIT':['Battery To Battery','Battery To SwGr #4','IO To IO','IO To Batteries','IO To SwGr #4','Battery Cabinet Conduit','Batt To SwGr #4 Comm Conduit','2\" EMT @ SwGr #4'],
+  'LIGHTING':['Lighting & Lamps','Lighting & Conduit'],
+  'CLOSEOUT':['Cut Down All Thread','Cap All Thread','Caulk Screw Holes','Clean Up','Final Walk Through','Check All Boxes For Bushings','Check Conduit/Unistrut/All Thread Level & Plumb']
+};
+var DASH_TOTALS = {'1. Structure':13,'ELECTRICAL':7,'BATTERY CABINETS':10,'IOs/POWER CABINETS':9,'SWITCH GEAR':7,'PANELS & CABLE':6,'CONDUIT':8,'LIGHTING':2,'CLOSEOUT':7};
+var INT_SUBS_D = ['ELECTRICAL','BATTERY CABINETS','IOs/POWER CABINETS','SWITCH GEAR','PANELS & CABLE','CONDUIT','LIGHTING','CLOSEOUT'];
+
+function calcTradePct(tradeName, tradesMap) {
+  if (CATONLY.indexOf(tradeName) >= 0) return (tradesMap[tradeName] !== undefined) ? tradesMap[tradeName] : null;
+  if (tradeName === '5. Internal Systems Rough-In') {
+    var sum = 0, has = false;
+    INT_SUBS_D.forEach(function(sub) {
+      (DASH_KNOWN[sub] || []).forEach(function(act) {
+        var v = tradesMap[sub + ' > ' + act];
+        if (v !== undefined && v !== null) { sum += v; has = true; }
+      });
+    });
+    return has ? sum / 54 : null;
+  }
+  var acts = DASH_KNOWN[tradeName] || [];
+  if (!acts.length) return null;
+  var sum2 = 0, has2 = false;
+  acts.forEach(function(act) {
+    var v = tradesMap[tradeName + ' > ' + act];
+    if (v !== undefined && v !== null) { sum2 += v; has2 = true; }
+  });
+  return has2 ? sum2 / (DASH_TOTALS[tradeName] || acts.length) : null;
+}
+
+function scrollToTrade(key) {
+  var target = document.querySelector('tr[data-cat="'+key+'"], tr[data-trade="'+key+'"]');
+  if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function fetchSummary(unit) {
+  var strip = document.getElementById('summaryStrip');
+  if (!unit) { strip.style.display = 'none'; return; }
+  fetch('/unit-progress/' + unit)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var map = data.trades || {};
+      var sumAll8 = 0;
+      SUMMARY_TRADES.forEach(function(t) { var p = calcTradePct(t.key, map); sumAll8 += (p !== null ? p : 0); });
+      var html = '';
+      SUMMARY_TRADES.forEach(function(t) {
+        var p = calcTradePct(t.key, map);
+        var pnum = p !== null ? Math.round(p * 100) : null;
+        var color = p === null ? '#4a6380' : (p >= 0.9 ? '#22c55e' : (p >= 0.5 ? '#f59e0b' : '#ef4444'));
+        var barHtml = pnum !== null ? '<div class="stbf" style="width:' + pnum + '%;background:' + color + '"></div>' : '';
+        html += '<div class="st-item" style="cursor:pointer" onclick="scrollToTrade(\'' + t.key + '\')">' +
+          '<div class="stn">' + t.label + '</div>' +
+          '<div class="stp" style="color:' + color + '">' + (pnum !== null ? pnum + '%' : '--') + '</div>' +
+          '<div class="stb">' + barHtml + '</div>' +
+          '</div>';
+      });
+      strip.innerHTML = html;
+      strip.style.display = 'block';
+    })
+    .catch(function() { strip.style.display = 'none'; });
+}
+
+
+function openIssues() {
+  var unit = document.getElementById('unit').value;
+  if (!unit) { alert('Select a unit first.'); return; }
+  window.location.href = '/issues/' + encodeURIComponent(unit);
+}
+window.addEventListener('DOMContentLoaded', function() {
+  // Auto AM/PM based on current hour (>= 12 = PM)
+  var h = new Date().getHours();
+  var autoPeriod = h >= 12 ? 'PM' : 'AM';
+  document.querySelectorAll('.period-btn').forEach(function(b){
+    b.classList.toggle('active', b.dataset.val === autoPeriod);
+  });
+  selectedPeriod = autoPeriod;
+
+  // Auto-select unit from URL param
+  var params = new URLSearchParams(window.location.search);
+  var uParam = params.get('unit');
+  if (uParam) {
+    var sel = document.getElementById('unit');
+    sel.value = uParam;
+    if (sel.value) loadPrevious();
+  }
+  buildTable();
+});
+</script>
+<script>
+// ── Auth gate (cross-page via localStorage) ──────────────────────
+(function(){
+  var AUTH_KEY='mbrAuth';
+  var stored=localStorage.getItem(AUTH_KEY);
+  if(stored){ return; }          // already authed — show page normally
+  // Hide page body, show gate
+  document.body.style.overflow='hidden';
+  document.getElementById('authGate').style.display='flex';
+})();
+
+var _agUser='',_agBuf='',_agNew=false,_agFirst='';
+
+function agSelName(n){
+  _agUser=n;_agBuf='';_agNew=false;_agFirst='';
+  document.getElementById('agPinTitle').textContent='Hello, '+n+'!';
+  document.getElementById('agPinSub').textContent='Enter your 4-digit PIN';
+  document.getElementById('agErr').textContent='';
+  agDots();
+  fetch('/api/users/has-pin?name='+encodeURIComponent(n))
+    .then(function(r){return r.json();})
+    .then(function(d){ if(!d.has_pin){_agNew=true;document.getElementById('agPinSub').textContent='Create a new 4-digit PIN';} })
+    .catch(function(){});
+  document.getElementById('ag1').style.display='none';
+  document.getElementById('ag2').style.display='block';
+}
+function agBack(){
+  document.getElementById('ag2').style.display='none';
+  document.getElementById('ag1').style.display='block';
+  _agBuf='';_agNew=false;_agFirst='';
+}
+function agDots(){
+  for(var i=0;i<4;i++){
+    var d=document.getElementById('agd'+i);
+    if(d)d.className='ag-dot'+(i<_agBuf.length?' on':'');
+  }
+}
+function agPk(k){
+  if(k==='C'){if(_agBuf.length>0){_agBuf=_agBuf.slice(0,-1);agDots();}return;}
+  if(_agBuf.length>=4)return;
+  _agBuf+=k;agDots();
+  if(_agBuf.length===4)setTimeout(agProc,110);
+}
+function agProc(){
+  if(_agNew&&!_agFirst){_agFirst=_agBuf;_agBuf='';document.getElementById('agPinSub').textContent='Confirm your PIN';agDots();return;}
+  if(_agNew&&_agFirst){
+    if(_agBuf!==_agFirst){document.getElementById('agErr').textContent='PINs do not match.';_agBuf='';_agFirst='';agDots();return;}
+    fetch('/api/users/set-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:_agUser,pin:_agBuf})})
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(d.ok){
+          var body='MBR Texas Timesheet%0A%0APIN Set For: '+encodeURIComponent(_agUser)+'%0APIN: '+_agBuf+'%0ADate: '+new Date().toLocaleDateString();
+          window.open('mailto:dshidalgop@gmail.com?subject='+encodeURIComponent('PIN – '+_agUser)+'&body='+body,'_blank');
+          localStorage.setItem('mbrAuth',_agUser);
+          document.getElementById('authGate').style.display='none';
+          document.body.style.overflow='';
+        }else{document.getElementById('agErr').textContent='Error: '+(d.error||'try again');}
+      }).catch(function(){document.getElementById('agErr').textContent='Network error.';});
+    return;
+  }
+  fetch('/api/users/verify-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:_agUser,pin:_agBuf})})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){
+        localStorage.setItem('mbrAuth',_agUser);
+        document.getElementById('authGate').style.display='none';
+        document.body.style.overflow='';
+      }else{document.getElementById('agErr').textContent='Incorrect PIN.';_agBuf='';agDots();}
+    }).catch(function(){document.getElementById('agErr').textContent='Network error.';});
+}
+</script>
+<!-- GNAV -->
+
+<nav class="gnav" id="gnav">
+  <a href="/" class="gnav-link"><span class="gi">🏠</span>Home</a>
+  <a href="/log" class="gnav-link"><span class="gi">📋</span>Log</a>
+  <a href="/dashboard" class="gnav-link"><span class="gi">📊</span>Dashboard</a>
+  <a href="/timesheet" class="gnav-link"><span class="gi">🕐</span>Timesheet</a>
+  <a href="/inventory" class="gnav-link"><span class="gi">📦</span>Inventory</a>
+  <a href="/issues-log" class="gnav-link"><span class="gi">⚠️</span>Issues</a>
+  <a href="/settings" class="gnav-link"><span class="gi">⚙️</span>Settings</a>
+</nav>
+<script>
+(function(){var p=location.pathname;document.querySelectorAll('.gnav-link').forEach(function(a){var h=a.getAttribute('href');if(h==='/'?p===h:p===h||p.startsWith(h))a.classList.add('gna');});})();
+(function(){var r=localStorage.getItem('mbrRole')||'worker';var lv={admin:5,boss:4,inventory:3,lead:2,worker:1}[r]||1;var rules={'/log':2,'/dashboard':4,'/inventory':2,'/issues-log':2,'/settings':4};document.querySelectorAll('.gnav-link').forEach(function(a){var h=a.getAttribute('href');if(rules[h]&&lv<rules[h]){a.href='/home';a.style.opacity='0.45';}});})();
+</script>
+</body>
+</html>
