@@ -741,16 +741,78 @@ def get_workers():
 
 @app.route("/api/workers", methods=["POST"])
 def add_worker():
+    import random
     data = request.get_json() or {}
     name = data.get("name","").strip()
     if not name:
         return jsonify({"ok": False, "error": "name required"}), 400
+    # Auto-assign a unique 4-digit PIN
+    pin = None
+    for _ in range(50):
+        candidate = str(random.randint(1000, 9999))
+        check = requests.get(
+            f"{SUPABASE_URL}/rest/v1/{WORKERS_TABLE}?pin=eq.{candidate}&select=id&limit=1",
+            headers=sb_headers()
+        )
+        if check.ok and not check.json():
+            pin = candidate
+            break
     r = requests.post(
         f"{SUPABASE_URL}/rest/v1/{WORKERS_TABLE}",
-        json={"name": name, "role": data.get("role",""), "active": True},
+        json={"name": name, "role": data.get("role",""), "active": True, "pin": pin},
         headers={**sb_headers(), "Prefer": "return=representation"}
     )
     return jsonify({"ok": r.ok, "worker": r.json()[0] if r.ok and r.json() else {}})
+
+@app.route("/api/workers/assign-pins", methods=["POST"])
+def assign_pins_bulk():
+    """Assign a unique random 4-digit PIN to every worker that doesn't have one."""
+    import random
+    # Get all workers without a PIN
+    r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/{WORKERS_TABLE}?pin=is.null&active=eq.true&select=id,name&limit=500",
+        headers=sb_headers()
+    )
+    workers = r.json() if r.ok else []
+    # Get existing PINs to avoid collisions
+    ep = requests.get(
+        f"{SUPABASE_URL}/rest/v1/{WORKERS_TABLE}?pin=not.is.null&select=pin&limit=500",
+        headers=sb_headers()
+    )
+    used = set(w["pin"] for w in (ep.json() if ep.ok else []) if w.get("pin"))
+    assigned = []
+    for worker in workers:
+        for _ in range(100):
+            candidate = str(random.randint(1000, 9999))
+            if candidate not in used:
+                used.add(candidate)
+                requests.patch(
+                    f"{SUPABASE_URL}/rest/v1/{WORKERS_TABLE}?id=eq.{worker['id']}",
+                    json={"pin": candidate},
+                    headers=sb_headers()
+                )
+                assigned.append({"name": worker["name"], "pin": candidate})
+                break
+    return jsonify({"ok": True, "assigned": len(assigned), "workers": assigned})
+
+@app.route("/api/workers/<worker_id>", methods=["PATCH"])
+def update_worker(worker_id):
+    """Update worker fields — currently used for PIN assignment."""
+    data = request.get_json() or {}
+    allowed = ["pin", "role", "active", "name"]
+    payload = {k: data[k] for k in allowed if k in data}
+    if not payload:
+        return jsonify({"ok": False, "error": "nothing to update"}), 400
+    r = requests.patch(
+        f"{SUPABASE_URL}/rest/v1/{WORKERS_TABLE}?id=eq.{worker_id}",
+        json=payload,
+        headers={**sb_headers(), "Prefer": "return=representation"}
+    )
+    if r.ok:
+        return jsonify({"ok": True})
+    if "unique" in r.text.lower() or "duplicate" in r.text.lower():
+        return jsonify({"ok": False, "error": "unique constraint — PIN already taken"}), 409
+    return jsonify({"ok": False, "error": r.text}), 400
 
 @app.route("/api/workers/<worker_id>", methods=["DELETE"])
 def deactivate_worker(worker_id):
@@ -776,32 +838,75 @@ def get_safety_meeting():
 
 @app.route("/api/safety-meeting", methods=["POST"])
 def checkin_safety():
-    """Mark worker as present in today's safety meeting."""
+    """Mark worker as present in today's safety meeting + create payroll check-in."""
+    import datetime as dt
     data = request.get_json() or {}
     name = data.get("worker_name","").strip()
     if not name:
         return jsonify({"ok": False, "error": "worker_name required"}), 400
-    today = __import__('datetime').date.today().isoformat()
+    today = dt.date.today().isoformat()
+    now_iso = dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
+
+    # 1. Record safety meeting attendance
     r = requests.post(
         f"{SUPABASE_URL}/rest/v1/{SM_TABLE}",
         json={"worker_name": name, "date": today,
               "supervisor": data.get("supervisor","")},
         headers={**sb_headers(), "Prefer": "return=representation"}
     )
-    if r.ok:
-        return jsonify({"ok": True, "record": r.json()[0] if r.json() else {}})
-    # If duplicate (unique constraint), return ok anyway
-    if "duplicate" in r.text.lower() or "unique" in r.text.lower():
-        return jsonify({"ok": True, "duplicate": True})
-    return jsonify({"ok": False, "error": r.text}), 400
+    if not r.ok:
+        if "duplicate" in r.text.lower() or "unique" in r.text.lower():
+            return jsonify({"ok": True, "duplicate": True})
+        return jsonify({"ok": False, "error": r.text}), 400
+
+    sm_record = r.json()[0] if r.json() else {}
+
+    # 2. Create payroll check-in (if not already checked in today)
+    existing = requests.get(
+        f"{SUPABASE_URL}/rest/v1/{CHECKINS_TABLE}"
+        f"?worker_name=eq.{requests.utils.quote(name)}&date=eq.{today}"
+        f"&checked_out_at=is.null&select=id&limit=1",
+        headers=sb_headers()
+    )
+    if existing.ok and not existing.json():
+        requests.post(
+            f"{SUPABASE_URL}/rest/v1/{CHECKINS_TABLE}",
+            json={"worker_name": name, "position": "Safety Meeting",
+                  "date": today, "checked_in_at": now_iso},
+            headers={**sb_headers(), "Prefer": "return=representation"}
+        )
+
+    return jsonify({"ok": True, "record": sm_record})
 
 @app.route("/api/safety-meeting/<record_id>", methods=["DELETE"])
 def undo_safety_checkin(record_id):
-    """Remove a worker from today's safety meeting (undo)."""
+    """Remove a worker from today's safety meeting (undo) + remove payroll check-in if no checkout."""
+    import datetime as dt
+    # Get the worker name from the SM record before deleting
+    sr = requests.get(
+        f"{SUPABASE_URL}/rest/v1/{SM_TABLE}?id=eq.{record_id}&select=worker_name&limit=1",
+        headers=sb_headers()
+    )
+    worker_name = ""
+    if sr.ok and sr.json():
+        worker_name = sr.json()[0].get("worker_name","")
+
+    # Delete SM record
     r = requests.delete(
         f"{SUPABASE_URL}/rest/v1/{SM_TABLE}?id=eq.{record_id}",
         headers=sb_headers()
     )
+
+    # Also remove payroll check-in for today if no checkout yet
+    if worker_name:
+        today = dt.date.today().isoformat()
+        requests.delete(
+            f"{SUPABASE_URL}/rest/v1/{CHECKINS_TABLE}"
+            f"?worker_name=eq.{requests.utils.quote(worker_name)}"
+            f"&date=eq.{today}&position=eq.Safety Meeting&checked_out_at=is.null",
+            headers=sb_headers()
+        )
+
     return jsonify({"ok": r.ok})
 
 @app.route("/api/safety-meeting/history", methods=["GET"])
@@ -1217,7 +1322,6 @@ def notify_leads_attendance(worker_name, att_type, report_date, return_date, rea
     if not SMTP_EMAIL or not SMTP_PASSWORD:
         return
     try:
-        # Get all lead/admin/supervisor users with email
         resp = requests.get(
             f"{SUPABASE_URL}/rest/v1/app_users"
             f"?select=name,email,role"
@@ -1226,17 +1330,14 @@ def notify_leads_attendance(worker_name, att_type, report_date, return_date, rea
             headers=sb_headers()
         )
         leads = [u for u in (resp.json() if resp.ok else []) if u.get("email")]
-        if not ADMIN_EMAIL in [u.get("email") for u in leads]:
+        if ADMIN_EMAIL not in [u.get("email") for u in leads]:
             leads.append({"name": "Daniel", "email": ADMIN_EMAIL})
         if not leads:
             return
 
         type_labels = {"late": "🕐 Running Late", "absent": "❌ Absent", "vacation": "🏖 Vacation"}
         type_label = type_labels.get(att_type, att_type.upper())
-        range_str = ""
-        if return_date:
-            range_str = f"<br><b>Back to Work On:</b> {return_date}"
-
+        range_str = f"<br><b>Back to Work On:</b> {return_date}" if return_date else ""
         subject = f"MBR Texas Attendance — {worker_name} reported {att_type}"
         body_html = f"""
         <div style="font-family:Arial,sans-serif;max-width:480px;padding:20px;">
@@ -1251,9 +1352,7 @@ def notify_leads_attendance(worker_name, att_type, report_date, return_date, rea
             <tr><td style="padding:8px 0;color:#64748b;">Reason</td>
                 <td style="padding:8px 0;">{reason or "—"}</td></tr>
           </table>
-          <p style="margin-top:20px;font-size:12px;color:#94a3b8;">
-            MBR Texas · TDG Tracker · Auto-notification
-          </p>
+          <p style="margin-top:20px;font-size:12px;color:#94a3b8;">MBR Texas · TDG Tracker · Auto-notification</p>
         </div>"""
 
         for lead in leads:
@@ -1270,7 +1369,7 @@ def notify_leads_attendance(worker_name, att_type, report_date, return_date, rea
                     srv.login(SMTP_EMAIL, SMTP_PASSWORD)
                     srv.sendmail(SMTP_EMAIL, [to_email], msg.as_string())
             except Exception:
-                pass  # Don't fail the request if email fails
+                pass
     except Exception:
         pass
 
@@ -1302,13 +1401,12 @@ def post_attendance():
         json=payload
     )
     if resp.ok:
-        # Fire notification email to leads (non-blocking)
         try:
             notify_leads_attendance(
                 worker_name=payload["worker_name"],
                 att_type=payload["type"],
                 report_date=payload.get("report_date",""),
-                return_date=payload.get("return_date"),
+                return_date=payload.get("return_date",""),
                 reason=payload.get("reason","")
             )
         except Exception:
@@ -1794,6 +1892,209 @@ def checkins_week():
 # ═══════════════════════════════════════════════════════════════════
 #  APP CONFIG (role permissions, etc.)
 # ═══════════════════════════════════════════════════════════════════
+@app.route("/api/auto-checkout", methods=["POST"])
+def auto_checkout():
+    """6:15 PM daily job:
+       1. Check out anyone still clocked in (logs 6:00 PM checkout).
+       2. Mark as absent anyone with NO check-in record at all today.
+    """
+    import datetime as dt
+    today = dt.date.today().isoformat()
+    # 6:00 PM CT = 23:00 UTC (CDT, UTC-5)
+    checkout_time = today + "T23:00:00"
+
+    # ── 1. Auto-checkout open check-ins ───────────────────────────────────────
+    co = requests.patch(
+        f"{SUPABASE_URL}/rest/v1/{CHECKINS_TABLE}"
+        f"?date=eq.{today}&checked_out_at=is.null",
+        json={"checked_out_at": checkout_time, "auto_checkout": True},
+        headers={**sb_headers(), "Prefer": "return=representation"}
+    )
+    checked_out = len(co.json()) if co.ok and co.json() else 0
+
+    # ── 2. Mark absent — workers with zero check-ins today ───────────────────
+    # Get all active workers
+    wr = requests.get(
+        f"{SUPABASE_URL}/rest/v1/{WORKERS_TABLE}?active=eq.true&select=name&limit=500",
+        headers=sb_headers()
+    )
+    all_workers = [w["name"] for w in (wr.json() if wr.ok else []) if w.get("name")]
+
+    # Get all workers who had ANY check-in today
+    cr = requests.get(
+        f"{SUPABASE_URL}/rest/v1/{CHECKINS_TABLE}?date=eq.{today}&select=worker_name&limit=500",
+        headers=sb_headers()
+    )
+    checked_in_names = set(r["worker_name"] for r in (cr.json() if cr.ok else []) if r.get("worker_name"))
+
+    # Also check who already has an attendance record for today (don't double-mark)
+    ar = requests.get(
+        f"{SUPABASE_URL}/rest/v1/attendance_reports?report_date=eq.{today}&select=worker_name&limit=500",
+        headers=sb_headers()
+    )
+    already_attendance = set(r["worker_name"] for r in (ar.json() if ar.ok else []) if r.get("worker_name"))
+
+    absent_names = []
+    for name in all_workers:
+        if name not in checked_in_names and name not in already_attendance:
+            # Create absent record automatically
+            requests.post(
+                f"{SUPABASE_URL}/rest/v1/attendance_reports",
+                json={"worker_name": name, "type": "absent",
+                      "reason": "Auto-marked: no check-in recorded for this day.",
+                      "report_date": today},
+                headers={**sb_headers(), "Prefer": "return=representation"}
+            )
+            absent_names.append(name)
+
+    return jsonify({
+        "ok": True,
+        "auto_checked_out": checked_out,
+        "auto_marked_absent": len(absent_names),
+        "absent_workers": absent_names
+    })
+
+@app.route("/api/checkin/by-pin", methods=["POST"])
+def checkin_by_pin():
+    """Look up worker by 4-digit PIN and check them in or out."""
+    import datetime as dt
+    data = request.get_json() or {}
+    pin = str(data.get("pin","")).strip().zfill(4)
+    if len(pin) != 4 or not pin.isdigit():
+        return jsonify({"ok": False, "error": "Invalid PIN"}), 400
+
+    # Find worker with this PIN
+    r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/workers?pin=eq.{pin}&select=id,name,pin&limit=1",
+        headers=sb_headers()
+    )
+    rows = r.json() if r.ok else []
+    if not rows:
+        return jsonify({"ok": False, "error": "PIN not found"}), 404
+
+    worker_name = rows[0].get("name","")
+    today = dt.date.today().isoformat()
+
+    # Check if currently checked in
+    active = requests.get(
+        f"{SUPABASE_URL}/rest/v1/{CHECKINS_TABLE}"
+        f"?worker_name=eq.{requests.utils.quote(worker_name)}"
+        f"&date=eq.{today}&checked_out_at=is.null&select=id,position,checked_in_at&limit=1",
+        headers=sb_headers()
+    )
+    active_rows = active.json() if active.ok else []
+
+    if active_rows:
+        # Check OUT
+        checkin_id = active_rows[0]["id"]
+        co = requests.patch(
+            f"{SUPABASE_URL}/rest/v1/{CHECKINS_TABLE}?id=eq.{checkin_id}",
+            json={"checked_out_at": dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")},
+            headers={**sb_headers(), "Prefer": "return=representation"}
+        )
+        return jsonify({"ok": co.ok, "action": "checkout", "worker_name": worker_name,
+                        "position": active_rows[0].get("position",""),
+                        "checked_in_at": active_rows[0].get("checked_in_at","")})
+    else:
+        # Check IN (late arrival via tablet)
+        now_iso = dt.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
+        ci = requests.post(
+            f"{SUPABASE_URL}/rest/v1/{CHECKINS_TABLE}",
+            json={"worker_name": worker_name, "position": "Late Arrival",
+                  "date": today, "checked_in_at": now_iso, "source": "tablet"},
+            headers={**sb_headers(), "Prefer": "return=representation"}
+        )
+        return jsonify({"ok": ci.ok, "action": "checkin", "worker_name": worker_name})
+
+
+@app.route("/api/contractor/profile", methods=["GET"])
+def get_contractor_profile():
+    """Get the current worker's profile by name — returns pin_set (bool), never the actual PIN."""
+    name = request.args.get("name","").strip()
+    if not name:
+        return jsonify({"ok": False, "error": "name required"}), 400
+    r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/{WORKERS_TABLE}"
+        f"?name=eq.{requests.utils.quote(name)}&select=id,name,pin&limit=1",
+        headers=sb_headers()
+    )
+    rows = r.json() if r.ok else []
+    if not rows:
+        return jsonify({"ok": False, "error": "worker not found"}), 404
+    w = rows[0]
+    return jsonify({"ok": True, "id": w["id"], "name": w["name"],
+                    "pin_set": bool(w.get("pin"))})
+
+@app.route("/api/contractor/pin", methods=["PATCH"])
+def update_contractor_pin():
+    """Worker changes their own PIN. First-time: old_pin may be blank if pin is null."""
+    import datetime as dt
+    data = request.get_json() or {}
+    name     = data.get("name","").strip()
+    old_pin  = str(data.get("old_pin","")).strip()
+    new_pin  = str(data.get("new_pin","")).strip()
+
+    if not name or not new_pin:
+        return jsonify({"ok": False, "error": "name and new_pin required"}), 400
+    if not new_pin.isdigit() or len(new_pin) != 4:
+        return jsonify({"ok": False, "error": "PIN must be 4 digits"}), 400
+
+    # Get current PIN
+    r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/{WORKERS_TABLE}"
+        f"?name=eq.{requests.utils.quote(name)}&select=id,pin&limit=1",
+        headers=sb_headers()
+    )
+    rows = r.json() if r.ok else []
+    if not rows:
+        return jsonify({"ok": False, "error": "worker not found"}), 404
+
+    current_pin = rows[0].get("pin") or ""
+    worker_id   = rows[0]["id"]
+
+    # Validate old PIN — skip if this is first-time setup (current_pin is null/empty)
+    if current_pin and old_pin != current_pin:
+        return jsonify({"ok": False, "error": "Current PIN is incorrect"}), 403
+
+    # Check new PIN is not already taken by someone else
+    dup = requests.get(
+        f"{SUPABASE_URL}/rest/v1/{WORKERS_TABLE}"
+        f"?pin=eq.{new_pin}&id=neq.{worker_id}&select=id&limit=1",
+        headers=sb_headers()
+    )
+    if dup.ok and dup.json():
+        return jsonify({"ok": False, "error": "That PIN is already in use. Choose another."}), 409
+
+    # Save new PIN
+    pr = requests.patch(
+        f"{SUPABASE_URL}/rest/v1/{WORKERS_TABLE}?id=eq.{worker_id}",
+        json={"pin": new_pin},
+        headers={**sb_headers(), "Prefer": "return=representation"}
+    )
+    return jsonify({"ok": pr.ok})
+
+@app.route("/api/contractor/name", methods=["PATCH"])
+def update_contractor_name():
+    """Worker updates their display name."""
+    data = request.get_json() or {}
+    old_name = data.get("old_name","").strip()
+    new_name = data.get("new_name","").strip()
+    if not old_name or not new_name:
+        return jsonify({"ok": False, "error": "old_name and new_name required"}), 400
+    r = requests.patch(
+        f"{SUPABASE_URL}/rest/v1/{WORKERS_TABLE}?name=eq.{requests.utils.quote(old_name)}",
+        json={"name": new_name},
+        headers={**sb_headers(), "Prefer": "return=representation"}
+    )
+    if r.ok:
+        return jsonify({"ok": True})
+    return jsonify({"ok": False, "error": r.text}), 400
+
+@app.route("/tablet")
+def tablet_page():
+    """Tablet check-in/out kiosk — shared device in common area."""
+    return render_template("tablet.html")
+
 @app.route("/api/config/<key>", methods=["GET"])
 def get_config(key):
     r = requests.get(
@@ -1951,3 +2252,401 @@ def get_sent_units():
         headers=sb_headers()
     )
     return jsonify(r.json() if r.ok else [])
+
+
+
+# -- Contractor: today check-in status
+@app.route("/api/contractor/status", methods=["GET"])
+def contractor_status():
+    name = request.args.get("name","").strip()
+    if not name: return jsonify({"ok":False}), 400
+    today = date.today().isoformat()
+    r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/{CHECKINS_TABLE}"
+        f"?worker_name=eq.{requests.utils.quote(name)}&date=eq.{today}"
+        f"&checked_out_at=is.null&select=id,checked_in_at&limit=1",
+        headers=sb_headers(), timeout=5
+    )
+    rows = r.json() if r.ok else []
+    if rows:
+        ci = rows[0].get("checked_in_at","")
+        return jsonify({"ok":True,"checked_in":True,"since":ci[11:16] if ci else ""})
+    # Fallback: check safety_meetings table (covers day safety meeting attended but checkins INSERT failed)
+    sm = requests.get(
+        f"{SUPABASE_URL}/rest/v1/{SM_TABLE}"
+        f"?worker_name=eq.{requests.utils.quote(name)}&date=eq.{today}"
+        f"&select=id,checked_in_at&limit=1",
+        headers=sb_headers(), timeout=5
+    )
+    sm_rows = sm.json() if sm.ok else []
+    if sm_rows:
+        ci = sm_rows[0].get("checked_in_at","")
+        return jsonify({"ok":True,"checked_in":True,"since":ci[11:16] if ci else ""})
+    return jsonify({"ok":True,"checked_in":False})
+
+# -- Notifications
+@app.route("/api/notifications", methods=["GET","POST"])
+def notifications():
+    if request.method == "POST":
+        data = request.get_json() or {}
+        r = requests.post(
+            f"{SUPABASE_URL}/rest/v1/notifications",
+            json={"title":data.get("title","").strip(),
+                  "body":data.get("body","").strip(),
+                  "target":data.get("target","all"),
+                  "created_by":data.get("created_by","")},
+            headers={**sb_headers(),"Prefer":"return=representation"}
+        )
+        return jsonify({"ok":r.ok})
+    name = request.args.get("name","").strip()
+    r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/notifications?order=created_at.desc&limit=20",
+        headers=sb_headers(), timeout=5
+    )
+    notifs = r.json() if r.ok else []
+    read_ids = set()
+    if name:
+        r2 = requests.get(
+            f"{SUPABASE_URL}/rest/v1/notification_reads"
+            f"?worker_name=eq.{requests.utils.quote(name)}&select=notification_id",
+            headers=sb_headers(), timeout=5
+        )
+        if r2.ok:
+            read_ids = {x["notification_id"] for x in r2.json()}
+    for n in notifs:
+        n["read"] = str(n["id"]) in read_ids
+    return jsonify({"ok":True,"notifications":notifs})
+
+@app.route("/api/notifications/<nid>/read", methods=["POST"])
+def mark_notification_read(nid):
+    name = (request.get_json() or {}).get("name","").strip()
+    if not name: return jsonify({"ok":False}),400
+    requests.post(
+        f"{SUPABASE_URL}/rest/v1/notification_reads",
+        json={"notification_id":nid,"worker_name":name},
+        headers={**sb_headers(),"Prefer":"return=minimal,resolution=ignore-duplicates"}
+    )
+    return jsonify({"ok":True})
+
+
+# ── Contractor: hours by week ─────────────────────────────────────────────────
+@app.route("/api/contractor/hours", methods=["GET"])
+def contractor_hours():
+    name       = request.args.get("name","").strip()
+    week_start = request.args.get("week_start","")  # YYYY-MM-DD (Monday)
+    if not name or not week_start:
+        return jsonify({"error":"name and week_start required"}),400
+    try:
+        from datetime import date, timedelta, datetime
+        ws = date.fromisoformat(week_start)
+        we = ws + timedelta(days=6)
+    except:
+        return jsonify({"error":"invalid week_start"}),400
+
+    r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/{CHECKINS_TABLE}"
+        f"?worker_name=eq.{requests.utils.quote(name)}"
+        f"&date=gte.{ws.isoformat()}&date=lte.{we.isoformat()}"
+        f"&select=date,checked_in_at,checked_out_at,auto_checkout"
+        f"&order=date.asc",
+        headers=sb_headers(), timeout=8
+    )
+    rows = r.json() if r.ok else []
+    days = []
+    total_mins = 0
+    for row in rows:
+        ci = row.get("checked_in_at")
+        co = row.get("checked_out_at")
+        hrs = None
+        if ci and co:
+            try:
+                from datetime import datetime
+                fmt = "%Y-%m-%dT%H:%M:%S"
+                ci_dt = datetime.fromisoformat(ci[:19])
+                co_dt = datetime.fromisoformat(co[:19])
+                mins = max(0, int((co_dt - ci_dt).total_seconds() / 60))
+                hrs = round(mins / 60, 2)
+                total_mins += mins
+            except:
+                pass
+        days.append({
+            "date": row["date"],
+            "checked_in":  ci[11:16] if ci else None,
+            "checked_out": co[11:16] if co else None,
+            "hours": hrs,
+            "auto_checkout": row.get("auto_checkout", False)
+        })
+    return jsonify({
+        "ok": True,
+        "week_start": ws.isoformat(),
+        "week_end":   we.isoformat(),
+        "total_hours": round(total_mins / 60, 2),
+        "days": days
+    })
+
+# ── Contractor: change own password ──────────────────────────────────────────
+@app.route("/api/contractor/password", methods=["PATCH"])
+def contractor_change_password():
+    data = request.get_json() or {}
+    name     = data.get("name","").strip()
+    curr_pw  = data.get("current_password","").strip()
+    new_pw   = data.get("new_password","").strip()
+    if not all([name, curr_pw, new_pw]):
+        return jsonify({"error":"All fields required"}),400
+    if len(new_pw) < 4:
+        return jsonify({"error":"Password must be at least 4 characters"}),400
+    # Verify current password
+    r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/app_users?name=eq.{requests.utils.quote(name)}&select=password&limit=1",
+        headers=sb_headers(), timeout=5
+    )
+    users = r.json() if r.ok else []
+    if not users:
+        return jsonify({"error":"User not found"}),404
+    if users[0].get("password","") != curr_pw:
+        return jsonify({"error":"Current password incorrect"}),403
+    # Update password
+    r2 = requests.patch(
+        f"{SUPABASE_URL}/rest/v1/app_users?name=eq.{requests.utils.quote(name)}",
+        json={"password": new_pw},
+        headers={**sb_headers(), "Prefer":"return=representation"}
+    )
+    return jsonify({"ok": r2.ok})
+
+# ── Contractor: reset own PIN ─────────────────────────────────────────────────
+@app.route("/api/contractor/reset-pin", methods=["POST"])
+def contractor_reset_own_pin():
+    data = request.get_json() or {}
+    name = data.get("name","").strip()
+    if not name:
+        return jsonify({"error":"name required"}),400
+    # Find worker id by name
+    r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/workers?name=eq.{requests.utils.quote(name)}&select=id&limit=1",
+        headers=sb_headers(), timeout=5
+    )
+    workers = r.json() if r.ok else []
+    if not workers:
+        return jsonify({"error":"Worker not found"}),404
+    wid = workers[0]["id"]
+    r2 = requests.patch(
+        f"{SUPABASE_URL}/rest/v1/workers?id=eq.{wid}",
+        json={"pin": None},
+        headers={**sb_headers(), "Prefer":"return=representation"}
+    )
+    return jsonify({"ok": r2.ok})
+
+# ── Reset worker PIN (Admin) ──────────────────────────────────────────────────
+@app.route("/api/workers/<worker_id>/reset-pin", methods=["POST"])
+def reset_worker_pin(worker_id):
+    r = requests.patch(
+        f"{SUPABASE_URL}/rest/v1/workers?id=eq.{worker_id}",
+        json={"pin": None},
+        headers={**sb_headers(), "Prefer": "return=representation"}
+    )
+    return jsonify({"ok": r.ok})
+
+# ── Session version (for force-logout) ───────────────────────────────────────
+@app.route("/api/session-version", methods=["GET"])
+def get_session_version():
+    r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/app_settings?key=eq.session_version&select=value&limit=1",
+        headers=sb_headers(), timeout=5
+    )
+    data = r.json() if r.ok else []
+    version = data[0]["value"] if data else "1"
+    return jsonify({"version": version})
+
+# ── Force logout all sessions (Admin) ────────────────────────────────────────
+@app.route("/api/admin/force-logout", methods=["POST"])
+def force_logout_all():
+    import time
+    new_ver = str(int(time.time()))
+    requests.patch(
+        f"{SUPABASE_URL}/rest/v1/app_settings?key=eq.session_version",
+        json={"value": new_ver},
+        headers={**sb_headers(), "Prefer": "return=representation"}
+    )
+    return jsonify({"ok": True, "version": new_ver})
+
+# ── Worker location: update current unit ─────────────────────────────────────
+@app.route("/api/worker/location", methods=["POST"])
+def update_worker_location():
+    data = request.get_json() or {}
+    name = data.get("name","").strip()
+    unit = data.get("unit","").strip().upper()
+    if not name or not unit:
+        return jsonify({"error":"name and unit required"}),400
+    from datetime import datetime, timezone
+    now_iso = datetime.now(timezone.utc).isoformat()
+    # Upsert current location
+    r = requests.post(
+        f"{SUPABASE_URL}/rest/v1/worker_locations?on_conflict=worker_name",
+        json={"worker_name": name, "unit": unit, "updated_at": now_iso},
+        headers={**sb_headers(), "Prefer": "resolution=merge-duplicates,return=representation"},
+        timeout=5
+    )
+    if not r.ok:
+        return jsonify({"ok": False, "error": r.text}), 200
+    # Log to history
+    requests.post(
+        f"{SUPABASE_URL}/rest/v1/worker_location_history",
+        json={"worker_name": name, "unit": unit, "recorded_at": now_iso},
+        headers={**sb_headers(), "Prefer": "return=minimal"},
+        timeout=5
+    )
+    return jsonify({"ok": True, "unit": unit})
+
+# ── Worker locations: get all current (Boss/Admin) ───────────────────────────
+@app.route("/api/worker/locations", methods=["GET"])
+def get_worker_locations():
+    r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/worker_locations?select=worker_name,unit,updated_at&order=unit.asc",
+        headers=sb_headers(), timeout=5
+    )
+    return jsonify(r.json() if r.ok else [])
+
+# ── Location page (QR scan target) ───────────────────────────────────────────
+@app.route("/location")
+def location_page():
+    unit = request.args.get("unit","").upper()
+    return render_template("location.html", unit=unit)
+
+# ── Section B live map ────────────────────────────────────────────────────────
+@app.route("/sectionb")
+def section_b_map():
+    return render_template("sectionb.html")
+
+# ── Location history PDF report ───────────────────────────────────────────────
+@app.route("/api/reports/location-history")
+def location_history_pdf():
+    from datetime import datetime, timezone, date as dt_date
+    from reportlab.lib.pagesizes import letter
+    from reportlab.pdfgen import canvas as rl_canvas
+    from reportlab.lib.colors import HexColor, white, black
+    from reportlab.lib.units import inch
+    import io as _io
+
+    target_date = request.args.get("date", dt_date.today().isoformat())
+
+    # Fetch history for the date
+    r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/worker_location_history"
+        f"?recorded_at=gte.{target_date}T00:00:00Z"
+        f"&recorded_at=lt.{target_date}T23:59:59Z"
+        f"&select=worker_name,unit,recorded_at&order=recorded_at.asc",
+        headers=sb_headers(), timeout=10
+    )
+    rows = r.json() if r.ok else []
+
+    # Build PDF
+    buf = _io.BytesIO()
+    PAGE_W, PAGE_H = letter
+    NAVY  = HexColor("#0c1f3a")
+    TEAL  = HexColor("#1abc9c")
+    LGRAY = HexColor("#94a3b8")
+    DGRAY = HexColor("#334155")
+
+    c = rl_canvas.Canvas(buf, pagesize=letter)
+    MARGIN = 0.65 * inch
+
+    def new_page():
+        c.showPage()
+        return PAGE_H - MARGIN
+
+    # Header
+    c.setFillColor(NAVY)
+    c.rect(0, PAGE_H - 60, PAGE_W, 60, fill=1, stroke=0)
+    c.setFillColor(TEAL)
+    c.rect(0, PAGE_H - 64, PAGE_W, 4, fill=1, stroke=0)
+    c.setFillColor(white)
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(MARGIN, PAGE_H - 38, "MBR Texas — Location Movement Report")
+    c.setFont("Helvetica", 10)
+    c.drawRightString(PAGE_W - MARGIN, PAGE_H - 38, f"Date: {target_date}")
+    c.setFillColor(LGRAY)
+    c.setFont("Helvetica", 9)
+    c.drawString(MARGIN, PAGE_H - 54, f"TDG Data Center Project · Katy, TX  ·  Total movements: {len(rows)}")
+
+    y = PAGE_H - 80
+
+    # Summary by worker
+    summary = {}
+    for row in rows:
+        wn = row.get("worker_name","")
+        if wn not in summary:
+            summary[wn] = []
+        summary[wn].append(row)
+
+    # Column headers
+    def draw_col_headers(y_pos):
+        c.setFillColor(DGRAY)
+        c.rect(MARGIN, y_pos - 18, PAGE_W - 2*MARGIN, 18, fill=1, stroke=0)
+        c.setFillColor(white)
+        c.setFont("Helvetica-Bold", 9)
+        c.drawString(MARGIN + 6,  y_pos - 12, "WORKER")
+        c.drawString(MARGIN + 200, y_pos - 12, "UNIT")
+        c.drawString(MARGIN + 310, y_pos - 12, "TIME (CT)")
+        return y_pos - 22
+
+    y = draw_col_headers(y)
+
+    alt = False
+    for row in rows:
+        if y < MARGIN + 40:
+            y = new_page()
+            y -= 10
+            y = draw_col_headers(y)
+
+        ts = row.get("recorded_at","")
+        # Convert UTC to CT (UTC-5 or -6; use -5 for CDT)
+        try:
+            from datetime import datetime as _dt
+            dt_utc = _dt.fromisoformat(ts.replace("Z","+00:00"))
+            dt_ct  = dt_utc.replace(tzinfo=None)
+            # rough CT offset
+            time_str = dt_ct.strftime("%I:%M:%S %p")
+        except:
+            time_str = ts[11:19] if len(ts) > 18 else ts
+
+        if alt:
+            c.setFillColor(HexColor("#f8fafc"))
+            c.rect(MARGIN, y - 14, PAGE_W - 2*MARGIN, 18, fill=1, stroke=0)
+        alt = not alt
+
+        c.setFillColor(DGRAY)
+        c.setFont("Helvetica", 9)
+        c.drawString(MARGIN + 6,   y - 8, row.get("worker_name",""))
+        c.setFont("Helvetica-Bold", 9)
+        c.setFillColor(HexColor("#0c1f3a"))
+        c.drawString(MARGIN + 200, y - 8, row.get("unit",""))
+        c.setFont("Helvetica", 9)
+        c.setFillColor(DGRAY)
+        c.drawString(MARGIN + 310, y - 8, time_str)
+        y -= 18
+
+    # Footer
+    c.setFillColor(LGRAY)
+    c.setFont("Helvetica", 8)
+    c.drawCentredString(PAGE_W/2, MARGIN/2,
+        f"Generated {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M')} UTC  ·  MBR Texas / TDG Data Center")
+
+    c.save()
+    buf.seek(0)
+    from flask import send_file
+    return send_file(
+        buf,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=f"Location_Report_{target_date}.pdf"
+    )
+
+# ── Reset worker locations (Admin/Boss, or scheduled) ────────────────────────
+@app.route("/api/admin/reset-locations", methods=["POST"])
+def reset_locations():
+    r = requests.delete(
+        f"{SUPABASE_URL}/rest/v1/worker_locations?worker_name=neq.PLACEHOLDER",
+        headers={**sb_headers(), "Prefer": "return=minimal"},
+        timeout=10
+    )
+    return jsonify({"ok": r.ok})

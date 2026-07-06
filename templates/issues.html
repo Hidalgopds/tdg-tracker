@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Issues -- Unit {{ unit }}</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0f1923; color: #e8edf2; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; min-height: 100vh; }
+a { color: inherit; text-decoration: none; }
+
+/* Header */
+.top-bar {
+  background: #162030; border-bottom: 2px solid #1e2d3d;
+  padding: 10px 16px; display: flex; align-items: center; gap: 12px;
+  position: sticky; top: 0; z-index: 100;
+}
+.back-btn {
+  height: 34px; padding: 0 14px; background: #1e2d3d; border: 1px solid #2a3d52;
+  border-radius: 7px; color: #8fa3b5; font-size: 12px; font-weight: 700;
+  cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 6px;
+}
+.back-btn:hover { background: #243548; color: #e8edf2; }
+.top-bar h1 { font-size: 15px; font-weight: 700; flex: 1; }
+.top-bar h1 span { color: #ef4444; }
+.unit-badge {
+  background: #1a3a5c; border: 1px solid #1a6bc4; border-radius: 7px;
+  padding: 4px 12px; font-size: 13px; font-weight: 800; color: #4da3ff;
+}
+
+/* Layout */
+main { max-width: 860px; margin: 0 auto; padding: 20px 16px; display: flex; flex-direction: column; gap: 20px; }
+
+/* New Issue Form */
+.form-card {
+  background: #162030; border: 1px solid #1e2d3d; border-radius: 12px; overflow: hidden;
+}
+.form-card-header {
+  background: #1a2a3a; padding: 12px 18px; display: flex; align-items: center;
+  justify-content: space-between; cursor: pointer; user-select: none;
+}
+.form-card-header h2 { font-size: 13px; font-weight: 700; color: #e8edf2; }
+.form-card-header .toggle { font-size: 18px; color: #4a6380; transition: transform .2s; }
+.form-card-header.open .toggle { transform: rotate(180deg); }
+.form-body { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.form-body.hidden { display: none; }
+
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: 10px; font-weight: 700; color: #4a6380; text-transform: uppercase; letter-spacing: .6px; }
+input.fi, textarea.fi, select.fi {
+  background: #0f1923; border: 1px solid #2a3d52; border-radius: 7px;
+  color: #e8edf2; font-size: 13px; padding: 8px 10px; outline: none;
+  font-family: inherit;
+}
+input.fi:focus, textarea.fi:focus, select.fi:focus { border-color: #1a6bc4; }
+textarea.fi { resize: vertical; min-height: 80px; }
+
+/* Status / Category selectors */
+.chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 700;
+  border: 1px solid #2a3d52; background: #0f1923; color: #6b7f94; cursor: pointer;
+  transition: all .15s;
+}
+.chip:hover { border-color: #4a6380; color: #e8edf2; }
+.chip.sel-open     { background: #1a3a1a; border-color: #22c55e; color: #22c55e; }
+.chip.sel-onhold   { background: #2a2010; border-color: #f59e0b; color: #f59e0b; }
+.chip.sel-delayed  { background: #2a1010; border-color: #ef4444; color: #ef4444; }
+.chip.sel-resolved { background: #0d2035; border-color: #1a6bc4; color: #4da3ff; }
+.chip.sel-cat      { background: #1a2a3a; border-color: #3a6a8a; color: #7ab8d8; }
+
+/* Photo upload */
+.photo-zone {
+  border: 2px dashed #2a3d52; border-radius: 8px; padding: 16px;
+  text-align: center; cursor: pointer; transition: border-color .15s;
+}
+.photo-zone:hover { border-color: #1a6bc4; }
+.photo-zone p { font-size: 12px; color: #4a6380; }
+.photo-zone p strong { color: #4da3ff; }
+#photoInput { display: none; }
+.photo-previews { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.photo-thumb {
+  width: 72px; height: 72px; border-radius: 6px; object-fit: cover;
+  border: 1px solid #2a3d52; position: relative;
+}
+.photo-thumb-wrap { position: relative; display: inline-block; }
+.photo-thumb-wrap .rm {
+  position: absolute; top: -6px; right: -6px; width: 18px; height: 18px;
+  background: #ef4444; border-radius: 50%; border: none; color: white;
+  font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  line-height: 1; font-weight: 700;
+}
+
+/* Buttons */
+.btn-row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+.btn-save {
+  height: 36px; padding: 0 20px; background: #22c55e; border: none; border-radius: 8px;
+  color: #0a1a0a; font-size: 13px; font-weight: 800; cursor: pointer;
+}
+.btn-save:hover { background: #16a34a; color: white; }
+.btn-save:disabled { background: #1e2d3d; color: #4a6380; cursor: not-allowed; }
+.btn-cancel {
+  height: 36px; padding: 0 16px; background: transparent; border: 1px solid #2a3d52;
+  border-radius: 8px; color: #6b7f94; font-size: 13px; cursor: pointer;
+}
+.btn-cancel:hover { border-color: #4a6380; color: #e8edf2; }
+
+/* Progress overlay */
+.upload-progress { font-size: 12px; color: #4da3ff; text-align: center; padding: 4px 0; display: none; }
+
+/* Issues list */
+.issues-header { display: flex; align-items: center; justify-content: space-between; }
+.issues-header h2 { font-size: 13px; font-weight: 700; color: #6b7f94; text-transform: uppercase; letter-spacing: .6px; }
+.issues-count { background: #1a2a3a; border-radius: 20px; padding: 2px 10px; font-size: 11px; color: #4da3ff; font-weight: 700; }
+
+.issue-card {
+  background: #162030; border: 1px solid #1e2d3d; border-radius: 10px;
+  overflow: hidden; transition: border-color .15s;
+}
+.issue-card:hover { border-color: #2a3d52; }
+.issue-card-top {
+  padding: 14px 16px; cursor: pointer; display: flex; align-items: flex-start; gap: 10px;
+}
+.issue-card-top .info { flex: 1; }
+.issue-card-top .title { font-size: 14px; font-weight: 700; color: #e8edf2; margin-bottom: 4px; }
+.issue-card-top .meta { font-size: 11px; color: #4a6380; display: flex; gap: 10px; flex-wrap: wrap; }
+.issue-card-body { padding: 0 16px 14px; border-top: 1px solid #1e2d3d; display: none; }
+.issue-card-body.open { display: block; }
+.issue-card-body .desc { font-size: 13px; color: #8fa3b5; margin: 12px 0; line-height: 1.6; white-space: pre-wrap; }
+.issue-card-body .res-label { font-size: 10px; font-weight: 700; color: #4a6380; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+.issue-card-body .res-text { font-size: 13px; color: #22c55e; }
+.issue-photos { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.issue-photos img { width: 90px; height: 90px; object-fit: cover; border-radius: 6px; border: 1px solid #2a3d52; cursor: pointer; }
+
+/* Status badge */
+.status-badge {
+  display: inline-block; padding: 3px 10px; border-radius: 20px;
+  font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; white-space: nowrap;
+}
+.s-open     { background: rgba(34,197,94,.15);  color: #22c55e; }
+.s-onhold   { background: rgba(245,158,11,.15); color: #f59e0b; }
+.s-delayed  { background: rgba(239,68,68,.15);  color: #ef4444; }
+.s-resolved { background: rgba(26,107,196,.15); color: #4da3ff; }
+
+.empty-msg { text-align: center; padding: 40px; color: #4a6380; font-size: 13px; }
+
+/* Toast */
+.toast {
+  display: none; position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: #22c55e; color: #0a1a0a; padding: 10px 22px; border-radius: 100px;
+  font-size: 13px; font-weight: 700; z-index: 999; white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(0,0,0,.5);
+}
+.toast.error { background: #ef4444; color: white; }
+
+/* Lightbox */
+.lightbox {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,.9);
+  z-index: 9999; align-items: center; justify-content: center;
+}
+.lightbox.open { display: flex; }
+.lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 8px; }
+.lightbox-close {
+  position: absolute; top: 16px; right: 20px; background: none; border: none;
+  color: white; font-size: 28px; cursor: pointer;
+}
+</style>
+
+<style id="gnav-style">
+.gnav{position:fixed;bottom:0;left:0;right:0;height:54px;background:#060c18;border-top:1px solid #1a2535;display:flex;justify-content:space-around;align-items:center;z-index:9999;box-shadow:0 -4px 24px rgba(0,0,0,.5);}
+.gnav a{display:flex;flex-direction:column;align-items:center;gap:1px;text-decoration:none;color:#475569;padding:0 8px;font-size:10px;font-weight:500;transition:.15s;min-width:44px;}
+.gnav a:hover,.gnav a.gna{color:#a855f7;}
+.gnav a .gi{font-size:19px;line-height:1.2;}
+body{padding-bottom:60px !important;}
+</style>
+<!-- LIGHT-THEME -->
+
+<style id="light-theme">
+/* ============================================
+   MBR TEXAS — LIGHT CORPORATE THEME
+   High-contrast for outdoor / sunlight use
+   ============================================ */
+:root{
+  --bg:#f0f4f8;--card:#ffffff;--border:#cbd5e1;
+  --text:#0f172a;--muted:#475569;
+  --accent:#1a6bc4;--green:#15803d;
+  --red:#b91c1c;--yellow:#92400e;--purple:#6d28d9;
+}
+html,body{background:#f0f4f8 !important;color:#0f172a !important;}
+
+/* ── Headers: stay dark blue (brand + readable with sunglasses) ── */
+.header,.topbar,header,#app-header{
+  background:#1e3a5f !important;color:#e2e8f0 !important;
+  border-bottom-color:#0f2d52 !important;
+}
+.hlogo{color:#60a5fa !important;}
+.back-btn,.topbar a,.header a{color:#93c5fd !important;}
+
+/* ── Gate / auth area ── */
+.gate{background:#f0f4f8 !important;}
+.gate-card{background:#ffffff !important;border-color:#e2e8f0 !important;
+  box-shadow:0 4px 24px rgba(0,0,0,.08) !important;}
+.gate-card h2{color:#0f172a !important;}
+.gate-card p{color:#475569 !important;}
+
+/* ── Name / user buttons ── */
+.name-btn,.user-btn{
+  background:#f1f5f9 !important;border-color:#e2e8f0 !important;color:#0f172a !important;
+}
+.name-btn:hover,.name-btn:active,.user-btn.active,.user-btn:hover{
+  background:#1a6bc4 !important;color:#ffffff !important;border-color:#1a6bc4 !important;
+}
+
+/* ── PIN pad ── */
+.pin-dot,.dot{background:#e2e8f0 !important;border-color:#cbd5e1 !important;}
+.pin-dot.on,.dot.filled{background:#1a6bc4 !important;border-color:#1a6bc4 !important;}
+.pk,.numpad button{
+  background:#f1f5f9 !important;border-color:#e2e8f0 !important;color:#0f172a !important;
+}
+.pk:active,.numpad button:hover{background:#dbeafe !important;}
+.pin-err,.pinErr,#pinErr{color:#b91c1c !important;}
+
+/* ── Tabs ── */
+.tabs{border-bottom-color:#e2e8f0 !important;}
+.tab-btn{color:#475569 !important;}
+.tab-btn:hover{color:#0f172a !important;}
+.tab-btn.active{color:#1a6bc4 !important;border-bottom-color:#1a6bc4 !important;}
+.tab-btn.active,.tab-btn:hover{background:none !important;}
+
+/* ── Inputs / selects / textareas ── */
+input,select,textarea,.sm-search{
+  background:#ffffff !important;border-color:#cbd5e1 !important;
+  color:#0f172a !important;
+}
+input:focus,select:focus,textarea:focus,.sm-search:focus{
+  border-color:#1a6bc4 !important;outline:none;
+}
+input::placeholder,.sm-search::placeholder{color:#94a3b8 !important;}
+
+/* ── Buttons ── */
+.btn-ghost,.tool-btn,.eb,.btn-s{
+  background:#f1f5f9 !important;border-color:#e2e8f0 !important;color:#1e293b !important;
+}
+.btn-ghost:hover,.tool-btn:hover{background:#e2e8f0 !important;}
+.tool-btn.active{background:#dbeafe !important;border-color:#1a6bc4 !important;color:#1a6bc4 !important;}
+.eb-edit{border-color:#3b82f6 !important;color:#1d4ed8 !important;}
+.eb-edit:hover{background:#dbeafe !important;}
+.eb-del{border-color:#ef4444 !important;color:#b91c1c !important;}
+.eb-del:hover{background:#fee2e2 !important;}
+
+/* ── Cards / panels ── */
+.section-card,.card,.modal,.gate-card,
+[class*="-card"]:not(.worker-card):not(.name-btn):not(.user-btn){
+  background:#ffffff !important;border-color:#e2e8f0 !important;
+}
+.content{background:#f0f4f8 !important;}
+
+/* ── Worker attendance cards ── */
+.worker-card{background:#ffffff !important;border-color:#e2e8f0 !important;}
+.worker-card.present{background:#dcfce7 !important;border-color:#16a34a !important;}
+.wc-name{color:#475569 !important;}
+.worker-card.present .wc-name{color:#0f172a !important;}
+.wc-time{color:#94a3b8 !important;}
+.worker-card.present .wc-time{color:#15803d !important;}
+.worker-card.edit-card{background:#f8fafc !important;border-color:#bfdbfe !important;}
+
+/* ── Phase banners ── */
+.phase-banner.meeting{background:#ede9fe !important;border-color:#c4b5fd !important;color:#6d28d9 !important;}
+.phase-banner.signin{background:#dcfce7 !important;border-color:#86efac !important;color:#15803d !important;}
+.phase-banner.saved{background:#dbeafe !important;border-color:#93c5fd !important;color:#1d4ed8 !important;}
+
+/* ── User pill ── */
+.user-pill{background:#ede9fe !important;border-color:#a78bfa !important;color:#6d28d9 !important;}
+
+/* ── Info bars ── */
+.info-bar{background:#dbeafe !important;border-color:#93c5fd !important;color:#1e40af !important;}
+.info-bar strong{color:#1d4ed8 !important;}
+
+/* ── Tables ── */
+table{background:transparent !important;}
+th{background:#f8fafc !important;color:#475569 !important;border-bottom-color:#e2e8f0 !important;}
+td{border-bottom-color:#f1f5f9 !important;color:#0f172a;}
+tr:hover td{background:#f8fafc !important;}
+
+/* ── Summary / stat cards ── */
+.summary-card,.summary-row .summary-card{
+  background:#ffffff !important;border-color:#e2e8f0 !important;
+  box-shadow:0 1px 4px rgba(0,0,0,.06) !important;
+}
+.summary-card .val{color:#1a6bc4 !important;}
+.summary-card .lbl{color:#475569 !important;}
+
+/* ── Badges ── */
+.badge-admin{background:#ede9fe !important;color:#5b21b6 !important;}
+.badge-lead,.badge-editor{background:#dbeafe !important;color:#1e40af !important;}
+.badge-worker,.badge-active{background:#dcfce7 !important;color:#15803d !important;}
+.badge-inactive{background:#f1f5f9 !important;color:#64748b !important;}
+
+/* ── Role access matrix ── */
+.role-matrix th{background:#f8fafc !important;border-bottom-color:#e2e8f0 !important;}
+.role-matrix th.admin-h{color:#5b21b6 !important;}
+.role-matrix th.lead-h{color:#1e40af !important;}
+.role-matrix th.worker-h{color:#15803d !important;}
+.role-matrix tr.sub-row{background:#fafafa !important;}
+.toggle-cell.on{background:#dcfce7 !important;color:#15803d !important;}
+.toggle-cell.off{background:#f1f5f9 !important;color:#94a3b8 !important;}
+
+/* ── Modal overlay ── */
+.modal-overlay.open{background:rgba(15,23,42,0.55) !important;}
+.modal{background:#ffffff !important;box-shadow:0 20px 60px rgba(0,0,0,.18) !important;}
+
+/* ── Global nav stays dark ── */
+.gnav{background:#1e3a5f !important;border-top-color:#0f2d52 !important;}
+.gnav a{color:#94a3b8 !important;}
+.gnav a:hover,.gnav a.gna{color:#60a5fa !important;}
+
+/* ── Toast ── */
+#toast{background:#1e293b !important;color:#e2e8f0 !important;}
+#toast.err{border-color:#b91c1c !important;color:#fca5a5 !important;}
+
+/* ── Scrollbars ── */
+::-webkit-scrollbar{width:6px;height:6px;background:#f1f5f9;}
+::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px;}
+
+/* ── Log out / utility bars ── */
+.log-out-bar,.logout-area{background:#1e3a5f !important;}
+
+/* ── SM section ── */
+.sm-item{background:#ffffff !important;border-color:#e2e8f0 !important;}
+.sm-date,.sm-counter span{color:#475569 !important;}
+
+/* ── Landing page cards ── */
+.card{background:#ffffff !important;border-color:#e2e8f0 !important;}
+.card:hover{border-color:#1a6bc4 !important;box-shadow:0 8px 32px rgba(26,107,196,.12) !important;}
+.card-body p{color:#475569 !important;}
+footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
+
+/* ── Dashboard ── */
+.unit-progress-card,.kpi-card,.chart-card{background:#ffffff !important;border-color:#e2e8f0 !important;}
+
+/* ── Week picker ── */
+.week-picker input{background:#ffffff !important;color:#0f172a !important;border-color:#cbd5e1 !important;}
+
+/* ── Roles grid (old) ── */
+.roles-grid{border-color:#e2e8f0 !important;}
+.rg-header{background:#f8fafc !important;color:#475569 !important;}
+.rg-cell{border-top-color:#f1f5f9 !important;}
+</style>
+
+</head>
+<body>
+<script>
+(function(){
+  var role = localStorage.getItem('mbrRole') || '';
+  var name = localStorage.getItem('mbrAuth') || '';
+  var lvl  = {admin:5,boss:4,inventory:3,lead:2,worker:1}[role] || 0;
+  if(!name || lvl < 2) { location.href='/home'; }
+})();
+</script>
+
+
+<div class="top-bar">
+  <button class="back-btn" onclick="goBack()">&#8592; Back to Log</button>
+  <h1>Issues &mdash; <span>Unit</span></h1>
+  <div class="unit-badge" id="unitBadge">{{ unit }}</div>
+</div>
+
+<main>
+  <!-- New Issue Form -->
+  <div class="form-card">
+    <div class="form-card-header open" id="formHeader" onclick="toggleForm()">
+      <h2>+ New Issue</h2>
+      <span class="toggle">&#8963;</span>
+    </div>
+    <div class="form-body" id="formBody">
+      <div style="display:grid;grid-template-columns:1fr 160px;gap:12px">
+        <div class="field">
+          <label>Title *</label>
+          <input type="text" class="fi" id="fTitle" placeholder="Short description of the issue">
+        </div>
+        <div class="field">
+          <label>Date</label>
+          <input type="date" class="fi" id="fDate">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Status</label>
+        <div class="chip-row" id="statusChips">
+          <div class="chip sel-open"    data-val="Open"     onclick="selectChip('status',this)">Open</div>
+          <div class="chip"             data-val="On Hold"  onclick="selectChip('status',this)">On Hold</div>
+          <div class="chip"             data-val="Delayed"  onclick="selectChip('status',this)">Delayed</div>
+          <div class="chip"             data-val="Resolved" onclick="selectChip('status',this)">Resolved</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Category</label>
+        <div class="chip-row" id="catChips">
+          <div class="chip sel-cat" data-val="QC"        onclick="selectChip('cat',this)">QC</div>
+          <div class="chip"         data-val="Safety"    onclick="selectChip('cat',this)">Safety</div>
+          <div class="chip"         data-val="Delay"     onclick="selectChip('cat',this)">Delay</div>
+          <div class="chip"         data-val="Materials" onclick="selectChip('cat',this)">Materials</div>
+          <div class="chip"         data-val="Personnel" onclick="selectChip('cat',this)">Personnel</div>
+          <div class="chip"         data-val="Other"     onclick="selectChip('cat',this)">Other</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Description</label>
+        <textarea class="fi" id="fDesc" placeholder="What happened? What is the impact?"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Resolution Notes (optional)</label>
+        <textarea class="fi" id="fResolution" placeholder="How was it resolved? What actions were taken?" style="min-height:60px"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Photos</label>
+        <div class="photo-zone" onclick="document.getElementById('photoInput').click()">
+          <p><strong>Click to add photos</strong></p>
+          <p>JPG, PNG, HEIC supported</p>
+        </div>
+        <input type="file" id="photoInput" accept="image/*" multiple onchange="handlePhotoSelect(this)">
+        <div class="photo-previews" id="photoPreviews"></div>
+      </div>
+
+      <div class="upload-progress" id="uploadProgress">Uploading photos...</div>
+
+      <div class="btn-row">
+        <button class="btn-cancel" onclick="resetForm()">Clear</button>
+        <button class="btn-save" id="saveBtn" onclick="submitIssue()">Save Issue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Issues List -->
+  <div>
+    <div class="issues-header">
+      <h2>Issue History</h2>
+      <span class="issues-count" id="issueCount">0 issues</span>
+    </div>
+    <div id="issuesList" style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
+      <div class="empty-msg">Loading...</div>
+    </div>
+  </div>
+</main>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">&#10005;</button>
+  <img id="lightboxImg" src="" alt="Issue photo">
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var UNIT = "{{ unit }}";
+var selectedStatus = "Open";
+var selectedCat = "QC";
+var pendingFiles = [];
+
+// Set today's date
+document.getElementById('fDate').value = new Date().toISOString().slice(0,10);
+
+function goBack() {
+  window.location.href = '/log?unit=' + encodeURIComponent(UNIT);
+}
+
+function toggleForm() {
+  var header = document.getElementById('formHeader');
+  var body = document.getElementById('formBody');
+  header.classList.toggle('open');
+  body.classList.toggle('hidden');
+}
+
+function selectChip(type, el) {
+  var groupId = type === 'status' ? 'statusChips' : 'catChips';
+  var group = document.getElementById(groupId);
+  group.querySelectorAll('.chip').forEach(function(c) {
+    c.className = 'chip';
+  });
+  if (type === 'status') {
+    var cls = {Open:'sel-open','On Hold':'sel-onhold',Delayed:'sel-delayed',Resolved:'sel-resolved'}[el.dataset.val] || '';
+    el.className = 'chip ' + cls;
+    selectedStatus = el.dataset.val;
+  } else {
+    el.className = 'chip sel-cat';
+    selectedCat = el.dataset.val;
+  }
+}
+
+function handlePhotoSelect(input) {
+  Array.from(input.files).forEach(function(file) {
+    pendingFiles.push(file);
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var wrap = document.createElement('div');
+      wrap.className = 'photo-thumb-wrap';
+      var idx = pendingFiles.length - 1;
+      wrap.innerHTML = '<img class="photo-thumb" src="' + e.target.result + '">' +
+        '<button class="rm" onclick="removePhoto(' + idx + ',this.parentNode)">x</button>';
+      document.getElementById('photoPreviews').appendChild(wrap);
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
+}
+
+function removePhoto(idx, wrap) {
+  pendingFiles[idx] = null;
+  wrap.remove();
+}
+
+async function uploadPhotos() {
+  var urls = [];
+  var files = pendingFiles.filter(function(f) { return f !== null; });
+  for (var i = 0; i < files.length; i++) {
+    var fd = new FormData();
+    fd.append('photo', files[i]);
+    var r = await fetch('/api/issues/upload-photo', { method: 'POST', body: fd });
+    var d = await r.json();
+    if (d.ok) urls.push(d.url);
+  }
+  return urls;
+}
+
+async function submitIssue() {
+  var title = document.getElementById('fTitle').value.trim();
+  if (!title) { showToast('Title is required', true); return; }
+
+  var btn = document.getElementById('saveBtn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+
+  var photoUrls = [];
+  var filesCount = pendingFiles.filter(function(f){return f!==null;}).length;
+  if (filesCount > 0) {
+    document.getElementById('uploadProgress').style.display = 'block';
+    btn.textContent = 'Uploading photos...';
+    photoUrls = await uploadPhotos();
+    document.getElementById('uploadProgress').style.display = 'none';
+  }
+
+  var payload = {
+    unit: UNIT,
+    date: document.getElementById('fDate').value,
+    title: title,
+    status: selectedStatus,
+    category: selectedCat,
+    description: document.getElementById('fDesc').value.trim(),
+    resolution: document.getElementById('fResolution').value.trim(),
+    photos: photoUrls,
+    created_by: localStorage.getItem('mbrAuth') || ''
+  };
+
+  try {
+    var r = await fetch('/api/issues', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    var d = await r.json();
+    if (d.ok) {
+      showToast('Issue saved!');
+      resetForm();
+      loadIssues();
+      setTimeout(function(){ goBack(); }, 1500);
+    } else {
+      showToast('Error: ' + d.error, true);
+    }
+  } catch(e) {
+    showToast('Network error', true);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Save Issue';
+  }
+}
+
+function resetForm() {
+  document.getElementById('fTitle').value = '';
+  document.getElementById('fDate').value = new Date().toISOString().slice(0,10);
+  document.getElementById('fDesc').value = '';
+  document.getElementById('fResolution').value = '';
+  document.getElementById('photoPreviews').innerHTML = '';
+  pendingFiles = [];
+  // reset chips
+  document.querySelectorAll('#statusChips .chip').forEach(function(c){ c.className='chip'; });
+  document.querySelector('#statusChips [data-val="Open"]').className = 'chip sel-open';
+  document.querySelectorAll('#catChips .chip').forEach(function(c){ c.className='chip'; });
+  document.querySelector('#catChips [data-val="QC"]').className = 'chip sel-cat';
+  selectedStatus = 'Open'; selectedCat = 'QC';
+}
+
+function statusClass(s) {
+  if (!s) return '';
+  return {Open:'s-open','On Hold':'s-onhold',Delayed:'s-delayed',Resolved:'s-resolved'}[s] || '';
+}
+
+function loadIssues() {
+  fetch('/api/issues/' + UNIT)
+    .then(function(r){ return r.json(); })
+    .then(function(list) {
+      var container = document.getElementById('issuesList');
+      document.getElementById('issueCount').textContent = list.length + ' issue' + (list.length !== 1 ? 's' : '');
+      if (!list.length) {
+        container.innerHTML = '<div class="empty-msg">No issues logged for this unit yet.</div>';
+        return;
+      }
+      container.innerHTML = list.map(function(issue, i) {
+        var sc = statusClass(issue.status);
+        var photos = (issue.photos || []).map(function(url) {
+          return '<img src="' + url + '" onclick="openLightbox(\'' + url + '\')" alt="photo">';
+        }).join('');
+        var photosHtml = photos ? '<div class="issue-photos">' + photos + '</div>' : '';
+        var resHtml = issue.resolution
+          ? '<div class="res-label">Resolution</div><div class="res-text">' + esc(issue.resolution) + '</div>'
+          : '';
+        return '<div class="issue-card">' +
+          '<div class="issue-card-top" onclick="toggleCard(' + i + ')">' +
+          '<div class="info">' +
+          '<div class="title">' + esc(issue.title) + '</div>' +
+          '<div class="meta">' +
+          '<span>' + (issue.date || '') + '</span>' +
+          '<span><span class="status-badge ' + sc + '">' + (issue.status||'') + '</span></span>' +
+          '<span style="color:#4a8aa8">' + (issue.category||'') + '</span>' +
+          (issue.photos && issue.photos.length ? '<span>' + issue.photos.length + ' photo(s)</span>' : '') +
+          '</div></div></div>' +
+          '<div class="issue-card-body" id="card-' + i + '">' +
+          (issue.description ? '<div class="desc">' + esc(issue.description) + '</div>' : '') +
+          resHtml + photosHtml +
+          '</div></div>';
+      }).join('');
+    })
+    .catch(function() {
+      document.getElementById('issuesList').innerHTML = '<div class="empty-msg">Error loading issues.</div>';
+    });
+}
+
+function toggleCard(i) {
+  var el = document.getElementById('card-' + i);
+  el.classList.toggle('open');
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function openLightbox(url) {
+  document.getElementById('lightboxImg').src = url;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.getElementById('lightboxImg').src = '';
+}
+
+function showToast(msg, isError) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (isError ? ' error' : '');
+  t.style.display = 'block';
+  setTimeout(function(){ t.style.display='none'; }, 3000);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('unitBadge').textContent = UNIT;
+  loadIssues();
+});
+</script>
+<!-- GNAV -->
+
+<nav class="gnav" id="gnav">
+  <a href="/" class="gnav-link"><span class="gi">🏠</span>Home</a>
+  <a href="/log" class="gnav-link"><span class="gi">📋</span>Log</a>
+  <a href="/dashboard" class="gnav-link"><span class="gi">📊</span>Dashboard</a>
+  <a href="/timesheet" class="gnav-link"><span class="gi">🕐</span>Timesheet</a>
+  <a href="/inventory" class="gnav-link"><span class="gi">📦</span>Inventory</a>
+  <a href="/issues-log" class="gnav-link"><span class="gi">⚠️</span>Issues</a>
+  <a href="/settings" class="gnav-link"><span class="gi">⚙️</span>Settings</a>
+</nav>
+<script>
+(function(){var p=location.pathname;document.querySelectorAll('.gnav-link').forEach(function(a){var h=a.getAttribute('href');if(h==='/'?p===h:p===h||p.startsWith(h))a.classList.add('gna');});})();
+(function(){var r=localStorage.getItem('mbrRole')||'worker';var lv={admin:5,boss:4,inventory:3,lead:2,worker:1}[r]||1;var rules={'/log':2,'/dashboard':4,'/inventory':2,'/issues-log':2,'/settings':4};document.querySelectorAll('.gnav-link').forEach(function(a){var h=a.getAttribute('href');if(rules[h]&&lv<rules[h]){a.href='/home';a.style.opacity='0.45';}});})();
+</script>
+<script>
+(function(){
+  var _a=localStorage.getItem('mbrAuth')||'';
+  if(!_a)return;
+  var chip=document.createElement('div');
+  chip.id='mbr-checkin-chip';
+  chip.style.cssText='display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px;background:rgba(100,116,139,0.15);color:#94a3b8;border:1px solid rgba(100,116,139,0.2);cursor:default;white-space:nowrap;flex-shrink:0;';
+  chip.innerHTML='<span id="chip-dot" style="width:6px;height:6px;border-radius:50%;background:#64748b;flex-shrink:0;display:inline-block;"></span> <span id="chip-label">—</span>';
+  function _insert(){
+    var hu=document.getElementById('headerUser');
+    if(hu&&hu.parentNode){hu.parentNode.insertBefore(chip,hu);return;}
+    var tb=document.querySelector('.top-bar,header');
+    if(tb){tb.appendChild(chip);}
+  }
+  function _upd(){
+    fetch('/api/contractor/status?name='+encodeURIComponent(_a))
+      .then(function(r){return r.json();})
+      .then(function(d){
+        var bc=document.getElementById('mbr-checkin-chip');
+        var bd=document.getElementById('chip-dot');
+        var bl=document.getElementById('chip-label');
+        if(!bc||!bd||!bl)return;
+        if(d.checked_in){
+          bc.style.background='rgba(34,197,94,0.15)';bc.style.color='#16a34a';bc.style.borderColor='rgba(34,197,94,0.3)';
+          bd.style.background='#22c55e';
+          bl.textContent=d.since?'Checked In · '+d.since:'Checked In';
+        }else{
+          bc.style.background='rgba(100,116,139,0.15)';bc.style.color='#94a3b8';bc.style.borderColor='rgba(100,116,139,0.2)';
+          bd.style.background='#64748b';
+          bl.textContent='Not Checked In';
+        }
+      }).catch(function(){setTimeout(_upd,5000);});
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',function(){_insert();_upd();});
+  }else{_insert();_upd();}
+  setInterval(_upd,60000);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Migrate Unit — TDG</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f1117;color:#e2e8f0;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:40px 20px}
+a.back{display:inline-flex;align-items:center;gap:6px;color:#4f8ef7;font-size:13px;text-decoration:none;margin-bottom:28px;align-self:flex-start}
+a.back:hover{color:#7aadff}
+.card{background:#1a1d27;border:1px solid #2a2d3e;border-radius:16px;padding:32px;width:100%;max-width:480px}
+h1{font-size:20px;font-weight:700;margin-bottom:6px}
+.sub{font-size:13px;color:#64748b;margin-bottom:28px;line-height:1.5}
+.field{margin-bottom:18px}
+label{display:block;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+select,input{width:100%;background:#0f1117;border:1px solid #2a2d3e;border-radius:8px;color:#e2e8f0;font-size:14px;padding:10px 12px;outline:none}
+select:focus,input:focus{border-color:#4f8ef7}
+.arrow{text-align:center;font-size:24px;color:#334155;margin:8px 0}
+.preview{background:#111827;border:1px solid #1e2533;border-radius:8px;padding:12px 16px;font-size:13px;color:#64748b;margin-bottom:20px;min-height:42px}
+.preview.has-data{color:#e2e8f0}
+.btn-row{display:flex;gap:10px;margin-top:4px}
+button{flex:1;height:42px;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer}
+.btn-preview{background:#1a2d4a;color:#4f8ef7}
+.btn-preview:hover{background:#1e3558}
+.btn-go{background:#ef4444;color:#fff}
+.btn-go:hover{background:#dc2626}
+.btn-go:disabled{background:#1e2533;color:#4a5568;cursor:not-allowed}
+.result{margin-top:18px;padding:12px 16px;border-radius:8px;font-size:13px;font-weight:600;display:none}
+.result.ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:#22c55e}
+.result.err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#ef4444}
+.warn{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#f59e0b;margin-bottom:20px}
+</style>
+</head>
+<body>
+
+<a class="back" href="/log">← Back to Log</a>
+
+<div class="card">
+  <h1>🔄 Migrate Unit Data</h1>
+  <p class="sub">Reassign all records from an A-series skid to a B-series unit. Use this when a unit moves from fabrication (A) to installation (B).</p>
+
+  <div class="warn">⚠️ This permanently changes the position label on ALL records for the selected unit. This cannot be undone automatically.</div>
+
+  <div class="field">
+    <label>From — A Series unit</label>
+    <select id="fromUnit">
+      <option value="">Select A unit…</option>
+      <option>01A</option><option>02A</option><option>03A</option>
+      <option>04A</option><option>05A</option><option>06A</option>
+      <option>07A</option><option>08A</option><option>09A</option><option>10A</option>
+    </select>
+  </div>
+
+  <div class="arrow">↓</div>
+
+  <div class="field">
+    <label>To — B Series unit</label>
+    <select id="toUnit">
+      <option value="">Select B unit…</option>
+      <option>01B</option><option>02B</option><option>03B</option>
+      <option>04B</option><option>05B</option><option>06B</option>
+      <option>07B</option><option>08B</option><option>09B</option>
+      <option>10B</option><option>11B</option><option>12B</option>
+      <option>13B</option><option>14B</option><option>15B</option>
+      <option>16B</option><option>17B</option><option>18B</option>
+      <option>19B</option><option>20B</option><option>21B</option>
+      <option>22B</option><option>23B</option><option>24B</option>
+      <option>25B</option><option>26B</option><option>27B</option>
+      <option>28B</option>
+    </select>
+  </div>
+
+  <div class="preview" id="preview">Select units above, then click Preview.</div>
+
+  <div class="btn-row">
+    <button class="btn-preview" onclick="doPreview()">🔍 Preview</button>
+    <button class="btn-go" id="goBtn" disabled onclick="doMigrate()">⚡ Migrate</button>
+  </div>
+
+  <div class="result" id="result"></div>
+</div>
+
+<script>
+var previewCount = 0;
+
+async function doPreview() {
+  var from = document.getElementById('fromUnit').value;
+  var to   = document.getElementById('toUnit').value;
+  var p    = document.getElementById('preview');
+  var btn  = document.getElementById('goBtn');
+  btn.disabled = true;
+  if (!from || !to) { p.textContent = 'Select both units first.'; p.classList.remove('has-data'); return; }
+  if (from === to)  { p.textContent = 'From and To cannot be the same.'; p.classList.remove('has-data'); return; }
+  p.textContent = 'Checking…';
+  try {
+    var r = await fetch('/migrate/preview/' + from);
+    var d = await r.json();
+    previewCount = d.count || 0;
+    if (previewCount === 0) {
+      p.textContent = 'No records found for ' + from + '. Nothing to migrate.';
+      p.classList.remove('has-data');
+    } else {
+      p.innerHTML = '✓ Found <strong style="color:#e2e8f0">' + previewCount + ' records</strong> for <strong style="color:#4f8ef7">' + from + '</strong> → will be reassigned to <strong style="color:#22c55e">' + to + '</strong>.';
+      p.classList.add('has-data');
+      btn.disabled = false;
+    }
+  } catch(e) { p.textContent = 'Error: ' + e.message; p.classList.remove('has-data'); }
+}
+
+async function doMigrate() {
+  var from = document.getElementById('fromUnit').value;
+  var to   = document.getElementById('toUnit').value;
+  var res  = document.getElementById('result');
+  var btn  = document.getElementById('goBtn');
+  if (!confirm('Move ' + previewCount + ' records from ' + from + ' → ' + to + '?\n\nThis cannot be undone automatically.')) return;
+  btn.disabled = true; btn.textContent = 'Migrating…';
+  try {
+    var r = await fetch('/migrate', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({from_pos:from, to_pos:to})});
+    var d = await r.json();
+    res.style.display = 'block';
+    if (d.ok) {
+      res.className = 'result ok';
+      res.textContent = '✓ Done — ' + d.moved + ' records moved from ' + from + ' to ' + to + '.';
+      document.getElementById('preview').textContent = 'Migration complete.';
+      document.getElementById('preview').classList.remove('has-data');
+    } else {
+      res.className = 'result err';
+      res.textContent = 'Error: ' + (d.error || 'Unknown error');
+      btn.disabled = false;
+    }
+  } catch(e) {
+    res.style.display='block'; res.className='result err'; res.textContent='Network error: '+e.message;
+    btn.disabled = false;
+  }
+  btn.textContent = '⚡ Migrate';
+}
+</script>
+</body>
+</html>

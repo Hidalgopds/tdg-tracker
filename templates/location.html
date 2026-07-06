@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MBR – Unit Check-In</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0c1f3a;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+  }
+  .card {
+    background: #152944;
+    border-radius: 20px;
+    padding: 40px 28px;
+    max-width: 360px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .logo { font-size: 11px; letter-spacing: 2px; color: #7a9cc4; margin-bottom: 20px; text-transform: uppercase; }
+  .unit-badge {
+    background: linear-gradient(135deg, #1a3f6f, #0e2d52);
+    border: 2px solid #2e86c1;
+    border-radius: 16px;
+    padding: 28px 20px;
+    margin-bottom: 28px;
+  }
+  .unit-label { font-size: 12px; color: #7a9cc4; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+  .unit-name { font-size: 64px; font-weight: 900; color: #fff; letter-spacing: 3px; line-height: 1; }
+  .unit-sub { font-size: 12px; color: #a0b8d0; margin-top: 6px; }
+  .question { font-size: 17px; font-weight: 600; color: #e2eaf4; margin-bottom: 24px; line-height: 1.4; }
+  .btn-row { display: flex; gap: 12px; justify-content: center; }
+  .btn-yes {
+    flex: 1;
+    padding: 16px;
+    background: #1abc9c;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .btn-yes:hover { background: #17a589; }
+  .btn-yes:active { transform: scale(0.97); }
+  .btn-no {
+    flex: 1;
+    padding: 16px;
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.6);
+    border: 1.5px solid rgba(255,255,255,0.15);
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-no:hover { background: rgba(255,255,255,0.13); }
+  .status-box {
+    border-radius: 12px;
+    padding: 24px 20px;
+    margin-bottom: 20px;
+  }
+  .status-icon { font-size: 40px; margin-bottom: 10px; }
+  .status-title { font-size: 19px; font-weight: 700; margin-bottom: 6px; }
+  .status-sub { font-size: 13px; color: #a0b8d0; line-height: 1.4; }
+  .box-success { background: #0d3325; border: 1.5px solid #1abc9c; }
+  .box-error   { background: #3b1010; border: 1.5px solid #e74c3c; }
+  .box-info    { background: #0f2540; border: 1.5px solid #2e86c1; }
+  .btn-home {
+    display: inline-block;
+    margin-top: 16px;
+    padding: 12px 32px;
+    background: #1a3f6f;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+  .btn-home:hover { background: #1f4f8a; }
+  .spinner {
+    width: 44px; height: 44px;
+    border: 4px solid rgba(255,255,255,0.1);
+    border-top-color: #1abc9c;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto 14px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #screen-confirm { display: block; }
+  #screen-loading { display: none; }
+  #screen-result  { display: none; }
+  #screen-login   { display: none; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">MBR Texas &middot; TDG Yard</div>
+
+  <div class="unit-badge">
+    <div class="unit-label">Section B &middot; Unit</div>
+    <div class="unit-name">{{ unit }}</div>
+    <div class="unit-sub">TDG Data Center Project &middot; Katy, TX</div>
+  </div>
+
+  <!-- Confirm screen -->
+  <div id="screen-confirm">
+    <p class="question">Are you working in Unit <strong>{{ unit }}</strong>?</p>
+    <div class="btn-row">
+      <button class="btn-yes" onclick="confirmYes()">&#10003;&nbsp; Yes</button>
+      <button class="btn-no"  onclick="confirmNo()">&#10007;&nbsp; No</button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div id="screen-loading">
+    <div class="spinner"></div>
+    <div style="font-size:14px;color:#7a9cc4;">Saving your location&hellip;</div>
+  </div>
+
+  <!-- Result -->
+  <div id="screen-result"></div>
+
+  <!-- Not logged in -->
+  <div id="screen-login">
+    <div class="status-box box-info">
+      <div class="status-icon">&#128274;</div>
+      <div class="status-title">Login Required</div>
+      <div class="status-sub">You must be logged in to register your location at this unit.</div>
+    </div>
+    <a href="/login" class="btn-home">Log In</a>
+  </div>
+</div>
+
+<script>
+var UNIT = "{{ unit }}";
+var workerName = localStorage.getItem('mbrAuth');
+
+// Check login on load
+window.addEventListener('DOMContentLoaded', function(){
+  if(!workerName){
+    document.getElementById('screen-confirm').style.display = 'none';
+    document.getElementById('screen-login').style.display = 'block';
+  }
+});
+
+function show(id){
+  ['screen-confirm','screen-loading','screen-result','screen-login'].forEach(function(s){
+    document.getElementById(s).style.display = 'none';
+  });
+  document.getElementById(id).style.display = 'block';
+}
+
+function confirmNo(){
+  window.location.href = '/';
+}
+
+async function confirmYes(){
+  show('screen-loading');
+  try {
+    var r = await fetch('/api/worker/location', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ name: workerName, unit: UNIT })
+    });
+    var d = await r.json();
+
+    if(d.ok){
+      localStorage.setItem('mbrUnit', UNIT);
+      localStorage.setItem('mbrUnitTime', new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}));
+      document.getElementById('screen-result').innerHTML =
+        '<div class="status-box box-success">' +
+        '<div class="status-icon">&#9989;</div>' +
+        '<div class="status-title">Location Saved</div>' +
+        '<div class="status-sub">' + workerName + ' is now recorded at Unit ' + UNIT + '</div>' +
+        '</div>' +
+        '<a href="/" class="btn-home">&larr; Go Home</a>';
+    } else {
+      document.getElementById('screen-result').innerHTML =
+        '<div class="status-box box-error">' +
+        '<div class="status-icon">&#10060;</div>' +
+        '<div class="status-title">Something went wrong</div>' +
+        '<div class="status-sub">' + (d.error || 'Could not save location. Try again.') + '</div>' +
+        '</div>' +
+        '<a href="/" class="btn-home">&larr; Go Home</a>';
+    }
+    show('screen-result');
+  } catch(e) {
+    document.getElementById('screen-result').innerHTML =
+      '<div class="status-box box-error">' +
+      '<div class="status-icon">&#10060;</div>' +
+      '<div class="status-title">Network Error</div>' +
+      '<div class="status-sub">Check your connection and try again.</div>' +
+      '</div>' +
+      '<a href="/" class="btn-home">&larr; Go Home</a>';
+    show('screen-result');
+  }
+}
+</script>
+</body>
+</html>

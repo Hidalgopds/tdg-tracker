@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Check In — {{ position }}</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#0f1117;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif}
+body{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:32px 20px 40px;min-height:100vh}
+
+.header{text-align:center;margin-bottom:32px}
+.badge{width:80px;height:80px;background:linear-gradient(135deg,#1a6bc4,#4f8ef7);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px}
+.position-name{font-size:28px;font-weight:800;letter-spacing:-.5px}
+.unit-info{font-size:13px;color:#64748b;margin-top:6px}
+
+/* State cards */
+.card{width:100%;max-width:380px;background:#1a1d27;border:1px solid #2a2d3e;border-radius:16px;padding:24px;margin-bottom:16px}
+.card-title{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:16px}
+
+/* Name input */
+.name-input{width:100%;background:#0f1117;border:1.5px solid #2a2d3e;border-radius:10px;color:#e2e8f0;font-size:18px;font-weight:600;padding:14px 16px;outline:none;text-align:center}
+.name-input:focus{border-color:#4f8ef7}
+.name-input::placeholder{color:#334155;font-weight:400}
+
+/* Buttons */
+.btn{width:100%;height:52px;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin-top:14px;transition:opacity .15s}
+.btn:active{opacity:.8}
+.btn-checkin{background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff}
+.btn-checkout{background:linear-gradient(135deg,#b45309,#f59e0b);color:#fff}
+.btn-move{background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff}
+.btn-disabled{background:#1e2533;color:#4a5568;cursor:not-allowed}
+
+/* Active check-in banner */
+.active-banner{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);border-radius:12px;padding:16px;margin-bottom:16px;width:100%;max-width:380px}
+.ab-label{font-size:11px;font-weight:700;color:#22c55e;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.ab-pos{font-size:20px;font-weight:800;color:#e2e8f0}
+.ab-time{font-size:12px;color:#64748b;margin-top:4px}
+
+/* Success */
+.success{text-align:center;padding:24px 0;display:none}
+.success-icon{font-size:56px;margin-bottom:12px}
+.success-title{font-size:22px;font-weight:800;color:#22c55e}
+.success-sub{font-size:13px;color:#64748b;margin-top:6px}
+
+/* Already checked in here */
+.here-banner{background:rgba(79,142,247,.08);border:1px solid rgba(79,142,247,.25);border-radius:12px;padding:20px;text-align:center;width:100%;max-width:380px;margin-bottom:16px}
+.here-pos{font-size:24px;font-weight:800;color:#4f8ef7;margin-bottom:4px}
+.here-since{font-size:12px;color:#64748b}
+
+.divider{width:100%;max-width:380px;height:1px;background:#1e2533;margin:8px 0}
+.err{color:#ef4444;font-size:13px;margin-top:10px;text-align:center;display:none}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="badge">📍</div>
+  <div class="position-name">Position {{ position }}</div>
+  <div class="unit-info" id="unitInfo">Loading unit info…</div>
+</div>
+
+<!-- State A: Not checked in anywhere -->
+<div id="stateNew" style="width:100%;max-width:380px;display:none">
+  <div class="card">
+    <div class="card-title">Check In</div>
+    <input class="name-input" type="text" id="nameInput" placeholder="Your name" autocomplete="given-name" autocorrect="off">
+    <button class="btn btn-checkin" onclick="doCheckin()">✓ Check In to {{ position }}</button>
+    <div class="err" id="errNew"></div>
+  </div>
+</div>
+
+<!-- State B: Already checked in HERE -->
+<div id="stateHere" style="width:100%;max-width:380px;display:none">
+  <div class="here-banner">
+    <div style="font-size:12px;color:#4f8ef7;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">✓ You're checked in here</div>
+    <div class="here-pos">{{ position }}</div>
+    <div class="here-since" id="hereSince"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Done for the day?</div>
+    <div style="font-size:14px;color:#94a3b8;margin-bottom:4px">Worker: <span id="hereWorkerName" style="color:#e2e8f0;font-weight:700"></span></div>
+    <button class="btn btn-checkout" onclick="doCheckout()">✕ Check Out from {{ position }}</button>
+    <div class="err" id="errHere"></div>
+  </div>
+</div>
+
+<!-- State C: Checked in at a DIFFERENT position -->
+<div id="stateOther" style="width:100%;max-width:380px;display:none">
+  <div class="active-banner">
+    <div class="ab-label">Currently checked in at</div>
+    <div class="ab-pos" id="otherPos"></div>
+    <div class="ab-time" id="otherTime"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Move to {{ position }}?</div>
+    <div style="font-size:14px;color:#94a3b8;margin-bottom:4px">Worker: <span id="otherWorkerName" style="color:#e2e8f0;font-weight:700"></span></div>
+    <button class="btn btn-move" onclick="doMove()">⇄ Move to {{ position }}</button>
+    <div style="margin-top:10px">
+      <button class="btn btn-checkout" onclick="doCheckoutOther()">✕ Just Check Out (no move)</button>
+    </div>
+    <div class="err" id="errOther"></div>
+  </div>
+</div>
+
+<!-- Success screen -->
+<div class="success" id="stateSuccess">
+  <div class="success-icon" id="successIcon">✅</div>
+  <div class="success-title" id="successTitle">Checked In!</div>
+  <div class="success-sub" id="successSub"></div>
+</div>
+
+<script>
+var POSITION = '{{ position }}';
+var BASE = '';
+var activeCheckin = null; // {id, position, worker_name, checked_in_at}
+
+function fmt(ts){
+  if(!ts) return '';
+  var d=new Date(ts);
+  return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+}
+
+async function init(){
+  // Load unit info for this position
+  try{
+    var r=await fetch('/unit-progress/'+POSITION);
+    var d=await r.json();
+    var meta=d.meta||{};
+    var info=[];
+    if(meta.tdg_number) info.push('TDG: '+meta.tdg_number);
+    if(meta.mbr_number) info.push('MBR #'+meta.mbr_number);
+    if(meta.fase) info.push('Fase '+meta.fase);
+    document.getElementById('unitInfo').textContent=info.length?info.join(' · '):'No unit assigned yet';
+  }catch(e){document.getElementById('unitInfo').textContent='';}
+
+  // Check for stored active check-in
+  var stored=localStorage.getItem('tdg_active_checkin');
+  if(stored){
+    try{ activeCheckin=JSON.parse(stored); }catch(e){ activeCheckin=null; }
+  }
+
+  if(activeCheckin){
+    // Verify it's still active on server
+    try{
+      var ar=await fetch('/api/checkin/by-name?name='+encodeURIComponent(activeCheckin.worker_name));
+      var ad=await ar.json();
+      if(ad.active){
+        activeCheckin=Object.assign({},ad.active,{worker_name:activeCheckin.worker_name});
+        localStorage.setItem('tdg_active_checkin',JSON.stringify(activeCheckin));
+        if(activeCheckin.position===POSITION){
+          showHere();
+        } else {
+          showOther();
+        }
+        return;
+      } else {
+        localStorage.removeItem('tdg_active_checkin');
+        activeCheckin=null;
+      }
+    }catch(e){}
+  }
+  showNew();
+}
+
+function showNew(){
+  hide(['stateHere','stateOther','stateSuccess']);
+  document.getElementById('stateNew').style.display='block';
+  var saved=localStorage.getItem('tdg_worker_name');
+  if(saved) document.getElementById('nameInput').value=saved;
+  setTimeout(function(){ document.getElementById('nameInput').focus(); },300);
+}
+
+function showHere(){
+  hide(['stateNew','stateOther','stateSuccess']);
+  document.getElementById('hereWorkerName').textContent=activeCheckin.worker_name;
+  document.getElementById('hereSince').textContent='Since '+fmt(activeCheckin.checked_in_at);
+  document.getElementById('stateHere').style.display='block';
+}
+
+function showOther(){
+  hide(['stateNew','stateHere','stateSuccess']);
+  document.getElementById('otherPos').textContent=activeCheckin.position;
+  document.getElementById('otherTime').textContent='Since '+fmt(activeCheckin.checked_in_at);
+  document.getElementById('otherWorkerName').textContent=activeCheckin.worker_name;
+  document.getElementById('stateOther').style.display='block';
+}
+
+function hide(ids){ ids.forEach(function(id){document.getElementById(id).style.display='none';}); }
+
+function showSuccess(icon,title,sub){
+  hide(['stateNew','stateHere','stateOther']);
+  document.getElementById('successIcon').textContent=icon;
+  document.getElementById('successTitle').textContent=title;
+  document.getElementById('successSub').textContent=sub;
+  document.getElementById('stateSuccess').style.display='block';
+}
+
+async function doCheckin(){
+  var name=document.getElementById('nameInput').value.trim();
+  var err=document.getElementById('errNew');
+  if(!name){err.textContent='Enter your name first.';err.style.display='block';return;}
+  err.style.display='none';
+  localStorage.setItem('tdg_worker_name',name);
+  try{
+    var r=await fetch('/api/checkin',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({position:POSITION,worker_name:name})});
+    var d=await r.json();
+    if(d.ok){
+      activeCheckin=Object.assign({},d.checkin,{worker_name:name});
+      localStorage.setItem('tdg_active_checkin',JSON.stringify(activeCheckin));
+      showSuccess('✅','Checked In!','You\'re now logged at Position '+POSITION+' · '+fmt(new Date()));
+    } else { err.textContent=d.error||'Error checking in.';err.style.display='block'; }
+  }catch(e){err.textContent='Network error.';err.style.display='block';}
+}
+
+async function doCheckout(){
+  var err=document.getElementById('errHere');
+  try{
+    var r=await fetch('/api/checkin/'+activeCheckin.id+'/checkout',{method:'POST'});
+    var d=await r.json();
+    if(d.ok){
+      localStorage.removeItem('tdg_active_checkin');
+      activeCheckin=null;
+      showSuccess('👋','Checked Out','See you tomorrow! You\'ve been logged out of Position '+POSITION+'.');
+    } else { err.textContent=d.error||'Error.';err.style.display='block'; }
+  }catch(e){err.textContent='Network error.';err.style.display='block';}
+}
+
+async function doCheckoutOther(){
+  var err=document.getElementById('errOther');
+  try{
+    var r=await fetch('/api/checkin/'+activeCheckin.id+'/checkout',{method:'POST'});
+    var d=await r.json();
+    if(d.ok){
+      localStorage.removeItem('tdg_active_checkin');
+      activeCheckin=null;
+      showSuccess('👋','Checked Out','You\'ve been logged out of Position '+activeCheckin.position+'.');
+    } else { err.textContent=d.error||'Error.';err.style.display='block'; }
+  }catch(e){err.textContent='Network error.';err.style.display='block';}
+}
+
+async function doMove(){
+  var name=activeCheckin.worker_name;
+  var err=document.getElementById('errOther');
+  // Checkout from current, then check in to new
+  try{
+    var r1=await fetch('/api/checkin/'+activeCheckin.id+'/checkout',{method:'POST'});
+    if(!r1.ok){ err.textContent='Error checking out.';err.style.display='block';return; }
+    var r2=await fetch('/api/checkin',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({position:POSITION,worker_name:name})});
+    var d=await r2.json();
+    if(d.ok){
+      activeCheckin=Object.assign({},d.checkin,{worker_name:name});
+      localStorage.setItem('tdg_active_checkin',JSON.stringify(activeCheckin));
+      showSuccess('✅','Moved!','Now checked in at Position '+POSITION+' · '+fmt(new Date()));
+    } else { err.textContent=d.error||'Error.';err.style.display='block'; }
+  }catch(e){err.textContent='Network error.';err.style.display='block';}
+}
+
+init();
+</script>
+</body>
+</html>

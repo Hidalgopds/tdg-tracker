@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Issues Log — TDG / MBR Texas</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f1117;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+
+/* Top bar */
+.top-bar{background:#0d1520;border-bottom:2px solid #1e2d3d;padding:10px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:100}
+.back-btn{height:32px;padding:0 14px;background:#1a2535;border:1px solid #2a3d52;border-radius:7px;color:#8fa3b5;font-size:12px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+.back-btn:hover{background:#243040;color:#e2e8f0}
+.top-bar h1{font-size:15px;font-weight:800;flex:1}
+.top-bar h1 span{color:#ef4444}
+.print-btn{height:32px;padding:0 14px;background:#1e3a5f;border:1px solid #3b82f6;border-radius:7px;color:#60a5fa;font-size:12px;font-weight:700;cursor:pointer}
+.print-btn:hover{background:#1d4ed8;color:#fff}
+
+/* KPI strip */
+.kpi-strip{display:flex;gap:10px;padding:16px 20px;flex-wrap:wrap}
+.kpi{background:#0d1520;border:1px solid #1e2d3d;border-radius:10px;padding:12px 18px;min-width:110px;text-align:center}
+.kpi .num{font-size:26px;font-weight:800}
+.kpi .lbl{font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-top:3px}
+.kpi.open .num{color:#ef4444}
+.kpi.hold .num{color:#f59e0b}
+.kpi.resolved .num{color:#22c55e}
+.kpi.total .num{color:#4f8ef7}
+
+/* Filter bar */
+.filter-bar{padding:0 20px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filter-bar select,.filter-bar input{background:#0d1520;border:1px solid #1e2d3d;border-radius:7px;color:#e2e8f0;font-size:12px;padding:6px 10px;outline:none;height:32px}
+.filter-bar select:focus,.filter-bar input:focus{border-color:#3b82f6}
+.filter-bar input{min-width:200px}
+.fbadge{font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+
+/* Table */
+.table-wrap{padding:0 20px 40px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:700px}
+thead th{background:#060c18;color:#7a8fa6;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;padding:9px 10px;text-align:left;border-bottom:2px solid #1e2d3d;white-space:nowrap}
+tbody tr{border-bottom:1px solid #0d1520;cursor:pointer}
+tbody tr:hover td{background:#0d1a2a}
+tbody td{padding:10px;font-size:13px;vertical-align:top;color:#94a3b8}
+tbody td.td-unit{font-weight:800;color:#4f8ef7;white-space:nowrap}
+tbody td.td-title{color:#e2e8f0;font-weight:700;max-width:280px}
+tbody td.td-desc{color:#94a3b8;font-size:12px;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+tbody td.td-date{white-space:nowrap;font-size:12px}
+
+/* Status badge */
+.sbadge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+.sbadge.Open{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#ef4444}
+.sbadge.On-Hold{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#f59e0b}
+.sbadge.Resolved{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);color:#22c55e}
+.sbadge.Monitoring{background:rgba(79,142,247,.12);border:1px solid rgba(79,142,247,.3);color:#4f8ef7}
+
+/* Category badge */
+.cbadge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;background:#1a2535;color:#64748b}
+
+/* Detail panel */
+.detail-panel{display:none;background:#0a1020;border-top:1px solid #1e2d3d;padding:14px 20px;font-size:13px}
+.detail-panel.open{display:table-row}
+.dp-inner{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:860px}
+.dp-field label{font-size:10px;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px}
+.dp-field p{color:#94a3b8;line-height:1.5}
+.dp-field p.empty{color:#334155;font-style:italic}
+.dp-actions{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+.status-btn{height:28px;padding:0 12px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer}
+.sb-resolve{background:#14532d;color:#86efac}
+.sb-hold{background:#451a03;color:#fcd34d}
+.sb-reopen{background:#1e3a5f;color:#60a5fa}
+
+/* Empty state */
+.empty-state{text-align:center;padding:60px 20px;color:#334155}
+.empty-state .icon{font-size:48px;margin-bottom:12px}
+
+/* Print */
+@media print{
+  .top-bar,.filter-bar,.kpi-strip,.print-btn,.back-btn,.dp-actions{display:none!important}
+  body{background:#fff;color:#000}
+  table{min-width:unset}
+  thead th{background:#f1f5f9;color:#475569;position:static}
+  tbody td{color:#374151}
+  .sbadge{border:1px solid #ccc;color:#374151!important;background:#f9fafb!important}
+  .cbadge{background:#f1f5f9;color:#374151}
+  .table-wrap{padding:0}
+}
+
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#0d1520;border:1px solid #1e2d3d;border-radius:16px;padding:24px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;position:relative}
+.modal h2{font-size:15px;font-weight:800;margin-bottom:18px;color:#e2e8f0}
+.modal .close-btn{position:absolute;top:14px;right:16px;background:none;border:none;color:#475569;font-size:20px;cursor:pointer;line-height:1}
+.modal .close-btn:hover{color:#e2e8f0}
+.mfield{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.mfield label{font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.6px}
+.mfield input,.mfield textarea,.mfield select{background:#060c18;border:1px solid #1e2d3d;border-radius:7px;color:#e2e8f0;font-size:13px;padding:8px 10px;outline:none;font-family:inherit}
+.mfield input:focus,.mfield textarea:focus,.mfield select:focus{border-color:#3b82f6}
+.mfield textarea{resize:vertical;min-height:70px}
+.mrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.btn-cancel{height:36px;padding:0 16px;background:#1a2535;border:1px solid #2a3d52;border-radius:8px;color:#64748b;font-size:13px;font-weight:700;cursor:pointer}
+.btn-submit{height:36px;padding:0 18px;background:#ef4444;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer}
+.btn-submit:hover{background:#dc2626}
+.btn-submit:disabled{background:#374151;cursor:not-allowed}
+.m-err{color:#ef4444;font-size:12px;min-height:16px}
+
+/* ── Auth gate overlay ── */
+#authGate{position:fixed;inset:0;background:#0a0f16;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
+.ag-card{background:#111d2b;border:1px solid #1e2d3d;border-radius:16px;padding:32px 28px;width:100%;max-width:340px;text-align:center}
+.ag-icon{font-size:36px;margin-bottom:8px}
+.ag-title{font-size:17px;font-weight:800;color:#e8edf2;margin-bottom:4px}
+.ag-sub{font-size:12px;color:#4a6380;margin-bottom:20px}
+.ag-name-btn{display:block;width:100%;margin-bottom:8px;height:40px;background:#162030;border:1px solid #1e2d3d;border-radius:8px;color:#e8edf2;font-size:14px;font-weight:600;cursor:pointer;transition:background .12s}
+.ag-name-btn:hover{background:#1a3a5c;border-color:#1a6bc4}
+.ag-back{display:block;width:100%;margin-top:8px;height:36px;background:none;border:1px solid #1e2d3d;border-radius:8px;color:#4a6380;font-size:13px;cursor:pointer}
+.ag-pin-dots{display:flex;gap:12px;justify-content:center;margin:14px 0}
+.ag-dot{width:15px;height:15px;border-radius:50%;border:2px solid #2a3d52}
+.ag-dot.on{background:#1a6bc4;border-color:#1a6bc4}
+.ag-pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:240px;margin:0 auto}
+.ag-pk{height:44px;background:#162030;border:1px solid #1e2d3d;border-radius:8px;color:#e8edf2;font-size:18px;font-weight:700;cursor:pointer}
+.ag-pk:hover{background:#1a3a5c}
+.ag-err{color:#ef4444;font-size:12px;min-height:16px;margin-top:6px}
+
+</style>
+
+<style id="gnav-style">
+.gnav{position:fixed;bottom:0;left:0;right:0;height:54px;background:#060c18;border-top:1px solid #1a2535;display:flex;justify-content:space-around;align-items:center;z-index:9999;box-shadow:0 -4px 24px rgba(0,0,0,.5);}
+.gnav a{display:flex;flex-direction:column;align-items:center;gap:1px;text-decoration:none;color:#475569;padding:0 8px;font-size:10px;font-weight:500;transition:.15s;min-width:44px;}
+.gnav a:hover,.gnav a.gna{color:#a855f7;}
+.gnav a .gi{font-size:19px;line-height:1.2;}
+body{padding-bottom:60px !important;}
+
+.td-pics{width:60px;text-align:center;white-space:nowrap;}
+.pic-badge{display:inline-block;padding:2px 7px;border-radius:12px;font-size:11px;font-weight:700;background:#1e3a5f;color:#60a5fa;cursor:pointer;}
+.dp-photos{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;}
+.dp-photo-thumb{width:96px;height:96px;object-fit:cover;border-radius:8px;border:2px solid #1e2d3d;cursor:pointer;transition:transform .15s;}
+.dp-photo-thumb:hover{transform:scale(1.05);}
+</style>
+<!-- LIGHT-THEME -->
+
+<style id="light-theme">
+/* ============================================
+   MBR TEXAS — LIGHT CORPORATE THEME
+   High-contrast for outdoor / sunlight use
+   ============================================ */
+:root{
+  --bg:#f0f4f8;--card:#ffffff;--border:#cbd5e1;
+  --text:#0f172a;--muted:#475569;
+  --accent:#1a6bc4;--green:#15803d;
+  --red:#b91c1c;--yellow:#92400e;--purple:#6d28d9;
+}
+html,body{background:#f0f4f8 !important;color:#0f172a !important;}
+
+/* ── Top bar: white background like the Log page ── */
+.header,.topbar,header,#app-header,.top-bar{
+  background:#ffffff !important;color:#0f172a !important;
+  border-bottom:2px solid #cbd5e1 !important;
+}
+.hlogo{color:#1a6bc4 !important;}
+.back-btn,.topbar a,.header a{
+  background:#f1f5f9 !important;border-color:#cbd5e1 !important;color:#1e293b !important;
+}
+.back-btn:hover{background:#e2e8f0 !important;}
+.top-bar h1{color:#0f172a !important;}
+.top-bar h1 span{color:#ef4444 !important;}
+.create-btn{border-color:#ef4444 !important;color:#b91c1c !important;background:#fee2e2 !important;}
+.print-btn{background:#f1f5f9 !important;border-color:#cbd5e1 !important;color:#374151 !important;}
+#lastRefresh{color:#64748b !important;}
+
+/* ── Gate / auth area ── */
+.gate{background:#f0f4f8 !important;}
+.gate-card{background:#ffffff !important;border-color:#e2e8f0 !important;
+  box-shadow:0 4px 24px rgba(0,0,0,.08) !important;}
+.gate-card h2{color:#0f172a !important;}
+.gate-card p{color:#475569 !important;}
+
+/* ── Name / user buttons ── */
+.name-btn,.user-btn{
+  background:#f1f5f9 !important;border-color:#e2e8f0 !important;color:#0f172a !important;
+}
+.name-btn:hover,.name-btn:active,.user-btn.active,.user-btn:hover{
+  background:#1a6bc4 !important;color:#ffffff !important;border-color:#1a6bc4 !important;
+}
+
+/* ── PIN pad ── */
+.pin-dot,.dot{background:#e2e8f0 !important;border-color:#cbd5e1 !important;}
+.pin-dot.on,.dot.filled{background:#1a6bc4 !important;border-color:#1a6bc4 !important;}
+.pk,.numpad button{
+  background:#f1f5f9 !important;border-color:#e2e8f0 !important;color:#0f172a !important;
+}
+.pk:active,.numpad button:hover{background:#dbeafe !important;}
+.pin-err,.pinErr,#pinErr{color:#b91c1c !important;}
+
+/* ── Tabs ── */
+.tabs{border-bottom-color:#e2e8f0 !important;}
+.tab-btn{color:#475569 !important;}
+.tab-btn:hover{color:#0f172a !important;}
+.tab-btn.active{color:#1a6bc4 !important;border-bottom-color:#1a6bc4 !important;}
+.tab-btn.active,.tab-btn:hover{background:none !important;}
+
+/* ── Inputs / selects / textareas ── */
+input,select,textarea,.sm-search{
+  background:#ffffff !important;border-color:#cbd5e1 !important;
+  color:#0f172a !important;
+}
+input:focus,select:focus,textarea:focus,.sm-search:focus{
+  border-color:#1a6bc4 !important;outline:none;
+}
+input::placeholder,.sm-search::placeholder{color:#94a3b8 !important;}
+
+/* ── Buttons ── */
+.btn-ghost,.tool-btn,.eb,.btn-s{
+  background:#f1f5f9 !important;border-color:#e2e8f0 !important;color:#1e293b !important;
+}
+.btn-ghost:hover,.tool-btn:hover{background:#e2e8f0 !important;}
+.tool-btn.active{background:#dbeafe !important;border-color:#1a6bc4 !important;color:#1a6bc4 !important;}
+.eb-edit{border-color:#3b82f6 !important;color:#1d4ed8 !important;}
+.eb-edit:hover{background:#dbeafe !important;}
+.eb-del{border-color:#ef4444 !important;color:#b91c1c !important;}
+.eb-del:hover{background:#fee2e2 !important;}
+
+/* ── Cards / panels ── */
+.section-card,.card,.modal,.gate-card,
+[class*="-card"]:not(.worker-card):not(.name-btn):not(.user-btn){
+  background:#ffffff !important;border-color:#e2e8f0 !important;
+}
+.content{background:#f0f4f8 !important;}
+
+/* ── Worker attendance cards ── */
+.worker-card{background:#ffffff !important;border-color:#e2e8f0 !important;}
+.worker-card.present{background:#dcfce7 !important;border-color:#16a34a !important;}
+.wc-name{color:#475569 !important;}
+.worker-card.present .wc-name{color:#0f172a !important;}
+.wc-time{color:#94a3b8 !important;}
+.worker-card.present .wc-time{color:#15803d !important;}
+.worker-card.edit-card{background:#f8fafc !important;border-color:#bfdbfe !important;}
+
+/* ── Phase banners ── */
+.phase-banner.meeting{background:#ede9fe !important;border-color:#c4b5fd !important;color:#6d28d9 !important;}
+.phase-banner.signin{background:#dcfce7 !important;border-color:#86efac !important;color:#15803d !important;}
+.phase-banner.saved{background:#dbeafe !important;border-color:#93c5fd !important;color:#1d4ed8 !important;}
+
+/* ── User pill ── */
+.user-pill{background:#ede9fe !important;border-color:#a78bfa !important;color:#6d28d9 !important;}
+
+/* ── Info bars ── */
+.info-bar{background:#dbeafe !important;border-color:#93c5fd !important;color:#1e40af !important;}
+.info-bar strong{color:#1d4ed8 !important;}
+
+/* ── Tables ── */
+table{background:transparent !important;}
+th,thead th{background:#f8fafc !important;color:#374151 !important;border-bottom-color:#e2e8f0 !important;}
+td{border-bottom-color:#f1f5f9 !important;color:#1e293b !important;}
+tbody td.td-title{color:#0f172a !important;font-weight:700 !important;}
+tbody td.td-unit{color:#1a6bc4 !important;}
+tbody td.td-date{color:#475569 !important;}
+tbody td.td-desc{color:#475569 !important;}
+tr:hover td{background:#f1f5f9 !important;}
+
+/* ── Summary / stat cards ── */
+.summary-card,.summary-row .summary-card{
+  background:#ffffff !important;border-color:#e2e8f0 !important;
+  box-shadow:0 1px 4px rgba(0,0,0,.06) !important;
+}
+.summary-card .val{color:#1a6bc4 !important;}
+.summary-card .lbl{color:#475569 !important;}
+
+/* ── Badges ── */
+.badge-admin{background:#ede9fe !important;color:#5b21b6 !important;}
+.badge-lead,.badge-editor{background:#dbeafe !important;color:#1e40af !important;}
+.badge-worker,.badge-active{background:#dcfce7 !important;color:#15803d !important;}
+.badge-inactive{background:#f1f5f9 !important;color:#64748b !important;}
+
+/* ── Role access matrix ── */
+.role-matrix th{background:#f8fafc !important;border-bottom-color:#e2e8f0 !important;}
+.role-matrix th.admin-h{color:#5b21b6 !important;}
+.role-matrix th.lead-h{color:#1e40af !important;}
+.role-matrix th.worker-h{color:#15803d !important;}
+.role-matrix tr.sub-row{background:#fafafa !important;}
+.toggle-cell.on{background:#dcfce7 !important;color:#15803d !important;}
+.toggle-cell.off{background:#f1f5f9 !important;color:#94a3b8 !important;}
+
+/* ── Modal overlay ── */
+.modal-overlay.open{background:rgba(15,23,42,0.55) !important;}
+.modal{background:#ffffff !important;box-shadow:0 20px 60px rgba(0,0,0,.18) !important;}
+
+/* ── Global nav stays dark ── */
+.gnav{background:#1e3a5f !important;border-top-color:#0f2d52 !important;}
+.gnav a{color:#94a3b8 !important;}
+.gnav a:hover,.gnav a.gna{color:#60a5fa !important;}
+
+/* ── Toast ── */
+#toast{background:#1e293b !important;color:#e2e8f0 !important;}
+#toast.err{border-color:#b91c1c !important;color:#fca5a5 !important;}
+
+/* ── Scrollbars ── */
+::-webkit-scrollbar{width:6px;height:6px;background:#f1f5f9;}
+::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px;}
+
+/* ── Log out / utility bars ── */
+.log-out-bar,.logout-area{background:#1e3a5f !important;}
+
+/* ── SM section ── */
+.sm-item{background:#ffffff !important;border-color:#e2e8f0 !important;}
+.sm-date,.sm-counter span{color:#475569 !important;}
+
+/* ── Landing page cards ── */
+.card{background:#ffffff !important;border-color:#e2e8f0 !important;}
+.card:hover{border-color:#1a6bc4 !important;box-shadow:0 8px 32px rgba(26,107,196,.12) !important;}
+.card-body p{color:#475569 !important;}
+footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
+
+/* ── Dashboard ── */
+.unit-progress-card,.kpi-card,.chart-card{background:#ffffff !important;border-color:#e2e8f0 !important;}
+
+/* ── Week picker ── */
+.week-picker input{background:#ffffff !important;color:#0f172a !important;border-color:#cbd5e1 !important;}
+
+/* ── Roles grid (old) ── */
+.roles-grid{border-color:#e2e8f0 !important;}
+.rg-header{background:#f8fafc !important;color:#475569 !important;}
+.rg-cell{border-top-color:#f1f5f9 !important;}
+</style>
+
+</head>
+<body>
+<div style="display:flex;align-items:center;padding:8px 16px;background:#060c18;border-bottom:1px solid #1a2535;"><a href="/" style="color:#94a3b8;text-decoration:none;font-size:13px;">← Home</a><div id="headerUser" style="display:flex;align-items:center;gap:8px;margin-left:auto;"></div></div>
+<script>(function(){var n=localStorage.getItem('mbrAuth')||'';var r=localStorage.getItem('mbrRole')||'';var el=document.getElementById('headerUser');if(!el||!n)return;var cap=r?r.charAt(0).toUpperCase()+r.slice(1):'';el.innerHTML='<span style="font-size:12px;font-weight:700;color:#94a3b8;">'+n+(cap?' &middot; '+cap:'')+' </span>'+'<button onclick="localStorage.removeItem(\'mbrAuth\');localStorage.removeItem(\'mbrRole\');location.href=\'/login\';" '+'style="padding:5px 12px;background:#1e2d45;border:1px solid #2d3f57;border-radius:8px;color:#94a3b8;font-size:12px;cursor:pointer;">Sign Out</button>';})();</script>
+<script>
+(function(){
+  var _a=localStorage.getItem('mbrAuth')||'';
+  if(!_a)return;
+  var chip=document.createElement('div');
+  chip.id='mbr-checkin-chip';
+  chip.style.cssText='display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px;background:rgba(100,116,139,0.15);color:#94a3b8;border:1px solid rgba(100,116,139,0.2);cursor:default;white-space:nowrap;flex-shrink:0;';
+  chip.innerHTML='<span id="chip-dot" style="width:6px;height:6px;border-radius:50%;background:#64748b;flex-shrink:0;display:inline-block;"></span> <span id="chip-label">—</span>';
+  function _insert(){
+    var hu=document.getElementById('headerUser');
+    if(hu&&hu.parentNode){hu.parentNode.insertBefore(chip,hu);return;}
+    var tb=document.querySelector('.top-bar,header');
+    if(tb){tb.appendChild(chip);}
+  }
+  function _upd(){
+    fetch('/api/contractor/status?name='+encodeURIComponent(_a))
+      .then(function(r){return r.json();})
+      .then(function(d){
+        var bc=document.getElementById('mbr-checkin-chip');
+        var bd=document.getElementById('chip-dot');
+        var bl=document.getElementById('chip-label');
+        if(!bc||!bd||!bl)return;
+        if(d.checked_in){
+          bc.style.background='rgba(34,197,94,0.15)';bc.style.color='#16a34a';bc.style.borderColor='rgba(34,197,94,0.3)';
+          bd.style.background='#22c55e';
+          bl.textContent=d.since?'Checked In · '+d.since:'Checked In';
+        }else{
+          bc.style.background='rgba(100,116,139,0.15)';bc.style.color='#94a3b8';bc.style.borderColor='rgba(100,116,139,0.2)';
+          bd.style.background='#64748b';
+          bl.textContent='Not Checked In';
+        }
+      }).catch(function(){setTimeout(_upd,5000);});
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',function(){_insert();_upd();});
+  }else{_insert();_upd();}
+  setInterval(_upd,60000);
+})();
+</script>
+<script>
+(function(){
+  var role = localStorage.getItem('mbrRole') || '';
+  var name = localStorage.getItem('mbrAuth') || '';
+  var lvl  = {admin:5,boss:4,inventory:3,lead:2,worker:1}[role] || 0;
+  if(!name || lvl < 2) { location.href='/home'; }
+})();
+</script>
+
+
+<!-- ── Auth Gate ── -->
+<div id="authGate" style="display:none">
+  <div class="ag-card">
+    <div id="ag1">
+      <div class="ag-icon">🔒</div>
+      <div class="ag-title">Supervisor Access</div>
+      <div class="ag-sub">Select your name to continue</div>
+      <button class="ag-name-btn" onclick="agSelName('John G.')">John G.</button>
+      <button class="ag-name-btn" onclick="agSelName('Mike G.')">Mike G.</button>
+      <button class="ag-name-btn" onclick="agSelName('Jason R.')">Jason R.</button>
+      <button class="ag-name-btn" onclick="agSelName('Daniel H.')">Daniel H.</button>
+      <button class="ag-back" onclick="history.back()">← Back</button>
+    </div>
+    <div id="ag2" style="display:none">
+      <div class="ag-title" id="agPinTitle">Enter PIN</div>
+      <div style="font-size:12px;color:#4a6380;margin-top:4px" id="agPinSub">4-digit PIN</div>
+      <div class="ag-pin-dots">
+        <div class="ag-dot" id="agd0"></div><div class="ag-dot" id="agd1"></div>
+        <div class="ag-dot" id="agd2"></div><div class="ag-dot" id="agd3"></div>
+      </div>
+      <div class="ag-err" id="agErr"></div>
+      <div class="ag-pin-grid">
+        <button class="ag-pk" onclick="agPk('1')">1</button><button class="ag-pk" onclick="agPk('2')">2</button><button class="ag-pk" onclick="agPk('3')">3</button>
+        <button class="ag-pk" onclick="agPk('4')">4</button><button class="ag-pk" onclick="agPk('5')">5</button><button class="ag-pk" onclick="agPk('6')">6</button>
+        <button class="ag-pk" onclick="agPk('7')">7</button><button class="ag-pk" onclick="agPk('8')">8</button><button class="ag-pk" onclick="agPk('9')">9</button>
+        <button class="ag-pk" onclick="agPk('C')" style="color:#6b7f94;font-size:18px">⌫</button>
+        <button class="ag-pk" onclick="agPk('0')">0</button>
+        <button class="ag-pk" onclick="agBack()" style="color:#ef4444;font-size:13px">✕</button>
+      </div>
+      <button class="ag-back" onclick="agBack()">← Back</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="top-bar">
+  <a href="/" class="back-btn">◀ Home</a>
+  <h1>⚠ Issues Log &nbsp;<span>TDG / MBR Texas</span></h1>
+  <span id="lastRefresh" style="font-size:11px;color:#334155"></span>
+  <button class="create-btn" onclick="openCreateModal()" style="height:32px;padding:0 14px;background:#7f1d1d;border:1px solid #ef4444;border-radius:7px;color:#fca5a5;font-size:12px;font-weight:700;cursor:pointer">＋ Create Issue</button>
+  <button class="email-btn" onclick="sendEmail()" style="height:32px;padding:0 14px;background:#1e3a5f;border:1px solid #3b82f6;border-radius:7px;color:#60a5fa;font-size:12px;font-weight:700;cursor:pointer">✉ Email Report</button>
+  <button class="print-btn" onclick="window.print()">🖨 Print / PDF</button>
+</div>
+
+<!-- KPI strip -->
+<div class="kpi-strip">
+  <div class="kpi total"><div class="num" id="kTotal">—</div><div class="lbl">Total</div></div>
+  <div class="kpi open"><div class="num" id="kOpen">—</div><div class="lbl">Open</div></div>
+  <div class="kpi hold"><div class="num" id="kHold">—</div><div class="lbl">On Hold</div></div>
+  <div class="kpi resolved"><div class="num" id="kRes">—</div><div class="lbl">Resolved</div></div>
+</div>
+
+<!-- Filters -->
+<div class="filter-bar">
+  <span class="fbadge">Filter:</span>
+  <select id="fUnit" onchange="applyFilters()">
+    <option value="">All Units</option>
+    <optgroup label="A Series">
+      <option>01A</option><option>02A</option><option>03A</option><option>04A</option>
+      <option>05A</option><option>06A</option><option>07A</option><option>08A</option>
+      <option>09A</option><option>10A</option>
+    </optgroup>
+    <optgroup label="B Series">
+      <option>01B</option><option>02B</option><option>03B</option><option>04B</option>
+      <option>05B</option><option>06B</option><option>07B</option><option>08B</option>
+      <option>09B</option><option>10B</option><option>11B</option><option>12B</option>
+      <option>13B</option><option>14B</option><option>15B</option><option>16B</option>
+      <option>17B</option><option>18B</option><option>19B</option><option>20B</option>
+      <option>21B</option><option>22B</option><option>23B</option><option>24B</option>
+      <option>25B</option><option>26B</option><option>27B</option><option>28B</option>
+    </optgroup>
+  </select>
+  <select id="fStatus" onchange="applyFilters()">
+    <option value="">All Statuses</option>
+    <option>Open</option>
+    <option>On Hold</option>
+    <option>Monitoring</option>
+    <option>Resolved</option>
+  </select>
+  <select id="fCat" onchange="applyFilters()">
+    <option value="">All Categories</option>
+    <option>Quality</option><option>Safety</option><option>Schedule</option>
+    <option>Material</option><option>Labor</option><option>Design</option><option>Other</option>
+  </select>
+  <input type="text" id="fSearch" placeholder="Search title or description…" oninput="applyFilters()">
+</div>
+
+<!-- Table -->
+<div class="table-wrap">
+  <table id="issueTable">
+    <thead>
+      <tr>
+        <th style="width:60px">Unit</th>
+        <th style="width:80px">Date</th>
+        <th>Title</th>
+        <th style="width:90px">Category</th>
+        <th style="width:90px">Status</th>
+        <th>Description</th>
+        <th style="width:80px">By</th>
+        <th style="width:70px">Pics</th>
+      </tr>
+    </thead>
+    <tbody id="issueBody">
+      <tr><td colspan="8" style="text-align:center;padding:40px;color:#334155">Loading…</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<script>
+var ALL_ISSUES = [];
+var openDetailRow = null;
+
+async function loadIssues() {
+  try {
+    var r = await fetch('/api/issues/all');
+    ALL_ISSUES = await r.json();
+    if (!Array.isArray(ALL_ISSUES)) ALL_ISSUES = [];
+    updateKPIs(ALL_ISSUES);
+    applyFilters();
+    document.getElementById('lastRefresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
+  } catch(e) {
+    document.getElementById('issueBody').innerHTML =
+      '<tr><td colspan="8" style="text-align:center;padding:40px;color:#ef4444">Error loading issues.</td></tr>';
+  }
+}
+
+function updateKPIs(data) {
+  document.getElementById('kTotal').textContent = data.length;
+  document.getElementById('kOpen').textContent  = data.filter(function(i){ return i.status==='Open'; }).length;
+  document.getElementById('kHold').textContent  = data.filter(function(i){ return i.status==='On Hold'; }).length;
+  document.getElementById('kRes').textContent   = data.filter(function(i){ return i.status==='Resolved'; }).length;
+}
+
+function applyFilters() {
+  var unit   = document.getElementById('fUnit').value;
+  var status = document.getElementById('fStatus').value;
+  var cat    = document.getElementById('fCat').value;
+  var search = document.getElementById('fSearch').value.toLowerCase();
+
+  var filtered = ALL_ISSUES.filter(function(i) {
+    if (unit   && i.unit     !== unit)   return false;
+    if (status && i.status   !== status) return false;
+    if (cat    && i.category !== cat)    return false;
+    if (search) {
+      var haystack = ((i.title||'') + ' ' + (i.description||'')).toLowerCase();
+      if (haystack.indexOf(search) === -1) return false;
+    }
+    return true;
+  });
+
+  renderTable(filtered);
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  var parts = d.split('-');
+  if (parts.length < 3) return d;
+  return parts[1]+'/'+parts[2]+'/'+parts[0].slice(2);
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function statusClass(s) {
+  if (!s) return '';
+  return s.replace(/\s+/g,'-');
+}
+
+function renderTable(data) {
+  var body = document.getElementById('issueBody');
+  if (!data.length) {
+    body.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="icon">✅</div>No issues match the current filters.</div></td></tr>';
+    return;
+  }
+  var html = '';
+  data.forEach(function(issue) {
+    var sc = statusClass(issue.status);
+    html += '<tr class="issue-row" onclick="toggleDetail(this,\''+esc(issue.id)+'\')" data-id="'+esc(issue.id)+'">';
+    html += '<td class="td-unit">'+esc(issue.unit)+'</td>';
+    html += '<td class="td-date">'+fmtDate(issue.date)+'</td>';
+    html += '<td class="td-title">'+esc(issue.title)+'</td>';
+    html += '<td><span class="cbadge">'+esc(issue.category||'—')+'</span></td>';
+    html += '<td><span class="sbadge '+sc+'">'+esc(issue.status||'—')+'</span></td>';
+    html += '<td class="td-desc">'+esc(issue.description||'—')+'</td>';
+    html += '<td style="font-size:11px;color:#94a3b8">'+esc(issue.created_by||'—')+'</td>';
+    var photos = (issue.photos && Array.isArray(issue.photos)) ? issue.photos : [];
+    if(photos.length > 0){
+      html += '<td class="td-pics"><span class="pic-badge">📷 '+photos.length+'</span></td>';
+    } else {
+      html += '<td class="td-pics" style="color:#334155">—</td>';
+    }
+    html += '</tr>';
+    // Detail row (hidden by default)
+    html += '<tr class="detail-row" id="detail-'+esc(issue.id)+'" style="display:none">';
+    html += '<td colspan="8"><div class="dp-inner">';
+    html += '<div class="dp-field"><label>Description</label><p>'+(issue.description?esc(issue.description):'<span class="empty">No description</span>')+'</p></div>';
+    html += '<div class="dp-field"><label>Reported by</label><p>'+(issue.created_by?'<strong>'+esc(issue.created_by)+'</strong>':'<span class=\"empty\">Unknown</span>')+'</p></div>';
+    html += '<div class="dp-field"><label>Resolution / Notes</label><p>'+(issue.resolution?esc(issue.resolution):'<span class="empty">Not yet resolved</span>')+'</p></div>';
+    var dpPhotos = (issue.photos && Array.isArray(issue.photos)) ? issue.photos : [];
+    if(dpPhotos.length > 0){
+      html += '<div class="dp-field" style="grid-column:1/-1"><label>Photos ('+dpPhotos.length+')</label><div class="dp-photos">';
+      dpPhotos.forEach(function(url){
+        html += '<a href="'+url+'" target="_blank"><img src="'+url+'" class="dp-photo-thumb"></a>';
+      });
+      html += '</div></div>';
+    }
+    html += '</div>';
+    // Action buttons
+    html += '<div class="dp-actions">';
+    if (issue.status !== 'Resolved') {
+      html += '<button class="status-btn sb-resolve" onclick="setStatus(event,\''+esc(issue.id)+'\',\'Resolved\')">✓ Mark Resolved</button>';
+      html += '<button class="status-btn sb-hold" onclick="setStatus(event,\''+esc(issue.id)+'\',\'On Hold\')">⏸ On Hold</button>';
+      html += '<button class="status-btn sb-hold" style="background:#1a2035;color:#94a3b8" onclick="setStatus(event,\''+esc(issue.id)+'\',\'Monitoring\')">👁 Monitoring</button>';
+    } else {
+      html += '<button class="status-btn sb-reopen" onclick="setStatus(event,\''+esc(issue.id)+'\',\'Open\')">↩ Reopen</button>';
+    }
+    html += '<a href="/issues/'+esc(issue.unit)+'" style="display:inline-flex;align-items:center;height:28px;padding:0 12px;background:#0d1520;border:1px solid #1e2d3d;border-radius:6px;font-size:11px;font-weight:700;color:#4f8ef7">↗ Open Unit</a>';
+    html += '<button onclick="printIssue(event,\''+esc(issue.id)+'\')" style="height:28px;padding:0 12px;background:#1a2535;border:1px solid #475569;border-radius:6px;font-size:11px;font-weight:700;color:#94a3b8;cursor:pointer;margin-left:auto">🖨 Print</button>';
+    html += '<button onclick="openEditModal(event,\''+esc(issue.id)+'\')" style="height:28px;padding:0 12px;background:#1e3a5f;border:1px solid #3b82f6;border-radius:6px;font-size:11px;font-weight:700;color:#60a5fa;cursor:pointer;margin-left:6px">✎ Edit Issue</button>';
+    html += '<button onclick="deleteIssue(event,\''+esc(issue.id)+'\')" style="height:28px;padding:0 12px;background:#450a0a;border:1px solid #ef4444;border-radius:6px;font-size:11px;font-weight:700;color:#fca5a5;cursor:pointer;margin-left:6px">🗑 Delete</button>';
+    html += '</div></td></tr>';
+  });
+  body.innerHTML = html;
+}
+
+function toggleDetail(row, id) {
+  var detailRow = document.getElementById('detail-'+id);
+  if (!detailRow) return;
+  var isOpen = detailRow.style.display !== 'none';
+  // Close any open detail
+  document.querySelectorAll('.detail-row').forEach(function(r){ r.style.display='none'; });
+  document.querySelectorAll('.issue-row').forEach(function(r){ r.style.background=''; });
+  if (!isOpen) {
+    detailRow.style.display = 'table-row';
+    row.style.background = '#0d1a2a';
+  }
+}
+
+async function setStatus(e, id, status) {
+  e.stopPropagation();
+  var resolution = '';
+  if (status === 'Resolved') {
+    resolution = prompt('Resolution notes (optional):') || '';
+  }
+  var r = await fetch('/api/issues/'+id+'/status', {
+    method: 'PATCH',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({status: status, resolution: resolution})
+  });
+  var d = await r.json();
+  if (d.ok) {
+    // Update local data and re-render
+    ALL_ISSUES.forEach(function(i){ if(i.id===id){ i.status=status; if(resolution) i.resolution=resolution; } });
+    updateKPIs(ALL_ISSUES);
+    applyFilters();
+  } else {
+    alert('Error updating status');
+  }
+}
+
+loadIssues();
+
+// ── Today's date default ──────────────────────────────────────────
+function todayISO(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+
+
+
+function printIssue(evt, id){
+  evt.stopPropagation();
+  var issue = ALL_ISSUES.find(function(i){ return String(i.id) === String(id); });
+  if(!issue) return;
+  var photos = (issue.photos && Array.isArray(issue.photos)) ? issue.photos : [];
+  var photoHtml = '';
+  if(photos.length > 0){
+    photoHtml = '<div style="margin-top:16px"><strong>Photos:</strong><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">';
+    photos.forEach(function(url){
+      photoHtml += '<img src="'+url+'" style="width:160px;height:160px;object-fit:cover;border-radius:6px;border:1px solid #ccc">';
+    });
+    photoHtml += '</div></div>';
+  }
+  var html = '<!DOCTYPE html><html><head><meta charset="utf-8">'
+    + '<title>Issue Report — '+issue.unit+'</title>'
+    + '<style>'
+    + 'body{font-family:Segoe UI,system-ui,sans-serif;margin:32px;color:#0f172a;font-size:13px}'
+    + 'h1{font-size:18px;font-weight:800;margin:0 0 4px}'
+    + '.sub{color:#64748b;font-size:12px;margin-bottom:20px}'
+    + 'table{width:100%;border-collapse:collapse;margin-bottom:16px}'
+    + 'td{padding:7px 10px;border:1px solid #e2e8f0;vertical-align:top}'
+    + 'td:first-child{font-weight:700;background:#f8fafc;width:140px;color:#475569}'
+    + '.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700}'
+    + '.open{background:#fee2e2;color:#b91c1c}'
+    + '.resolved{background:#dcfce7;color:#15803d}'
+    + '.monitoring{background:#dbeafe;color:#1d4ed8}'
+    + '.on-hold{background:#fef9c3;color:#92400e}'
+    + '.section{font-weight:700;margin:16px 0 6px;border-bottom:2px solid #1e3a5f;padding-bottom:4px;color:#1e3a5f}'
+    + '.logo{font-size:22px;font-weight:900;color:#1e3a5f;letter-spacing:-0.5px}'
+    + '.logo span{color:#ef4444}'
+    + 'footer{margin-top:32px;font-size:10px;color:#94a3b8;border-top:1px solid #e2e8f0;padding-top:8px}'
+    + '@media print{body{margin:16px}}'
+    + '</style></head><body>'
+    + '<div class="logo">TDG / <span>MBR</span> Texas</div>'
+    + '<h1>Issue Report — Unit '+issue.unit+'</h1>'
+    + '<div class="sub">Printed: '+new Date().toLocaleString()+'</div>'
+    + '<table>'
+    + '<tr><td>Unit</td><td><strong>'+issue.unit+'</strong></td></tr>'
+    + '<tr><td>Date</td><td>'+(issue.date||'—')+'</td></tr>'
+    + '<tr><td>Title</td><td><strong>'+(issue.title||'—')+'</strong></td></tr>'
+    + '<tr><td>Category</td><td>'+(issue.category||'—')+'</td></tr>'
+    + '<tr><td>Status</td><td><span class="badge '+(issue.status||'').toLowerCase().replace(' ','-')+'">'+(issue.status||'—')+'</span></td></tr>'
+    + '</table>'
+    + '<div class="section">Description</div>'
+    + '<p style="margin:0 0 16px;line-height:1.6">'+(issue.description||'No description provided.')+'</p>'
+    + '<div class="section">Resolution / Notes</div>'
+    + '<p style="margin:0 0 16px;line-height:1.6">'+(issue.resolution||'Not yet resolved.')+'</p>'
+    + photoHtml
+    + '<footer>TDG / MBR Texas — Issue Tracking System &nbsp;|&nbsp; ID: '+issue.id+'</footer>'
+    + '</body></html>';
+  var w = window.open('','_blank','width=780,height=900');
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  setTimeout(function(){ w.print(); }, 400);
+}
+
+async function deleteIssue(evt, id){
+  evt.stopPropagation();
+  var issue = ALL_ISSUES.find(function(i){ return String(i.id) === String(id); });
+  var label = issue ? (issue.unit + ' — ' + issue.title) : id;
+  if(!confirm('Delete issue:\n"' + label + '"\n\nThis cannot be undone.')) return;
+  try{
+    var r = await fetch('/api/issues/'+id, {method:'DELETE'});
+    var d = await r.json();
+    if(d.ok){ await loadIssues(); }
+    else { alert('Error: '+(d.error||'could not delete')); }
+  }catch(e){ alert('Network error: '+e.message); }
+}
+
+// ── Edit Issue Modal ──────────────────────────────────────────────
+var EDIT_ID = null;
+function openEditModal(evt, id){
+  evt.stopPropagation();
+  EDIT_ID = id;
+  var issue = ALL_ISSUES.find(function(i){ return String(i.id) === String(id); });
+  if(!issue){ return; }
+  document.getElementById('ei-unit').textContent  = issue.unit;
+  document.getElementById('ei-date').value        = issue.date || '';
+  document.getElementById('ei-title').value       = issue.title || '';
+  document.getElementById('ei-cat').value         = issue.category || 'Quality';
+  document.getElementById('ei-status').value      = issue.status || 'Open';
+  document.getElementById('ei-desc').value        = issue.description || '';
+  document.getElementById('ei-res').value         = issue.resolution || '';
+  document.getElementById('ei-err').textContent   = '';
+  // Populate existing photos
+  var existingContainer = document.getElementById('ei-existing-photos');
+  existingContainer.innerHTML = '';
+  var existingPhotos = (issue.photos && Array.isArray(issue.photos)) ? issue.photos.slice() : [];
+  existingPhotos.forEach(function(url, idx){
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'position:relative;display:inline-block';
+    var img = document.createElement('img');
+    img.src = url;
+    img.style.cssText = 'width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1';
+    var btn = document.createElement('button');
+    btn.textContent = '✕';
+    btn.style.cssText = 'position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#ef4444;color:#fff;border:none;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;line-height:1;padding:0';
+    btn.onclick = function(){ wrap.remove(); };
+    wrap.appendChild(img); wrap.appendChild(btn);
+    existingContainer.appendChild(wrap);
+  });
+  // Clear new photo input
+  document.getElementById('ei-photos').value = '';
+  document.getElementById('ei-new-thumbs').innerHTML = '';
+  document.getElementById('editModal').classList.add('open');
+}
+function closeEditModal(){
+  document.getElementById('editModal').classList.remove('open');
+  EDIT_ID = null;
+}
+document.addEventListener('DOMContentLoaded', function(){
+  document.getElementById('editModal').addEventListener('click', function(e){
+    if(e.target === this) closeEditModal();
+  });
+});
+async function submitEdit(){
+  var title = document.getElementById('ei-title').value.trim();
+  var err   = document.getElementById('ei-err');
+  if(!title){ err.textContent='Title is required.'; return; }
+  err.textContent='';
+  var btn = document.getElementById('ei-submit');
+  btn.disabled=true; btn.textContent='Saving…';
+  // Collect kept existing photos (those not removed)
+  var keptPhotos = [];
+  document.getElementById('ei-existing-photos').querySelectorAll('img').forEach(function(img){
+    keptPhotos.push(img.src);
+  });
+  // Upload new photos
+  var newFiles = document.getElementById('ei-photos').files;
+  for(var i=0; i<newFiles.length; i++){
+    var fd = new FormData(); fd.append('photo', newFiles[i]);
+    try{
+      var pr = await fetch('/api/issues/upload-photo', {method:'POST', body:fd});
+      var pd = await pr.json();
+      if(pd.ok && pd.url) keptPhotos.push(pd.url);
+      else { err.textContent='Photo upload failed: '+(pd.error||'error'); }
+    }catch(e2){ err.textContent='Upload error: '+e2.message; }
+  }
+  var payload = {
+    date:        document.getElementById('ei-date').value,
+    title:       title,
+    category:    document.getElementById('ei-cat').value,
+    status:      document.getElementById('ei-status').value,
+    description: document.getElementById('ei-desc').value.trim(),
+    resolution:  document.getElementById('ei-res').value.trim(),
+    photos:      keptPhotos
+  };
+  try{
+    var r = await fetch('/api/issues/'+EDIT_ID+'/edit', {
+      method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+    });
+    var d = await r.json();
+    if(d.ok){ closeEditModal(); await loadIssues(); }
+    else { err.textContent = d.error || 'Error saving.'; }
+  }catch(e){ err.textContent='Network error.'; }
+  finally{ btn.disabled=false; btn.textContent='Save Changes'; }
+}
+
+// ── Create Issue Modal ────────────────────────────────────────────
+function openCreateModal(){
+  document.getElementById('mi-date').value = todayISO();
+  document.getElementById('mi-err').textContent = '';
+  document.getElementById('mi-thumbs').innerHTML = '';
+  document.getElementById('mi-photos').value = '';
+  document.getElementById('mi-title').value = '';
+  document.getElementById('mi-desc').value = '';
+  document.getElementById('mi-unit').value = '';
+  document.getElementById('createModal').classList.add('open');
+}
+function closeCreateModal(){
+  document.getElementById('createModal').classList.remove('open');
+}
+// Close on overlay click
+document.getElementById('createModal').addEventListener('click', function(e){
+  if(e.target === this) closeCreateModal();
+});
+
+// Photo preview
+document.getElementById('ei-photos').addEventListener('change', function(){
+  var thumbs = document.getElementById('ei-new-thumbs');
+  thumbs.innerHTML = '';
+  Array.from(this.files).forEach(function(file){
+    var img = document.createElement('img');
+    img.style.cssText = 'width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1';
+    img.src = URL.createObjectURL(file);
+    thumbs.appendChild(img);
+  });
+});
+
+document.getElementById('mi-photos').addEventListener('change', function(){
+  var thumbs = document.getElementById('mi-thumbs');
+  thumbs.innerHTML = '';
+  Array.from(this.files).forEach(function(file){
+    var img = document.createElement('img');
+    img.style.cssText = 'width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid #1e2d3d';
+    img.src = URL.createObjectURL(file);
+    thumbs.appendChild(img);
+  });
+});
+
+async function submitIssue(){
+  var unit  = document.getElementById('mi-unit').value.trim();
+  var title = document.getElementById('mi-title').value.trim();
+  var err   = document.getElementById('mi-err');
+  if(!unit)  { err.textContent='Select a unit.'; return; }
+  if(!title) { err.textContent='Title is required.'; return; }
+  err.textContent = '';
+  var btn = document.getElementById('mi-submit');
+  btn.disabled = true; btn.textContent = 'Uploading…';
+
+  // Upload photos first
+  var photoUrls = [];
+  var files = document.getElementById('mi-photos').files;
+  for(var i=0; i<files.length; i++){
+    var fd = new FormData(); fd.append('photo', files[i]);
+    try{
+      var pr = await fetch('/api/issues/upload-photo', {method:'POST', body:fd});
+      var pd = await pr.json();
+      if(pd.ok && pd.url){ photoUrls.push(pd.url); }
+      else { err.textContent = 'Photo upload failed: '+(pd.error||'unknown error'); }
+    }catch(e){ err.textContent = 'Photo upload error: '+e.message; }
+  }
+
+  btn.textContent = 'Saving…';
+  var payload = {
+    unit:  unit,
+    date:  document.getElementById('mi-date').value || todayISO(),
+    title: title,
+    category:    document.getElementById('mi-cat').value,
+    status:      document.getElementById('mi-status').value,
+    description: document.getElementById('mi-desc').value.trim(),
+    photos: photoUrls,
+    created_by: localStorage.getItem('mbrAuth') || ''
+  };
+
+  try{
+    var r = await fetch('/api/issues', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+    var d = await r.json();
+    if(d.ok){
+      closeCreateModal();
+      await loadIssues(); // refresh
+    } else { err.textContent = d.error || 'Error saving issue.'; }
+  }catch(e){ err.textContent = 'Network error.'; }
+  finally{ btn.disabled=false; btn.textContent='Submit Issue'; }
+}
+
+// ── Email Report ─────────────────────────────────────────────────
+function sendEmail(){
+  // Get currently visible (filtered) issues
+  var unit   = document.getElementById('fUnit').value;
+  var status = document.getElementById('fStatus').value;
+  var filtered = ALL_ISSUES.filter(function(i){
+    if(unit   && i.unit!==unit)     return false;
+    if(status && i.status!==status) return false;
+    return true;
+  });
+
+  var open   = filtered.filter(function(i){ return i.status==='Open'; }).length;
+  var hold   = filtered.filter(function(i){ return i.status==='On Hold'; }).length;
+  var mon    = filtered.filter(function(i){ return i.status==='Monitoring'; }).length;
+  var res    = filtered.filter(function(i){ return i.status==='Resolved'; }).length;
+
+  var body = 'TDG / MBR Texas — Issues Report%0D%0A';
+  body += 'Generated: '+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})+'%0D%0A';
+  if(unit) body += 'Unit: '+unit+'%0D%0A';
+  body += '%0D%0A';
+  body += 'SUMMARY: Total '+filtered.length+' | Open '+open+' | On Hold '+hold+' | Monitoring '+mon+' | Resolved '+res+'%0D%0A';
+  body += '================================================================%0D%0A%0D%0A';
+
+  // Group by status: Open first, then On Hold, then Monitoring, then Resolved
+  var order = ['Open','On Hold','Monitoring','Resolved'];
+  order.forEach(function(st){
+    var group = filtered.filter(function(i){ return i.status===st; });
+    if(!group.length) return;
+    body += st.toUpperCase()+' ('+group.length+')%0D%0A';
+    body += '----------------------------------------------------------------%0D%0A';
+    group.forEach(function(i){
+      body += 'Unit: '+i.unit+'  |  Date: '+fmtDate(i.date)+'  |  Category: '+(i.category||'—')+'%0D%0A';
+      body += 'Title: '+(i.title||'—')+'%0D%0A';
+      if(i.description) body += 'Description: '+i.description+'%0D%0A';
+      if(i.resolution)  body += 'Resolution: '+i.resolution+'%0D%0A';
+      body += '%0D%0A';
+    });
+  });
+
+  var subject = encodeURIComponent('TDG Issues Report — '+new Date().toLocaleDateString('en-US'));
+  window.location.href = 'mailto:?subject='+subject+'&body='+body;
+}
+
+</script>
+
+<!-- Edit Issue Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <button class="close-btn" onclick="closeEditModal()">✕</button>
+    <h2>✎ Edit Issue — <span id="ei-unit" style="color:#4f8ef7"></span></h2>
+    <div class="mrow">
+      <div class="mfield">
+        <label>Date</label>
+        <input type="date" id="ei-date">
+      </div>
+      <div class="mfield">
+        <label>Status</label>
+        <select id="ei-status">
+          <option>Open</option><option>Monitoring</option><option>On Hold</option><option>Resolved</option>
+        </select>
+      </div>
+    </div>
+    <div class="mfield">
+      <label>Title *</label>
+      <input type="text" id="ei-title" placeholder="Brief description of the issue">
+    </div>
+    <div class="mfield">
+      <label>Category</label>
+      <select id="ei-cat">
+        <option>Quality</option><option>Safety</option><option>Schedule</option>
+        <option>Material</option><option>Labor</option><option>Design</option><option>Other</option>
+      </select>
+    </div>
+    <div class="mfield">
+      <label>Description</label>
+      <textarea id="ei-desc" placeholder="What happened?"></textarea>
+    </div>
+    <div class="mfield">
+      <label>Resolution / Notes</label>
+      <textarea id="ei-res" placeholder="How was it resolved?"></textarea>
+    </div>
+    <div class="mfield">
+      <label>Photos</label>
+      <div id="ei-existing-photos" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+      <input type="file" id="ei-photos" accept="image/*" multiple style="background:#ffffff;border:1px solid #cbd5e1;border-radius:7px;color:#374151;font-size:12px;padding:6px 8px;cursor:pointer;width:100%">
+      <div id="ei-new-thumbs" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px"></div>
+    </div>
+    <div class="m-err" id="ei-err"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeEditModal()">Cancel</button>
+      <button class="btn-submit" id="ei-submit" onclick="submitEdit()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create Issue Modal -->
+<div class="modal-overlay" id="createModal">
+  <div class="modal">
+    <button class="close-btn" onclick="closeCreateModal()">✕</button>
+    <h2>⚠ Create New Issue</h2>
+    <div class="mrow">
+      <div class="mfield">
+        <label>Unit *</label>
+        <select id="mi-unit">
+          <option value="">— Select —</option>
+          <optgroup label="A Series">
+            <option>01A</option><option>02A</option><option>03A</option><option>04A</option>
+            <option>05A</option><option>06A</option><option>07A</option><option>08A</option>
+            <option>09A</option><option>10A</option>
+          </optgroup>
+          <optgroup label="B Series">
+            <option>01B</option><option>02B</option><option>03B</option><option>04B</option>
+            <option>05B</option><option>06B</option><option>07B</option><option>08B</option>
+            <option>09B</option><option>10B</option><option>11B</option><option>12B</option>
+            <option>13B</option><option>14B</option><option>15B</option><option>16B</option>
+            <option>17B</option><option>18B</option><option>19B</option><option>20B</option>
+            <option>21B</option><option>22B</option><option>23B</option><option>24B</option>
+            <option>25B</option><option>26B</option><option>27B</option><option>28B</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="mfield">
+        <label>Date *</label>
+        <input type="date" id="mi-date">
+      </div>
+    </div>
+    <div class="mfield">
+      <label>Title *</label>
+      <input type="text" id="mi-title" placeholder="Brief description of the issue">
+    </div>
+    <div class="mrow">
+      <div class="mfield">
+        <label>Category</label>
+        <select id="mi-cat">
+          <option>Quality</option><option>Safety</option><option>Schedule</option>
+          <option>Material</option><option>Labor</option><option>Design</option><option>Other</option>
+        </select>
+      </div>
+      <div class="mfield">
+        <label>Status</label>
+        <select id="mi-status">
+          <option>Open</option><option>Monitoring</option><option>On Hold</option>
+        </select>
+      </div>
+    </div>
+    <div class="mfield">
+      <label>Description</label>
+      <textarea id="mi-desc" placeholder="What happened? Where? What is the impact?"></textarea>
+    </div>
+    <div class="mfield">
+      <label>Photos (optional)</label>
+      <input type="file" id="mi-photos" accept="image/*" multiple style="background:#060c18;border:1px solid #1e2d3d;border-radius:7px;color:#94a3b8;font-size:12px;padding:6px 8px;cursor:pointer">
+      <div id="mi-thumbs" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px"></div>
+    </div>
+    <div class="m-err" id="mi-err"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeCreateModal()">Cancel</button>
+      <button class="btn-submit" id="mi-submit" onclick="submitIssue()">Submit Issue</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Auth gate (cross-page via localStorage) ──────────────────────
+(function(){
+  var AUTH_KEY='mbrAuth';
+  var stored=localStorage.getItem(AUTH_KEY);
+  if(stored){ return; }          // already authed — show page normally
+  // Hide page body, show gate
+  document.body.style.overflow='hidden';
+  document.getElementById('authGate').style.display='flex';
+})();
+
+var _agUser='',_agBuf='',_agNew=false,_agFirst='';
+
+function agSelName(n){
+  _agUser=n;_agBuf='';_agNew=false;_agFirst='';
+  document.getElementById('agPinTitle').textContent='Hello, '+n+'!';
+  document.getElementById('agPinSub').textContent='Enter your 4-digit PIN';
+  document.getElementById('agErr').textContent='';
+  agDots();
+  fetch('/api/users/has-pin?name='+encodeURIComponent(n))
+    .then(function(r){return r.json();})
+    .then(function(d){ if(!d.has_pin){_agNew=true;document.getElementById('agPinSub').textContent='Create a new 4-digit PIN';} })
+    .catch(function(){});
+  document.getElementById('ag1').style.display='none';
+  document.getElementById('ag2').style.display='block';
+}
+function agBack(){
+  document.getElementById('ag2').style.display='none';
+  document.getElementById('ag1').style.display='block';
+  _agBuf='';_agNew=false;_agFirst='';
+}
+function agDots(){
+  for(var i=0;i<4;i++){
+    var d=document.getElementById('agd'+i);
+    if(d)d.className='ag-dot'+(i<_agBuf.length?' on':'');
+  }
+}
+function agPk(k){
+  if(k==='C'){if(_agBuf.length>0){_agBuf=_agBuf.slice(0,-1);agDots();}return;}
+  if(_agBuf.length>=4)return;
+  _agBuf+=k;agDots();
+  if(_agBuf.length===4)setTimeout(agProc,110);
+}
+function agProc(){
+  if(_agNew&&!_agFirst){_agFirst=_agBuf;_agBuf='';document.getElementById('agPinSub').textContent='Confirm your PIN';agDots();return;}
+  if(_agNew&&_agFirst){
+    if(_agBuf!==_agFirst){document.getElementById('agErr').textContent='PINs do not match.';_agBuf='';_agFirst='';agDots();return;}
+    fetch('/api/users/set-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:_agUser,pin:_agBuf})})
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(d.ok){
+          var body='MBR Texas Timesheet%0A%0APIN Set For: '+encodeURIComponent(_agUser)+'%0APIN: '+_agBuf+'%0ADate: '+new Date().toLocaleDateString();
+          window.open('mailto:dshidalgop@gmail.com?subject='+encodeURIComponent('PIN – '+_agUser)+'&body='+body,'_blank');
+          localStorage.setItem('mbrAuth',_agUser);
+          document.getElementById('authGate').style.display='none';
+          document.body.style.overflow='';
+        }else{document.getElementById('agErr').textContent='Error: '+(d.error||'try again');}
+      }).catch(function(){document.getElementById('agErr').textContent='Network error.';});
+    return;
+  }
+  fetch('/api/users/verify-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:_agUser,pin:_agBuf})})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){
+        localStorage.setItem('mbrAuth',_agUser);
+        document.getElementById('authGate').style.display='none';
+        document.body.style.overflow='';
+      }else{document.getElementById('agErr').textContent='Incorrect PIN.';_agBuf='';agDots();}
+    }).catch(function(){document.getElementById('agErr').textContent='Network error.';});
+}
+</script>
+<!-- GNAV -->
+
+<nav class="gnav" id="gnav">
+  <a href="/" class="gnav-link"><span class="gi">🏠</span>Home</a>
+  <a href="/log" class="gnav-link"><span class="gi">📋</span>Log</a>
+  <a href="/dashboard" class="gnav-link"><span class="gi">📊</span>Dashboard</a>
+  <a href="/timesheet" class="gnav-link"><span class="gi">🕐</span>Timesheet</a>
+  <a href="/inventory" class="gnav-link"><span class="gi">📦</span>Inventory</a>
+  <a href="/issues-log" class="gnav-link"><span class="gi">⚠️</span>Issues</a>
+  <a href="/settings" class="gnav-link"><span class="gi">⚙️</span>Settings</a>
+</nav>
+<script>
+(function(){var p=location.pathname;document.querySelectorAll('.gnav-link').forEach(function(a){var h=a.getAttribute('href');if(h==='/'?p===h:p===h||p.startsWith(h))a.classList.add('gna');});})();
+(function(){var r=localStorage.getItem('mbrRole')||'worker';var lv={admin:5,boss:4,inventory:3,lead:2,worker:1}[r]||1;var rules={'/log':2,'/dashboard':4,'/inventory':2,'/issues-log':2,'/settings':4};document.querySelectorAll('.gnav-link').forEach(function(a){var h=a.getAttribute('href');if(rules[h]&&lv<rules[h]){a.href='/home';a.style.opacity='0.45';}});})();
+</script>
+</body>
+</html>

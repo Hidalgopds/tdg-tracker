@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Codes — TDG Yard Positions</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f1117;color:#e2e8f0;min-height:100vh}
+
+/* Top bar */
+.top-bar{background:#1a1d27;border-bottom:1px solid #2a2d3e;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.top-bar h1{font-size:18px;font-weight:700}
+.top-bar p{font-size:12px;color:#64748b;margin-top:2px}
+.actions{display:flex;gap:10px;align-items:center}
+.btn{height:36px;padding:0 16px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}
+.btn-print{background:#3b82f6;color:#fff}
+.btn-print:hover{background:#2563eb}
+
+/* Filter tabs */
+.filters{padding:16px 24px;display:flex;gap:8px;flex-wrap:wrap}
+.ftab{height:30px;padding:0 14px;border:1px solid #2a2d3e;border-radius:20px;background:#1a1d27;color:#64748b;font-size:12px;font-weight:600;cursor:pointer}
+.ftab.active{background:#1e3a5f;border-color:#3b82f6;color:#4f8ef7}
+
+/* Grid */
+.grid{display:flex;flex-wrap:wrap;gap:16px;padding:8px 24px 40px}
+
+/* QR Card */
+.qr-card{background:#1a1d27;border:1px solid #2a2d3e;border-radius:12px;padding:16px;display:flex;flex-direction:column;align-items:center;gap:10px;width:180px}
+.qr-pos{font-size:18px;font-weight:800;letter-spacing:-.3px}
+.qr-url{font-size:9px;color:#475569;text-align:center;word-break:break-all}
+.qr-box{background:#fff;border-radius:8px;padding:8px}
+.qr-box canvas, .qr-box img{display:block}
+
+/* Print styles */
+@media print {
+  body{background:#fff;color:#000}
+  .top-bar,.filters,.actions{display:none!important}
+  .grid{padding:0;gap:12px}
+  .qr-card{border:1px solid #ccc;break-inside:avoid;background:#fff}
+  .qr-pos{color:#000}
+  .qr-url{color:#666}
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div>
+    <h1>📍 TDG Yard — QR Check-In Codes</h1>
+    <p>Print and place at each position. Workers scan to check in.</p>
+  </div>
+  <div class="actions">
+    <button class="btn btn-print" onclick="window.print()">🖨 Print All</button>
+    <a href="/" style="color:#4f8ef7;font-size:13px;text-decoration:none">← Home</a>
+  </div>
+</div>
+
+<div class="filters">
+  <button class="ftab active" onclick="filter('all',this)">All</button>
+  <button class="ftab" onclick="filter('A',this)">A Series</button>
+  <button class="ftab" onclick="filter('B',this)">B Series</button>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<script>
+var BASE_URL = window.location.origin;
+
+var ALL_POSITIONS = [
+  '01A','02A','03A','04A','05A','06A','07A','08A','09A','10A',
+  '01B','02B','03B','04B','05B','06B','07B','08B','09B','10B',
+  '11B','12B','13B','14B','15B','16B','17B','18B','19B','20B',
+  '21B','22B','23B','24B','25B','26B','27B','28B'
+];
+
+var currentFilter = 'all';
+
+function filter(f, btn){
+  currentFilter = f;
+  document.querySelectorAll('.ftab').forEach(function(t){t.classList.remove('active');});
+  btn.classList.add('active');
+  renderGrid();
+}
+
+function renderGrid(){
+  var grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  var positions = ALL_POSITIONS.filter(function(p){
+    if(currentFilter === 'A') return p.endsWith('A');
+    if(currentFilter === 'B') return p.endsWith('B');
+    return true;
+  });
+
+  positions.forEach(function(pos){
+    var url = BASE_URL + '/checkin/' + pos;
+    var card = document.createElement('div');
+    card.className = 'qr-card';
+    card.dataset.series = pos.slice(-1);
+
+    var posLabel = document.createElement('div');
+    posLabel.className = 'qr-pos';
+    posLabel.textContent = 'Position ' + pos;
+
+    var qrBox = document.createElement('div');
+    qrBox.className = 'qr-box';
+    qrBox.id = 'qr-' + pos;
+
+    var urlLabel = document.createElement('div');
+    urlLabel.className = 'qr-url';
+    urlLabel.textContent = url;
+
+    card.appendChild(posLabel);
+    card.appendChild(qrBox);
+    card.appendChild(urlLabel);
+    grid.appendChild(card);
+
+    // Generate QR
+    new QRCode(qrBox, {
+      text: url,
+      width: 140,
+      height: 140,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  });
+}
+
+renderGrid();
+</script>
+</body>
+</html>

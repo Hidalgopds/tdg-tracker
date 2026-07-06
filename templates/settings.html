@@ -1,0 +1,1780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings — MBR Tracker</title>
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--border:#334155;--text:#e2e8f0;--muted:#94a3b8;--accent:#3b82f6;--green:#22c55e;--red:#ef4444;--yellow:#f59e0b;--purple:#a855f7;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;padding-bottom:60px;}
+.topbar{background:#1e3a5f;padding:12px 24px;display:flex;align-items:center;gap:12px;}
+.topbar h1{font-size:18px;font-weight:600;}
+.topbar a{color:var(--muted);text-decoration:none;font-size:13px;}
+/* GATE */
+#gate{display:flex;align-items:center;justify-content:center;min-height:80vh;}
+.gate-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:36px 32px;width:360px;text-align:center;}
+.gate-card h2{font-size:20px;margin-bottom:6px;}
+.gate-card p{color:var(--muted);font-size:13px;margin-bottom:24px;}
+#userList{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
+.user-btn{background:var(--border);border:none;color:var(--text);border-radius:8px;padding:12px;font-size:15px;cursor:pointer;transition:.15s;}
+.user-btn:hover,.user-btn.active{background:var(--accent);}
+.pin-dots{display:flex;justify-content:center;gap:10px;margin:16px 0;}
+.dot{width:14px;height:14px;border-radius:50%;background:var(--border);transition:.15s;}
+.dot.filled{background:var(--accent);}
+.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;}
+.numpad button{background:var(--border);border:none;color:var(--text);border-radius:8px;padding:14px;font-size:18px;font-weight:600;cursor:pointer;}
+.numpad button:hover{background:#475569;}
+.pin-err{color:var(--red);font-size:13px;min-height:20px;margin-top:8px;}
+#pinSection{display:none;}
+/* MAIN */
+#main{display:block;padding:28px 32px;max-width:1100px;margin:0 auto;}
+.settings-header{display:flex;align-items:center;gap:10px;margin-bottom:24px;}
+.settings-header h2{font-size:22px;font-weight:700;}
+/* TABS */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:24px;flex-wrap:wrap;}
+.tab-btn{background:none;border:none;color:var(--muted);padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:2px solid transparent;transition:.15s;}
+.tab-btn:hover{color:var(--text);}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+/* CARDS */
+.section-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:24px;}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:8px;}
+.section-header h3{font-size:16px;font-weight:600;}
+.info-bar{background:#1e3a5f;border:1px solid #2563eb44;border-radius:8px;padding:10px 16px;font-size:12px;color:#93c5fd;margin-bottom:18px;line-height:1.7;}
+.info-bar strong{color:#60a5fa;}
+table{width:100%;border-collapse:collapse;}
+th{text-align:left;font-size:11px;font-weight:600;color:var(--muted);padding:8px 12px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.5px;}
+td{padding:10px 12px;font-size:14px;border-bottom:1px solid #1e293b;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#ffffff06;}
+/* BADGES */
+.badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:600;}
+.badge-admin{background:#7c3aed22;color:#a78bfa;}.badge-boss{background:#f59e0b22;color:#fbbf24;}.badge-inv{background:#fb923c22;color:#fb923c;}
+.badge-lead{background:#0369a122;color:#38bdf8;}
+.badge-editor{background:#0369a122;color:#38bdf8;}
+.badge-worker{background:#06402622;color:#4ade80;}
+.badge-inactive{background:#37415122;color:var(--muted);}
+.badge-active{background:#06402622;color:#4ade80;}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;border:none;cursor:pointer;font-size:13px;font-weight:500;transition:.15s;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:#2563eb;}
+.btn-ghost{background:#334155;color:var(--text);}
+.btn-ghost:hover{background:#475569;}
+.btn-danger{background:#7f1d1d33;color:var(--red);border:1px solid #7f1d1d55;}
+.btn-danger:hover{background:#7f1d1d66;}
+.btn-secondary{background:#1e3a5f44;color:#60a5fa;border:1px solid #1e3a5f88;}
+.btn-secondary:hover{background:#1e3a5f77;}
+.btn-sm{padding:4px 10px;font-size:12px;}
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:#00000088;z-index:200;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:28px;width:420px;max-width:95vw;max-height:90vh;overflow-y:auto;}
+.modal h3{margin-bottom:20px;font-size:17px;}
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:500;}
+.field input,.field select,.field textarea{width:100%;background:#0f172a;border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:7px;font-size:14px;}
+.field input:focus,.field select:focus{outline:none;border-color:var(--accent);}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;}
+/* ROLE ACCESS MATRIX */
+.role-matrix{width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.role-matrix th{background:#0f172a;padding:12px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);text-align:center;border-bottom:1px solid var(--border);}
+.role-matrix th:first-child{text-align:left;width:220px;}
+.role-matrix td{padding:11px 16px;border-top:1px solid var(--border);text-align:center;vertical-align:middle;}
+.role-matrix td:first-child{text-align:left;font-size:14px;}
+.role-matrix tr.sub-row td:first-child{padding-left:32px;font-size:13px;color:var(--muted);}
+.role-matrix tr.sub-row{background:#00000015;}
+.toggle-cell{cursor:pointer;width:48px;height:32px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:18px;transition:.12s;user-select:none;}
+.toggle-cell.on{background:#06402633;color:var(--green);}
+.toggle-cell.off{background:#37415120;color:#475569;}
+.toggle-cell.locked{cursor:not-allowed;opacity:.6;}
+.role-matrix th.boss-h{color:#f59e0b;}
+.role-matrix th.admin-h{color:#a78bfa;}
+.role-matrix th.lead-h{color:#38bdf8;}
+.role-matrix th.worker-h{color:#4ade80;}
+.role-matrix th.inv-h{color:#fb923c;}
+.matrix-footer{display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:8px;}
+.matrix-note{font-size:12px;color:var(--muted);}
+/* HOURS */
+.week-picker{display:flex;align-items:flex-end;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+.week-picker input{background:#0f172a;border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:7px;font-size:14px;}
+.summary-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;}
+.summary-card{background:#0f172a;border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;}
+.summary-card .val{font-size:28px;font-weight:700;color:var(--accent);}
+.summary-card .lbl{font-size:12px;color:var(--muted);margin-top:4px;}
+/* TOAST */
+#toast{position:fixed;bottom:70px;right:24px;background:#1e293b;border:1px solid var(--border);color:var(--text);padding:12px 20px;border-radius:8px;font-size:14px;display:none;z-index:999;box-shadow:0 4px 20px #00000066;}
+#toast.err{border-color:var(--red);color:var(--red);}
+.pw-wrap{position:relative;}.pw-wrap input{padding-right:42px;width:100%;}
+.eye-btn{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#64748b;font-size:17px;line-height:1;padding:0;}
+.eye-btn:hover{color:#94a3b8;}
+</style>
+
+<style id="gnav-style">
+.gnav{position:fixed;bottom:0;left:0;right:0;height:54px;background:#060c18;border-top:1px solid #1a2535;display:flex;justify-content:space-around;align-items:center;z-index:9999;box-shadow:0 -4px 24px rgba(0,0,0,.5);}
+.gnav a{display:flex;flex-direction:column;align-items:center;gap:1px;text-decoration:none;color:#475569;padding:0 8px;font-size:10px;font-weight:500;transition:.15s;min-width:44px;}
+.gnav a:hover,.gnav a.gna{color:#a855f7;}
+.gnav a .gi{font-size:19px;line-height:1.2;}
+body{padding-bottom:60px !important;}
+</style>
+<!-- LIGHT-THEME -->
+
+<style id="light-theme">
+/* ============================================
+   MBR TEXAS — LIGHT CORPORATE THEME
+   High-contrast for outdoor / sunlight use
+   ============================================ */
+:root{
+  --bg:#f0f4f8;--card:#ffffff;--border:#cbd5e1;
+  --text:#0f172a;--muted:#475569;
+  --accent:#1a6bc4;--green:#15803d;
+  --red:#b91c1c;--yellow:#92400e;--purple:#6d28d9;
+}
+html,body{background:#f0f4f8 !important;color:#0f172a !important;}
+
+/* ── Headers: stay dark blue (brand + readable with sunglasses) ── */
+.header,.topbar,header,#app-header{
+  background:#1e3a5f !important;color:#e2e8f0 !important;
+  border-bottom-color:#0f2d52 !important;
+}
+.hlogo{color:#60a5fa !important;}
+.back-btn,.topbar a,.header a{color:#93c5fd !important;}
+
+/* ── Gate / auth area ── */
+.gate{background:#f0f4f8 !important;}
+.gate-card{background:#ffffff !important;border-color:#e2e8f0 !important;
+  box-shadow:0 4px 24px rgba(0,0,0,.08) !important;}
+.gate-card h2{color:#0f172a !important;}
+.gate-card p{color:#475569 !important;}
+
+/* ── Name / user buttons ── */
+.name-btn,.user-btn{
+  background:#f1f5f9 !important;border-color:#e2e8f0 !important;color:#0f172a !important;
+}
+.name-btn:hover,.name-btn:active,.user-btn.active,.user-btn:hover{
+  background:#1a6bc4 !important;color:#ffffff !important;border-color:#1a6bc4 !important;
+}
+
+/* ── PIN pad ── */
+.pin-dot,.dot{background:#e2e8f0 !important;border-color:#cbd5e1 !important;}
+.pin-dot.on,.dot.filled{background:#1a6bc4 !important;border-color:#1a6bc4 !important;}
+.pk,.numpad button{
+  background:#f1f5f9 !important;border-color:#e2e8f0 !important;color:#0f172a !important;
+}
+.pk:active,.numpad button:hover{background:#dbeafe !important;}
+.pin-err,.pinErr,#pinErr{color:#b91c1c !important;}
+
+/* ── Tabs ── */
+.tabs{border-bottom-color:#e2e8f0 !important;}
+.tab-btn{color:#475569 !important;}
+.tab-btn:hover{color:#0f172a !important;}
+.tab-btn.active{color:#1a6bc4 !important;border-bottom-color:#1a6bc4 !important;}
+.tab-btn.active,.tab-btn:hover{background:none !important;}
+
+/* ── Inputs / selects / textareas ── */
+input,select,textarea,.sm-search{
+  background:#ffffff !important;border-color:#cbd5e1 !important;
+  color:#0f172a !important;
+}
+input:focus,select:focus,textarea:focus,.sm-search:focus{
+  border-color:#1a6bc4 !important;outline:none;
+}
+input::placeholder,.sm-search::placeholder{color:#94a3b8 !important;}
+
+/* ── Buttons ── */
+.btn-ghost,.tool-btn,.eb,.btn-s{
+  background:#f1f5f9 !important;border-color:#e2e8f0 !important;color:#1e293b !important;
+}
+.btn-ghost:hover,.tool-btn:hover{background:#e2e8f0 !important;}
+.tool-btn.active{background:#dbeafe !important;border-color:#1a6bc4 !important;color:#1a6bc4 !important;}
+.eb-edit{border-color:#3b82f6 !important;color:#1d4ed8 !important;}
+.eb-edit:hover{background:#dbeafe !important;}
+.eb-del{border-color:#ef4444 !important;color:#b91c1c !important;}
+.eb-del:hover{background:#fee2e2 !important;}
+
+/* ── Cards / panels ── */
+.section-card,.card,.modal,.gate-card,
+[class*="-card"]:not(.worker-card):not(.name-btn):not(.user-btn){
+  background:#ffffff !important;border-color:#e2e8f0 !important;
+}
+.content{background:#f0f4f8 !important;}
+
+/* ── Worker attendance cards ── */
+.worker-card{background:#ffffff !important;border-color:#e2e8f0 !important;}
+.worker-card.present{background:#dcfce7 !important;border-color:#16a34a !important;}
+.wc-name{color:#475569 !important;}
+.worker-card.present .wc-name{color:#0f172a !important;}
+.wc-time{color:#94a3b8 !important;}
+.worker-card.present .wc-time{color:#15803d !important;}
+.worker-card.edit-card{background:#f8fafc !important;border-color:#bfdbfe !important;}
+
+/* ── Phase banners ── */
+.phase-banner.meeting{background:#ede9fe !important;border-color:#c4b5fd !important;color:#6d28d9 !important;}
+.phase-banner.signin{background:#dcfce7 !important;border-color:#86efac !important;color:#15803d !important;}
+.phase-banner.saved{background:#dbeafe !important;border-color:#93c5fd !important;color:#1d4ed8 !important;}
+
+/* ── User pill ── */
+.user-pill{background:#ede9fe !important;border-color:#a78bfa !important;color:#6d28d9 !important;}
+
+/* ── Info bars ── */
+.info-bar{background:#dbeafe !important;border-color:#93c5fd !important;color:#1e40af !important;}
+.info-bar strong{color:#1d4ed8 !important;}
+
+/* ── Tables ── */
+table{background:transparent !important;}
+th{background:#f8fafc !important;color:#475569 !important;border-bottom-color:#e2e8f0 !important;}
+td{border-bottom-color:#f1f5f9 !important;color:#0f172a;}
+tr:hover td{background:#f8fafc !important;}
+
+/* ── Summary / stat cards ── */
+.summary-card,.summary-row .summary-card{
+  background:#ffffff !important;border-color:#e2e8f0 !important;
+  box-shadow:0 1px 4px rgba(0,0,0,.06) !important;
+}
+.summary-card .val{color:#1a6bc4 !important;}
+.summary-card .lbl{color:#475569 !important;}
+
+/* ── Badges ── */
+.badge-admin{background:#ede9fe !important;color:#5b21b6 !important;}
+.badge-lead,.badge-editor{background:#dbeafe !important;color:#1e40af !important;}
+.badge-worker,.badge-active{background:#dcfce7 !important;color:#15803d !important;}
+.badge-inactive{background:#f1f5f9 !important;color:#64748b !important;}
+
+/* ── Role access matrix ── */
+.role-matrix th{background:#f8fafc !important;border-bottom-color:#e2e8f0 !important;}
+.role-matrix th.boss-h{color:#d97706 !important;}
+.role-matrix th.admin-h{color:#5b21b6 !important;}
+.role-matrix th.lead-h{color:#1e40af !important;}
+.role-matrix th.worker-h{color:#15803d !important;}
+.role-matrix th.inv-h{color:#c2410c !important;}
+.role-matrix tr.sub-row{background:#fafafa !important;}
+.toggle-cell.on{background:#dcfce7 !important;color:#15803d !important;}
+.toggle-cell.off{background:#f1f5f9 !important;color:#94a3b8 !important;}
+
+/* ── Modal overlay ── */
+.modal-overlay.open{background:rgba(15,23,42,0.55) !important;}
+.modal{background:#ffffff !important;box-shadow:0 20px 60px rgba(0,0,0,.18) !important;}
+
+/* ── Global nav stays dark ── */
+.gnav{background:#1e3a5f !important;border-top-color:#0f2d52 !important;}
+.gnav a{color:#94a3b8 !important;}
+.gnav a:hover,.gnav a.gna{color:#60a5fa !important;}
+
+/* ── Toast ── */
+#toast{background:#1e293b !important;color:#e2e8f0 !important;}
+#toast.err{border-color:#b91c1c !important;color:#fca5a5 !important;}
+
+/* ── Scrollbars ── */
+::-webkit-scrollbar{width:6px;height:6px;background:#f1f5f9;}
+::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px;}
+
+/* ── Log out / utility bars ── */
+.log-out-bar,.logout-area{background:#1e3a5f !important;}
+
+/* ── SM section ── */
+.sm-item{background:#ffffff !important;border-color:#e2e8f0 !important;}
+.sm-date,.sm-counter span{color:#475569 !important;}
+
+/* ── Landing page cards ── */
+.card{background:#ffffff !important;border-color:#e2e8f0 !important;}
+.card:hover{border-color:#1a6bc4 !important;box-shadow:0 8px 32px rgba(26,107,196,.12) !important;}
+.card-body p{color:#475569 !important;}
+footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
+
+/* ── Dashboard ── */
+.unit-progress-card,.kpi-card,.chart-card{background:#ffffff !important;border-color:#e2e8f0 !important;}
+
+/* ── Week picker ── */
+.week-picker input{background:#ffffff !important;color:#0f172a !important;border-color:#cbd5e1 !important;}
+
+/* ── Roles grid (old) ── */
+.roles-grid{border-color:#e2e8f0 !important;}
+.rg-header{background:#f8fafc !important;color:#475569 !important;}
+.rg-cell{border-top-color:#f1f5f9 !important;}
+</style>
+
+</head>
+<body>
+
+<style>
+#mbr-status-bar{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 14px;background:#1e3a5f;border-bottom:1px solid rgba(255,255,255,0.1);height:48px;}
+#mbr-checkin-chip{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px;cursor:default;transition:.3s;}
+.chip-in{background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);}
+.chip-out{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.45);border:1px solid rgba(255,255,255,0.1);}
+.chip-dot{width:6px;height:6px;border-radius:50%;}
+.dot-in{background:#22c55e;}
+.dot-out{background:rgba(255,255,255,0.25);}
+#mbr-bell-btn{position:relative;background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.5);font-size:18px;padding:2px 4px;transition:.2s;}
+#mbr-bell-btn:hover{color:#fff;}
+#mbr-bell-badge{position:absolute;top:-2px;right:-2px;background:#ef4444;color:#fff;font-size:9px;font-weight:700;min-width:15px;height:15px;border-radius:999px;display:none;align-items:center;justify-content:center;padding:0 3px;}
+#mbr-notif-panel{position:fixed;top:36px;right:0;width:320px;max-height:420px;overflow-y:auto;background:#0f1e35;border:1px solid rgba(255,255,255,0.1);border-top:none;border-radius:0 0 0 12px;z-index:499;display:none;box-shadow:0 8px 32px rgba(0,0,0,0.4);}
+#mbr-notif-panel .np-header{padding:10px 14px;font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;justify-content:space-between;align-items:center;}
+.np-item{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.06);cursor:pointer;transition:.15s;}
+.np-item:hover{background:rgba(255,255,255,0.04);}
+.np-item.unread{border-left:3px solid #0ea5e9;}
+.np-item.read{border-left:3px solid transparent;opacity:.65;}
+.np-title{font-size:13px;font-weight:600;color:#fff;margin-bottom:3px;}
+.np-body{font-size:12px;color:rgba(255,255,255,0.5);line-height:1.4;}
+.np-time{font-size:10px;color:rgba(255,255,255,0.3);margin-top:5px;}
+.np-empty{padding:24px;text-align:center;font-size:12px;color:rgba(255,255,255,0.3);}
+body{padding-top:48px!important;}
+</style>
+<div id="mbr-status-bar">
+  <!-- Left: navigation -->
+  <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
+    <a href="/" style="color:#93c5fd;text-decoration:none;font-size:13px;white-space:nowrap;">← Home</a>
+    <span style="color:#334155;margin:0 2px;">|</span>
+    <span style="font-size:15px;font-weight:700;color:#e2e8f0;">⚙️ Settings</span>
+  </div>
+  <!-- Right: status + user + bell -->
+  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+    <div id="mbr-loc-chip" style="font-size:11px;font-weight:600;color:#7a9cc4;padding:2px 8px;display:none;">📍 <span id="loc-chip-text"></span></div>
+    <div id="mbr-checkin-chip" class="chip-out">
+      <span class="chip-dot dot-out" id="chip-dot"></span>
+      <span id="chip-label">Not Checked In</span>
+    </div>
+    <div id="headerUser" style="display:flex;align-items:center;gap:6px;"></div>
+    <button id="mbr-bell-btn" onclick="toggleNotifPanel()" title="Notifications" style="position:relative;background:none;border:none;cursor:pointer;font-size:16px;padding:4px;color:#94a3b8;line-height:1;">🔔<div id="mbr-bell-badge"></div></button>
+  </div>
+</div>
+<div id="mbr-notif-panel">
+  <div class="np-header">
+    <span>Notifications</span>
+    <span id="np-mark-all" onclick="markAllRead()" style="cursor:pointer;color:#0ea5e9;font-size:10px;text-transform:none;letter-spacing:0;">Mark all read</span>
+  </div>
+  <div id="np-list"></div>
+</div>
+<script>
+(function(){
+  var auth = localStorage.getItem('mbrAuth')||'';
+  if(!auth) return;
+  // Check-in status
+  function refreshCheckInStatus(){
+    fetch('/api/contractor/status?name='+encodeURIComponent(auth))
+      .then(function(r){return r.json();})
+      .then(function(d){
+        var chip=document.getElementById('mbr-checkin-chip');
+        var dot=document.getElementById('chip-dot');
+        var lbl=document.getElementById('chip-label');
+        if(!chip||!dot||!lbl) return;
+        if(d.checked_in){
+          chip.className='mbr-checkin-chip chip-in';
+          dot.className='chip-dot dot-in';
+          lbl.textContent=d.since?'Checked In · '+d.since:'Checked In';
+        } else {
+          chip.className='mbr-checkin-chip chip-out';
+          dot.className='chip-dot dot-out';
+          lbl.textContent='Not Checked In';
+        }
+      }).catch(function(){ setTimeout(refreshCheckInStatus, 5000); });
+  }
+  window.refreshCheckInStatus = refreshCheckInStatus;
+  refreshCheckInStatus();
+  setInterval(refreshCheckInStatus, 60000);
+
+  // Location chip
+  var unit = localStorage.getItem('mbrUnit');
+  if(unit){
+    var lc = document.getElementById('mbr-loc-chip');
+    var lt = document.getElementById('loc-chip-text');
+    if(lc && lt){ lt.textContent = 'Unit ' + unit; lc.style.display = 'block'; }
+  }
+
+  // Notifications
+  loadNotifications();
+})();
+
+var _notifPanel = false;
+function toggleNotifPanel(){
+  _notifPanel = !_notifPanel;
+  document.getElementById('mbr-notif-panel').style.display = _notifPanel ? 'block' : 'none';
+  if(_notifPanel) loadNotifications();
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('#mbr-bell-btn') && !e.target.closest('#mbr-notif-panel')){
+    document.getElementById('mbr-notif-panel').style.display='none';
+    _notifPanel=false;
+  }
+});
+function loadNotifications(){
+  var auth = localStorage.getItem('mbrAuth')||'';
+  fetch('/api/notifications?name='+encodeURIComponent(auth))
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var list = document.getElementById('np-list');
+      var badge = document.getElementById('mbr-bell-badge');
+      if(!d.ok||!d.notifications) return;
+      var notifs = d.notifications;
+      var unread = notifs.filter(function(n){return !n.read;}).length;
+      if(unread>0){badge.style.display='flex';badge.textContent=unread>9?'9+':unread;}
+      else{badge.style.display='none';}
+      if(notifs.length===0){list.innerHTML='<div class="np-empty">No notifications</div>';return;}
+      list.innerHTML = notifs.map(function(n){
+        var ago = timeAgo(n.created_at);
+        return '<div class="np-item '+(n.read?'read':'unread')+'" onclick="markRead(''+n.id+'')">'
+          +'<div class="np-title">'+escHtml(n.title)+'</div>'
+          +(n.body?'<div class="np-body">'+escHtml(n.body)+'</div>':'')
+          +'<div class="np-time">'+ago+'</div></div>';
+      }).join('');
+    }).catch(function(){});
+}
+function markRead(id){
+  var auth = localStorage.getItem('mbrAuth')||'';
+  fetch('/api/notifications/'+id+'/read',{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:auth})})
+    .then(function(){loadNotifications();});
+}
+function markAllRead(){
+  var auth = localStorage.getItem('mbrAuth')||'';
+  var items = document.querySelectorAll('.np-item.unread');
+  var ids = [];
+  items.forEach(function(el){
+    var m = el.getAttribute('onclick').match(/'([^']+)'/);
+    if(m) ids.push(m[1]);
+  });
+  Promise.all(ids.map(function(id){
+    return fetch('/api/notifications/'+id+'/read',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:auth})});
+  })).then(function(){loadNotifications();});
+}
+function escHtml(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function timeAgo(iso){
+  if(!iso) return '';
+  var d=new Date(iso), now=new Date();
+  var mins=Math.floor((now-d)/60000);
+  if(mins<1) return 'Just now';
+  if(mins<60) return mins+'m ago';
+  var hrs=Math.floor(mins/60);
+  if(hrs<24) return hrs+'h ago';
+  return Math.floor(hrs/24)+'d ago';
+}
+</script>
+
+
+<script>(function(){var n=localStorage.getItem('mbrAuth')||'';var r=localStorage.getItem('mbrRole')||'';var el=document.getElementById('headerUser');if(!el||!n)return;var cap=r?r.charAt(0).toUpperCase()+r.slice(1):'';el.innerHTML='<span style="font-size:12px;font-weight:700;color:#94a3b8;">'+n+(cap?' &middot; '+cap:'')+'</span>'+'<button onclick="localStorage.removeItem(\'mbrAuth\');localStorage.removeItem(\'mbrRole\');location.href=\'/login\';" '+'style="padding:5px 12px;background:#1e2d45;border:1px solid #2d3f57;border-radius:8px;color:#94a3b8;font-size:12px;cursor:pointer;">Sign Out</button>';})();</script>
+
+<script>
+/* Profile name/avatar — DOMContentLoaded ensures elements exist even inside hidden tabs */
+(function(){
+  var n=localStorage.getItem('mbrAuth')||'';
+  var r=localStorage.getItem('mbrRole')||'';
+  if(!n)return;
+  var ini=n.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase()||n.charAt(0).toUpperCase();
+  function setProfile(){
+    var av=document.getElementById('ca-avatar');
+    var dn=document.getElementById('ca-display-name');
+    var dr=document.getElementById('ca-display-role');
+    if(av)av.textContent=ini;
+    if(dn)dn.textContent=n;
+    if(dr)dr.textContent=r;
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',setProfile);
+  } else {
+    setProfile();
+  }
+  window.addEventListener('load',setProfile);
+})();
+</script>
+
+<!-- GATE REMOVED — auth via login system -->
+
+<!-- MAIN -->
+<div id="main">
+  <div class="settings-header">
+    <h2>⚙️ Settings <span id="adminWho" style="font-size:14px;color:var(--muted);font-weight:400;"></span></h2>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-btn-users" onclick="switchTab('users',this)">👥 Users &amp; Roles</button>
+    <button class="tab-btn" id="tab-btn-hours" onclick="switchTab('hours',this)">🕐 Hours</button>
+    <button class="tab-btn" id="tab-btn-roles" onclick="switchTab('roles',this)">🔑 Role Access</button>
+    <button class="tab-btn" id="tab-btn-contractor" onclick="switchTab('contractor',this)">👤 My Profile</button>
+  </div>
+
+  <!-- ═══ USERS ═══ -->
+  <div id="tab-users" class="tab-panel active">
+    <!-- Pending approvals -->
+  
+  <!-- Notifications — Admin/Boss only -->
+  <div id="notifAdminSection" style="display:none;margin-top:16px;">
+    <div class="section-card">
+      <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <h3>🔔 Send Notification</h3>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
+        <input type="text" id="notif-title" placeholder="Title (e.g. Safety reminder, Checks are here...)"
+          style="padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;">
+        <textarea id="notif-body" placeholder="Message (optional)" rows="2"
+          style="padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;resize:vertical;"></textarea>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <select id="notif-target" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;flex:1;">
+            <option value="all">All workers</option>
+            <option value="worker">Workers only</option>
+            <option value="lead">Leads only</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="sendNotification()" style="white-space:nowrap;">Send 🔔</button>
+        </div>
+        <div id="notif-status" style="font-size:12px;display:none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Log Everyone Out — Admin only -->
+  <div id="forceLogoutSection" style="display:none;margin-top:16px;">
+    <div class="section-card" style="border-color:#ef4444;background:rgba(239,68,68,0.04);">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:#ef4444;">⚠ Force Log Out — All Users</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px;">Invalidates all active sessions. Everyone will be redirected to login on their next action.</div>
+        </div>
+        <button class="btn btn-sm" onclick="forceLogoutAll()"
+          style="background:#ef4444;color:#fff;border:none;font-weight:700;padding:8px 18px;border-radius:8px;cursor:pointer;">
+          Log Everyone Out
+        </button>
+      </div>
+      <div id="forceLogoutStatus" style="font-size:12px;margin-top:8px;display:none;"></div>
+    </div>
+  </div>
+
+  <div class="section-card" id="pendingSection" style="display:none;margin-top:16px;">
+      <div class="section-header">
+        <h3>⏳ Pending Approval <span id="pendingCount" style="background:#ca8a04;color:#fff;border-radius:12px;padding:2px 10px;font-size:12px;margin-left:8px;">0</span></h3>
+      </div>
+      <p style="color:var(--muted);font-size:13px;margin:0 0 12px;">These users registered but need your approval before they can log in.</p>
+      <table>
+        <thead><tr><th>Name</th><th>Email</th><th>Registered</th><th>Action</th></tr></thead>
+        <tbody id="pendingBody"></tbody>
+      </table>
+    </div>
+
+    <!-- App Users -->
+    <div class="section-card">
+      <div class="section-header">
+        <h3>App Users</h3>
+        <button class="btn btn-primary btn-sm" onclick="openUserModal()">+ Add User</button>
+      </div>
+      <div class="info-bar">
+        <strong>Boss</strong> — owner level, all access &nbsp;|&nbsp;
+        <strong>Admin</strong> — full access including Settings &nbsp;|&nbsp;
+        <strong>Lead</strong> — Log, Dashboard, Timesheet, Issues &nbsp;|&nbsp;
+        <strong>Worker</strong> — QR check-in only (no web login needed)
+      </div>
+      <table>
+        <thead><tr><th>Name</th><th>Role</th><th>Actions</th></tr></thead>
+        <tbody id="usersBody"><tr><td colspan="4" style="color:var(--muted);text-align:center;padding:24px;">Loading...</td></tr></tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- ═══ WORKERS (removed — use App Users) ═══ -->
+  <div id="tab-workers" class="tab-panel" style="display:none;">
+    <div class="section-card">
+      <div class="section-header">
+        <h3>Workers / Crew Registry</h3>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-danger btn-sm" onclick="cleanupInactive()" id="cleanupBtn">🗑 Remove Inactive</button>
+          <button class="btn btn-primary btn-sm" onclick="openWorkerModal()">+ Add Worker</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <button class="btn btn-ghost btn-sm" onclick="filterWorkers('all')" id="fw-all" style="border:1px solid var(--accent);color:var(--accent);">All</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterWorkers('active')" id="fw-active">Active</button>
+        <button class="btn btn-ghost btn-sm" onclick="filterWorkers('inactive')" id="fw-inactive">Inactive</button>
+      </div>
+      <table>
+        <thead><tr><th>Name</th><th>Trade</th><th>Rate/hr</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="workersBody"><tr><td colspan="5" style="color:var(--muted);text-align:center;padding:24px;">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══ CONTACTS ═══ -->
+  <div id="tab-contacts" class="tab-panel" style="display:none !important;">
+    <div class="section-card">
+      <div class="section-header">
+        <h3>Project Contacts</h3>
+        <button class="btn btn-primary btn-sm" onclick="openContactModal()">+ Add Contact</button>
+      </div>
+      <table>
+        <thead><tr><th>Name</th><th>Company / Role</th><th>Phone</th><th>Email</th><th>Notes</th><th>Actions</th></tr></thead>
+        <tbody id="contactsBody"><tr><td colspan="6" style="color:var(--muted);text-align:center;padding:24px;">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══ HOURS ═══ -->
+  <div id="tab-hours" class="tab-panel">
+
+    <!-- Worker Summary (30-day rolling) -->
+    <div class="section-card" style="margin-bottom:20px;">
+      <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <h3>Worker Hours Summary <span id="hrs-range-label" style="font-size:12px;font-weight:400;color:var(--muted);margin-left:8px;"></span></h3>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost btn-sm" onclick="loadSummary(7)">7 days</button>
+          <button class="btn btn-ghost btn-sm" onclick="loadSummary(14)">14 days</button>
+          <button class="btn btn-ghost btn-sm" onclick="loadSummary(30)" id="sumBtn30">30 days</button>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Worker</th><th style="text-align:center">Days</th><th style="text-align:center">Total Hours</th><th>Last Seen</th></tr></thead>
+        <tbody id="summaryBody"><tr><td colspan="4" style="color:var(--muted);text-align:center;padding:24px;">Loading...</td></tr></tbody>
+      </table>
+    </div>
+
+    <!-- Weekly Detail -->
+    <div class="section-card">
+      <div class="section-header"><h3>Weekly Detail</h3></div>
+      <div class="week-picker">
+        <div>
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Week Start (Mon)</label>
+          <input type="date" id="weekStart" onchange="loadHours()">
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;">Week End (Sun)</label>
+          <input type="date" id="weekEnd" onchange="loadHours()">
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="shiftWeek(-1)">← Prev</button>
+        <button class="btn btn-ghost btn-sm" onclick="shiftWeek(1)">Next →</button>
+        <button class="btn btn-ghost btn-sm" onclick="setThisWeek()">This Week</button>
+      </div>
+      <div class="summary-row">
+        <div class="summary-card"><div class="val" id="h-total">—</div><div class="lbl">Total Hours</div></div>
+        <div class="summary-card"><div class="val" id="h-workers">—</div><div class="lbl">Workers</div></div>
+        <div class="summary-card"><div class="val" id="h-days">—</div><div class="lbl">Days w/ Data</div></div>
+      </div>
+
+
+      <table>
+        <thead><tr><th>Worker</th><th>Unit</th><th>Date</th><th>In</th><th>Out</th><th>Hours</th></tr></thead>
+        <tbody id="hoursBody"><tr><td colspan="6" style="color:var(--muted);text-align:center;padding:24px;">Select a week above</td></tr></tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- ═══ ROLES ═══ -->
+  <div id="tab-roles" class="tab-panel">
+    <div class="section-card">
+      <div class="section-header">
+        <h3>Role Access Matrix</h3>
+      </div>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:20px;">
+        Click any cell to toggle access. Changes save automatically to the database.
+        <strong style="color:var(--yellow)"> ⚠ Note:</strong> Admin access to Settings is always locked on.
+      </p>
+      <table class="role-matrix" id="roleMatrix">
+        <thead>
+          <tr>
+            <th>Page / Feature</th>
+            <th class="admin-h">⚙ Admin</th>
+            <th class="boss-h">👔 Boss</th>
+            <th class="inv-h">📦 Inventory</th>
+            <th class="lead-h">👷 Lead</th>
+            <th class="worker-h">🔩 Worker</th>
+          </tr>
+        </thead>
+        <tbody id="matrixBody"></tbody>
+      </table>
+      <div class="matrix-footer">
+        <span class="matrix-note">🟢 = access granted &nbsp;|&nbsp; ◌ = no access &nbsp;|&nbsp; Workers use QR code only — no web login needed</span>
+        <button class="btn btn-primary btn-sm" onclick="savePerms()">💾 Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ CONTRACTOR AREA ═══ -->
+  <div id="tab-contractor" class="tab-panel">
+
+    <!-- Worker info card -->
+    <div class="section-card" style="max-width:560px;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:18px;">
+        <div id="ca-avatar" style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#1a6bc4,#0ea5e9);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;flex-shrink:0;">?</div>
+        <div>
+          <div id="ca-display-name" style="font-size:17px;font-weight:700;color:var(--text);">—</div>
+          <div id="ca-display-role" style="font-size:12px;color:var(--muted);text-transform:capitalize;margin-top:2px;"></div>
+        </div>
+        <div id="ca-pin-badge" style="margin-left:auto;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;display:none;"></div>
+      </div>
+      <!-- Check-in status inside profile card -->
+      <div id="ca-checkin-status" style="margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+        <span id="ca-ci-chip" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:4px 12px;border-radius:999px;background:rgba(255,255,255,0.06);color:#94a3b8;border:1px solid #e2e8f0;">
+          <span id="ca-ci-dot" style="width:7px;height:7px;border-radius:50%;background:#94a3b8;"></span>
+          <span id="ca-ci-label">Loading…</span>
+        </span>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-secondary btn-sm" onclick="openChangePw()" style="flex:1;min-width:130px;">🔑 Change Password</button>
+        <button class="btn btn-secondary btn-sm" onclick="contractorResetPin()" style="flex:1;min-width:130px;">🔄 Reset PIN</button>
+      </div>
+    </div>
+
+    <!-- Hours this week -->
+    <div class="section-card" style="max-width:560px;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div style="font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">🕐 Hours Worked</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button onclick="changeWeek(-1)" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:13px;">‹</button>
+          <span id="ca-week-label" style="font-size:12px;color:var(--muted);min-width:140px;text-align:center;"></span>
+          <button onclick="changeWeek(1)" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:13px;">›</button>
+        </div>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:16px;">
+        <span id="ca-total-hours" style="font-size:32px;font-weight:700;color:var(--text);">—</span>
+        <span style="font-size:13px;color:var(--muted);">hrs total</span>
+      </div>
+      <div id="ca-hours-grid" style="display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+
+
+  </div>
+
+
+</div>
+
+<!-- USER MODAL -->
+<div class="modal-overlay" id="userModal">
+  <div class="modal">
+    <h3 id="userModalTitle">Add User</h3>
+    <div class="field"><label>Name</label><input type="text" id="um-name" placeholder="Full name"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="field"><label>Email</label><input type="email" id="um-email" placeholder="employee@email.com"></div>
+      <div class="field"><label>Phone (optional)</label><input type="tel" id="um-phone" placeholder="555-000-0000"></div>
+    </div>
+    <div class="field">
+      <label>Role</label>
+      <select id="um-role">
+        <option value="admin">Admin — full access + Settings (you)</option>
+        <option value="boss">Boss — full access + owner level</option>
+        <option value="inventory">Inventory — view/edit/approve materials only</option>
+        <option value="lead" selected>Lead — Log, Timesheet, Dashboard, Issues</option>
+        <option value="worker">Worker — QR check-in only</option>
+      </select>
+    </div>
+    <div class="field"><label>PIN (4 digits — leave blank to keep existing)</label><input type="password" id="um-pin" placeholder="••••" maxlength="4" inputmode="numeric"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('userModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveUser()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESET PASSWORD MODAL -->
+<div class="modal-overlay" id="resetPwModal">
+  <div class="modal" style="max-width:380px;">
+    <h3 id="resetPwTitle">Reset Password</h3>
+    <div class="field">
+      <label>New Password</label>
+      <input type="password" id="rp-pass" placeholder="Min. 4 characters" autocomplete="new-password">
+    </div>
+    <div class="field">
+      <label>Confirm Password</label>
+      <input type="password" id="rp-pass2" placeholder="Repeat password" autocomplete="new-password">
+    </div>
+    <div id="rp-err" style="color:#f87171;font-size:13px;display:none;margin-top:4px;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('resetPwModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveResetPw()">Update Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- WORKER MODAL -->
+<div class="modal-overlay" id="workerModal">
+  <div class="modal">
+    <h3 id="workerModalTitle">Add Worker</h3>
+    <div class="field"><label>Name</label><input type="text" id="wm-name" placeholder="Full name"></div>
+    <div class="field">
+      <label>Trade</label>
+      <select id="wm-trade">
+        <option value="">— Select trade —</option>
+        <option>Structure</option><option>Structure Paint</option><option>Envelope</option>
+        <option>Electrical</option><option>Battery Cabinets</option><option>IO Cabinets</option>
+        <option>Switch Gear</option><option>Cable &amp; Panels</option><option>Lighting</option>
+        <option>Closeout</option><option>General Labor</option><option>Foreman</option>
+      </select>
+    </div>
+    <div class="field"><label>Hourly Rate ($)</label><input type="number" id="wm-rate" placeholder="0.00" min="0" step="0.01"></div>
+    <div class="field">
+      <label>Status</label>
+      <select id="wm-active">
+        <option value="true">Active</option>
+        <option value="false">Inactive</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('workerModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveWorker()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONTACT MODAL -->
+<div class="modal-overlay" id="contactModal">
+  <div class="modal">
+    <h3 id="contactModalTitle">Add Contact</h3>
+    <div class="field"><label>Name</label><input type="text" id="cm-name" placeholder="Full name"></div>
+    <div class="field"><label>Company</label><input type="text" id="cm-company" placeholder="Company name"></div>
+    <div class="field"><label>Role / Title</label><input type="text" id="cm-role" placeholder="e.g. Site Inspector"></div>
+    <div class="field"><label>Phone</label><input type="tel" id="cm-phone" placeholder="555-000-0000"></div>
+    <div class="field"><label>Email</label><input type="email" id="cm-email" placeholder="email@example.com"></div>
+    <div class="field"><label>Notes</label><textarea id="cm-notes" rows="2" style="resize:vertical;"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('contactModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveContact()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ─── ROLE MATRIX DEFINITIONS ─── */
+var PAGES = [
+  // Home
+  {id:'home',             label:'🏠 Home',                     parent:null,       locked:false},
+  // Daily Log
+  {id:'log',              label:'📋 Daily Log',                 parent:null,       locked:false},
+  {id:'log.submit',       label:'↳ Submit Log Entry',           parent:'log',      locked:false},
+  {id:'log.history',      label:'↳ View History',               parent:'log',      locked:false},
+  {id:'log.export',       label:'↳ Export CSV',                 parent:'log',      locked:false},
+  // Dashboard
+  {id:'dashboard',        label:'📊 Dashboard',                 parent:null,       locked:false},
+  {id:'dash.full',        label:'↳ Full Dashboard View',        parent:'dashboard',locked:false},
+  {id:'dash.urgency',     label:'↳ Urgency Order',              parent:'dashboard',locked:false},
+  // Timesheet
+  {id:'timesheet',        label:'🕐 Timesheet',                 parent:null,       locked:false},
+  {id:'ts.safety',        label:'↳ Safety Meeting',             parent:'timesheet',locked:false},
+  {id:'ts.qr',            label:'↳ QR Check-in / Out',         parent:'timesheet',locked:false},
+  {id:'ts.attendance',    label:'↳ Attendance (Late/Absent)',   parent:'timesheet',locked:false},
+  {id:'ts.reports',       label:'↳ Attendance Reports (Admin)', parent:'timesheet',locked:false},
+  // Inventory
+  {id:'inventory',        label:'📦 Inventory',                 parent:null,       locked:false},
+  {id:'inv.view',         label:'↳ View Stock',                 parent:'inventory',locked:false},
+  {id:'inv.edit',         label:'↳ Add / Edit Items',           parent:'inventory',locked:false},
+  {id:'inv.requests',     label:'↳ Material Requests',          parent:'inventory',locked:false},
+  {id:'inv.approve',      label:'↳ Approve Requests',           parent:'inventory',locked:false},
+  // Issues Log
+  {id:'issues',           label:'⚠️ Issues Log',                parent:null,       locked:false},
+  {id:'iss.view',         label:'↳ View Issues',                parent:'issues',   locked:false},
+  {id:'iss.create',       label:'↳ Create Issue',               parent:'issues',   locked:false},
+  {id:'iss.resolve',      label:'↳ Resolve / Edit',             parent:'issues',   locked:false},
+  {id:'iss.delete',       label:'↳ Delete Issue',               parent:'issues',   locked:false},
+  // Settings
+  {id:'settings',         label:'⚙️ Settings',                  parent:null,       locked:true},
+  {id:'set.users',        label:'↳ Users & Roles',              parent:'settings', locked:false},
+  {id:'set.workers',      label:'↳ Workers / Crew',             parent:'settings', locked:false},
+  {id:'set.hours',        label:'↳ Hours Tracking',             parent:'settings', locked:false},
+  {id:'set.roles',        label:'↳ Role Access Matrix',         parent:'settings', locked:false},
+];
+var DEFAULT_PERMS = {
+  admin:     {home:1,log:1,'log.submit':1,'log.history':1,'log.export':1,dashboard:1,'dash.full':1,'dash.urgency':1,timesheet:1,'ts.safety':1,'ts.qr':1,'ts.attendance':1,'ts.reports':1,inventory:1,'inv.view':1,'inv.edit':1,'inv.requests':1,'inv.approve':1,issues:1,'iss.view':1,'iss.create':1,'iss.resolve':1,'iss.delete':1,settings:1,'set.users':1,'set.workers':1,'set.hours':1,'set.roles':1},
+  boss:      {home:1,log:1,'log.submit':1,'log.history':1,'log.export':1,dashboard:1,'dash.full':1,'dash.urgency':1,timesheet:1,'ts.safety':1,'ts.qr':1,'ts.attendance':1,'ts.reports':1,inventory:1,'inv.view':1,'inv.edit':1,'inv.requests':1,'inv.approve':1,issues:1,'iss.view':1,'iss.create':1,'iss.resolve':1,'iss.delete':1,settings:1,'set.users':0,'set.workers':0,'set.hours':1,'set.roles':0},
+  inventory: {home:1,log:0,'log.submit':0,'log.history':0,'log.export':0,dashboard:0,'dash.full':0,'dash.urgency':0,timesheet:0,'ts.safety':0,'ts.qr':1,'ts.attendance':1,'ts.reports':0,inventory:1,'inv.view':1,'inv.edit':1,'inv.requests':1,'inv.approve':1,issues:0,'iss.view':0,'iss.create':0,'iss.resolve':0,'iss.delete':0,settings:0,'set.users':0,'set.workers':0,'set.hours':0,'set.roles':0},
+  lead:      {home:1,log:1,'log.submit':1,'log.history':1,'log.export':0,dashboard:0,'dash.full':0,'dash.urgency':0,timesheet:1,'ts.safety':1,'ts.qr':1,'ts.attendance':1,'ts.reports':0,inventory:1,'inv.view':1,'inv.edit':0,'inv.requests':1,'inv.approve':0,issues:1,'iss.view':1,'iss.create':1,'iss.resolve':1,'iss.delete':0,settings:0,'set.users':0,'set.workers':0,'set.hours':0,'set.roles':0},
+  worker:    {home:1,log:0,'log.submit':0,'log.history':0,'log.export':0,dashboard:0,'dash.full':0,'dash.urgency':0,timesheet:0,'ts.safety':0,'ts.qr':1,'ts.attendance':1,'ts.reports':0,inventory:0,'inv.view':0,'inv.edit':0,'inv.requests':0,'inv.approve':0,issues:0,'iss.view':0,'iss.create':0,'iss.resolve':0,'iss.delete':0,settings:0,'set.users':0,'set.workers':0,'set.hours':0,'set.roles':0}
+};
+var PERMS = JSON.parse(JSON.stringify(DEFAULT_PERMS));
+
+/* ─── STATE ─── */
+var ADMIN_KEY = 'mbrSettingsAdmin';
+var curAdmin = null, pinBuf = '';
+var ALL_USERS = [], ALL_WORKERS = [], ALL_CONTACTS = [];
+var editUserName = null, editWorkerName = null, editContactId = null;
+var workerFilter = 'all';
+
+/* ─── GATE ─── */
+function selName(n){
+  curAdmin=n;
+  document.querySelectorAll('.user-btn').forEach(function(b){b.classList.toggle('active',b.textContent.trim()===n);});
+  pinBuf=''; updDots();
+  document.getElementById('pinErr').textContent='';
+  document.getElementById('pinSection').style.display='block';
+}
+function addDigit(d){if(pinBuf.length>=4)return;pinBuf+=d;updDots();if(pinBuf.length===4)setTimeout(verifyAdmin,100);}
+function delDigit(){pinBuf=pinBuf.slice(0,-1);updDots();}
+function clearPin(){pinBuf='';updDots();}
+function updDots(){for(var i=0;i<4;i++)document.getElementById('d'+i).className='dot'+(i<pinBuf.length?' filled':'');}
+function resetGate(){curAdmin=null;pinBuf='';updDots();document.getElementById('pinSection').style.display='none';document.getElementById('pinErr').textContent='';document.querySelectorAll('.user-btn').forEach(function(b){b.classList.remove('active');});}
+function verifyAdmin(){
+  document.getElementById('pinErr').textContent='';
+  fetch('/api/users/verify-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:curAdmin,pin:pinBuf})})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.ok){localStorage.setItem(ADMIN_KEY,curAdmin);showMain();}
+      else{pinBuf='';updDots();document.getElementById('pinErr').textContent=d.error||'Incorrect PIN';}
+    }).catch(function(){pinBuf='';updDots();document.getElementById('pinErr').textContent='Server error.';});
+}
+function showMain(){
+  document.getElementById('main').style.display='block';
+  document.getElementById('logoutBtn').style.display='';
+  var who=localStorage.getItem('mbrAuth')||localStorage.getItem(ADMIN_KEY)||curAdmin||'';
+  document.getElementById('adminWho').textContent='— '+who;
+  loadUsers(); loadWorkers(); loadPerms(); setThisWeek();
+}
+function logout(){localStorage.removeItem('mbrAuth');localStorage.removeItem('mbrRole');location.href='/login';}
+
+/* ─── TABS ─── */
+function switchTab(name,btn){
+  document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='hours'){loadHours();loadSummary(30);}
+}
+
+/* ─── USERS ─── */
+function loadUsers(){
+  var tb=document.getElementById('usersBody');
+  var ctrl=new AbortController();
+  var timer=setTimeout(function(){ctrl.abort();},10000);
+  fetch('/api/users',{signal:ctrl.signal})
+    .then(function(r){clearTimeout(timer);if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+    .then(function(rows){ALL_USERS=rows;renderUsers();})
+    .catch(function(e){
+      clearTimeout(timer);
+      var msg=e.name==='AbortError'?'Request timed out':e.message;
+      tb.innerHTML='<tr><td colspan="3" style="text-align:center;padding:24px;color:#f87171;">⚠ Could not load users ('+msg+'). <button class="btn btn-ghost btn-sm" onclick="loadUsers()" style="margin-left:8px;">↺ Retry</button></td></tr>';
+    });
+  fetch('/api/users/pending')
+    .then(function(r){return r.ok?r.json():[];})
+    .then(function(rows){renderPending(rows||[]);})
+    .catch(function(){renderPending([]);});
+}
+function renderPending(rows){
+  var sec=document.getElementById('pendingSection');
+  var tb=document.getElementById('pendingBody');
+  var cnt=document.getElementById('pendingCount');
+  if(!rows||!rows.length){sec.style.display='none';return;}
+  sec.style.display='block';
+  cnt.textContent=rows.length;
+  tb.innerHTML=rows.map(function(u){
+    var nk=encodeURIComponent(u.name);
+    var dt=u.created_at?new Date(u.created_at).toLocaleDateString():'—';
+    return '<tr style="background:rgba(202,138,4,0.08);">'+
+      '<td><strong>'+esc(u.name)+'</strong></td>'+
+      '<td style="font-size:12px;color:var(--muted);">'+(u.email||'—')+'</td>'+
+      '<td style="font-size:12px;color:var(--muted);">'+dt+'</td>'+
+      '<td><button class="btn btn-primary btn-sm" onclick="approveUser(\'' + nk + '\',\'' + esc(u.name) + '\')">✓ Approve</button> ' +
+      '<button class="btn btn-danger btn-sm" onclick="removeUser(\'' + nk + '\',\'' + esc(u.name) + '\')">✗ Reject</button></td>' +
+    '</tr>';
+  }).join('');
+}
+function approveUser(nk,displayName){
+  var name=decodeURIComponent(nk);
+  fetch('/api/users/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name})})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.ok){loadUsers();showToast('✓ '+displayName+' approved — they can now log in');}
+      else showToast(d.error||'Approval failed',true);
+    });
+}
+function renderUsers(){
+  var tb=document.getElementById('usersBody');
+  if(!ALL_USERS.length){tb.innerHTML='<tr><td colspan="3" style="color:var(--muted);text-align:center;padding:24px;">No users yet</td></tr>';return;}
+  tb.innerHTML=ALL_USERS.map(function(u){
+    var bc=u.role==='admin'?'badge-admin':u.role==='boss'?'badge-boss':u.role==='inventory'?'badge-inv':u.role==='lead'?'badge-lead':'badge-worker';
+    var nk=encodeURIComponent(u.name);
+    var em=u.email?'<a href="mailto:'+u.email+'" style="color:var(--accent);font-size:11px">'+esc(u.email)+'</a>':'<em style="color:var(--muted);font-size:11px">no email</em>';
+    var ph=u.phone?'<span style="font-size:11px;color:var(--muted)"> · '+esc(u.phone)+'</span>':'';
+    return '<tr>'+
+      '<td><strong>'+esc(u.name)+'</strong><br>'+em+ph+'</td>'+
+      '<td><span class="badge '+bc+'">'+(u.role||'—')+'</span></td>'+
+
+      '<td><button class="btn btn-ghost btn-sm" onclick="openUserModalByName(\''+nk+'\')">'+'Edit</button> '+
+      '<button class="btn btn-secondary btn-sm" onclick="openResetPw(\''+nk+'\'\,\''+esc(u.name)+'\')">'+'Reset Pw</button> '+
+      '<button class="btn btn-secondary btn-sm" onclick="resetPin(\''+nk+'\',\''+esc(u.name)+'\')" title="Reset worker PIN">'+'🔄 Reset PIN</button> '+
+      '<button class="btn btn-danger btn-sm" onclick="removeUser(\''+nk+'\'\,\''+esc(u.name)+'\')">'+'Remove</button></td>'+
+    '</tr>';
+  }).join('');
+}
+function openUserModal(){
+  editUserName=null;
+  document.getElementById('userModalTitle').textContent='Add User';
+  document.getElementById('um-name').value='';
+  document.getElementById('um-name').disabled=false;
+  document.getElementById('um-role').value='lead';
+  document.getElementById('um-email').value='';
+  document.getElementById('um-phone').value='';
+  document.getElementById('um-pin').value='';
+  document.getElementById('userModal').classList.add('open');
+}
+function openUserModalByName(nk){
+  var name=decodeURIComponent(nk);
+  var u=ALL_USERS.find(function(x){return x.name===name;});
+  if(!u)return;
+  editUserName=name;
+  document.getElementById('userModalTitle').textContent='Edit User';
+  document.getElementById('um-name').value=u.name;
+  document.getElementById('um-name').disabled=false; // name is editable
+  document.getElementById('um-role').value=u.role||'lead';
+  document.getElementById('um-email').value=u.email||'';
+  document.getElementById('um-phone').value=u.phone||'';
+  document.getElementById('um-pin').value='';
+  document.getElementById('userModal').classList.add('open');
+}
+function saveUser(){
+  var name=document.getElementById('um-name').value.trim();
+  var role=document.getElementById('um-role').value;
+  var pin=document.getElementById('um-pin').value.trim();
+  var email=document.getElementById('um-email').value.trim();
+  var phone=document.getElementById('um-phone').value.trim();
+  if(!name){showToast('Name required',true);return;}
+  var body={role:role,email:email||null,phone:phone||null};if(pin)body.pin=pin;
+  var url=editUserName?'/api/users/by-name/'+encodeURIComponent(editUserName):'/api/users';
+  var method=editUserName?'PATCH':'POST';
+  if(!editUserName){body.name=name;}
+  else if(name!==editUserName){body.new_name=name;}
+  fetch(url,{method:method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.ok||!d.error){closeModal('userModal');loadUsers();showToast('Saved');}
+      else showToast(d.error||'Error',true);
+    });
+}
+function removeUser(nk,displayName){
+  if(!confirm('Remove "'+displayName+'"?'))return;
+  fetch('/api/users/by-name/'+nk,{method:'DELETE'}).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){loadUsers();showToast('Removed');}else showToast(d.error||'Failed',true);
+  });
+}
+
+/* ─── WORKERS ─── */
+function loadWorkers(){
+  fetch('/api/workers/all').then(function(r){return r.json();}).then(function(rows){ALL_WORKERS=rows;renderWorkers();});
+}
+function filterWorkers(f){
+  workerFilter=f;
+  ['all','active','inactive'].forEach(function(k){
+    var btn=document.getElementById('fw-'+k);
+    btn.style.border=k===f?'1px solid var(--accent)':'';
+    btn.style.color=k===f?'var(--accent)':'';
+  });
+  renderWorkers();
+}
+function renderWorkers(){
+  var tb=document.getElementById('workersBody');
+  var rows=ALL_WORKERS.filter(function(w){
+    if(workerFilter==='active')return w.active!==false;
+    if(workerFilter==='inactive')return w.active===false;
+    return true;
+  });
+  if(!rows.length){tb.innerHTML='<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:24px;">No workers</td></tr>';return;}
+  tb.innerHTML=rows.map(function(w){
+    var rate=w.hourly_rate?'$'+parseFloat(w.hourly_rate).toFixed(2)+'/hr':'—';
+    var badge=w.active===false?'<span class="badge badge-inactive">Inactive</span>':'<span class="badge badge-active">Active</span>';
+    var wk=encodeURIComponent(w.name);
+    return '<tr>'+
+      '<td><strong>'+esc(w.name)+'</strong></td>'+
+      '<td>'+(w.trade||'—')+'</td>'+
+      '<td>'+rate+'</td>'+
+      '<td>'+badge+'</td>'+
+      '<td><button class="btn btn-ghost btn-sm" onclick="openWorkerModalByName(\''+wk+'\')">Edit</button> '+
+      '<button class="btn btn-danger btn-sm" onclick="removeWorker(\''+wk+'\',\''+esc(w.name)+'\')">Deactivate</button></td>'+
+    '</tr>';
+  }).join('');
+}
+function openWorkerModal(){
+  editWorkerName=null;
+  document.getElementById('workerModalTitle').textContent='Add Worker';
+  document.getElementById('wm-name').value='';document.getElementById('wm-name').disabled=false;
+  document.getElementById('wm-trade').value='';document.getElementById('wm-rate').value='';
+  document.getElementById('wm-active').value='true';
+  document.getElementById('workerModal').classList.add('open');
+}
+function openWorkerModalByName(wk){
+  var name=decodeURIComponent(wk);
+  var w=ALL_WORKERS.find(function(x){return x.name===name;});
+  if(!w)return;
+  editWorkerName=name;
+  document.getElementById('workerModalTitle').textContent='Edit Worker';
+  document.getElementById('wm-name').value=w.name;document.getElementById('wm-name').disabled=true;
+  document.getElementById('wm-trade').value=w.trade||'';
+  document.getElementById('wm-rate').value=w.hourly_rate||'';
+  document.getElementById('wm-active').value=w.active===false?'false':'true';
+  document.getElementById('workerModal').classList.add('open');
+}
+function saveWorker(){
+  var name=document.getElementById('wm-name').value.trim();
+  if(!name){showToast('Name required',true);return;}
+  var body={trade:document.getElementById('wm-trade').value,active:document.getElementById('wm-active').value==='true'};
+  var rate=document.getElementById('wm-rate').value;if(rate)body.hourly_rate=parseFloat(rate);
+  var url=editWorkerName?'/api/workers/by-name/'+encodeURIComponent(editWorkerName):'/api/workers';
+  var method=editWorkerName?'PATCH':'POST';
+  if(!editWorkerName)body.name=name;
+  fetch(url,{method:method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.ok||!d.error){closeModal('workerModal');loadWorkers();showToast('Saved');}
+      else showToast(d.error||'Error',true);
+    });
+}
+function removeWorker(wk,displayName){
+  if(!confirm('Deactivate "'+displayName+'"?'))return;
+  fetch('/api/workers/by-name/'+wk,{method:'DELETE'}).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){loadWorkers();showToast('Deactivated');}else showToast(d.error||'Failed',true);
+  });
+}
+function cleanupInactive(){
+  var count=ALL_WORKERS.filter(function(w){return w.active===false;}).length;
+  if(!count){showToast('No inactive workers to remove');return;}
+  if(!confirm('Permanently delete '+count+' inactive worker(s)? This cannot be undone.'))return;
+  fetch('/api/workers/inactive',{method:'DELETE'}).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){loadWorkers();showToast(count+' worker(s) deleted');}
+    else showToast(d.error||'Failed',true);
+  });
+}
+
+/* ─── CONTACTS ─── */
+function loadContacts(){
+  fetch('/api/contacts').then(function(r){return r.json();}).then(function(rows){ALL_CONTACTS=rows;renderContacts();});
+}
+function renderContacts(){
+  var tb=document.getElementById('contactsBody');
+  if(!ALL_CONTACTS.length){tb.innerHTML='<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:24px;">No contacts yet</td></tr>';return;}
+  tb.innerHTML=ALL_CONTACTS.map(function(c){
+    var co=c.company?'<strong>'+esc(c.company)+'</strong><br>':'';
+    var rl=c.role?'<small style="color:var(--muted)">'+esc(c.role)+'</small>':'';
+    var ph=c.phone?'<a href="tel:'+c.phone+'" style="color:var(--accent)">'+esc(c.phone)+'</a>':'—';
+    var em=c.email?'<a href="mailto:'+c.email+'" style="color:var(--accent)">'+esc(c.email)+'</a>':'—';
+    return '<tr>'+
+      '<td><strong>'+esc(c.name)+'</strong></td>'+
+      '<td>'+co+rl+'</td>'+
+      '<td>'+ph+'</td><td>'+em+'</td>'+
+      '<td style="max-width:150px;white-space:normal;font-size:12px;color:var(--muted)">'+(c.notes?esc(c.notes):'')+'</td>'+
+      '<td><button class="btn btn-ghost btn-sm" onclick="openContactModal(\''+esc(c.id)+'\')">Edit</button> '+
+      '<button class="btn btn-danger btn-sm" onclick="deleteContact(\''+esc(c.id)+'\',\''+esc(c.name)+'\')">Del</button></td>'+
+    '</tr>';
+  }).join('');
+}
+function openContactModal(id){
+  editContactId=id||null;
+  var c=id?ALL_CONTACTS.find(function(x){return x.id===id;}):null;
+  document.getElementById('contactModalTitle').textContent=id?'Edit Contact':'Add Contact';
+  document.getElementById('cm-name').value=c?c.name:'';
+  document.getElementById('cm-company').value=c?(c.company||''):'';
+  document.getElementById('cm-role').value=c?(c.role||''):'';
+  document.getElementById('cm-phone').value=c?(c.phone||''):'';
+  document.getElementById('cm-email').value=c?(c.email||''):'';
+  document.getElementById('cm-notes').value=c?(c.notes||''):'';
+  document.getElementById('contactModal').classList.add('open');
+}
+function saveContact(){
+  var name=document.getElementById('cm-name').value.trim();
+  if(!name){showToast('Name required',true);return;}
+  var body={name:name,company:document.getElementById('cm-company').value.trim(),role:document.getElementById('cm-role').value.trim(),phone:document.getElementById('cm-phone').value.trim(),email:document.getElementById('cm-email').value.trim(),notes:document.getElementById('cm-notes').value.trim()};
+  var url=editContactId?'/api/contacts/'+editContactId:'/api/contacts';
+  var method=editContactId?'PATCH':'POST';
+  fetch(url,{method:method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.ok||!d.error){closeModal('contactModal');loadContacts();showToast('Saved');}
+      else showToast(d.error||'Error',true);
+    });
+}
+function deleteContact(id,name){
+  if(!confirm('Delete "'+name+'"?'))return;
+  fetch('/api/contacts/'+id,{method:'DELETE'}).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){loadContacts();showToast('Deleted');}else showToast(d.error||'Failed',true);
+  });
+}
+
+/* ─── HOURS ─── */
+function setThisWeek(){
+  var now=new Date(),day=now.getDay(),diff=day===0?-6:1-day;
+  var mon=new Date(now);mon.setDate(now.getDate()+diff);
+  var sun=new Date(mon);sun.setDate(mon.getDate()+6);
+  document.getElementById('weekStart').value=mon.toISOString().split('T')[0];
+  document.getElementById('weekEnd').value=sun.toISOString().split('T')[0];
+  loadHours();
+}
+function shiftWeek(dir){
+  var s=document.getElementById('weekStart').value,e=document.getElementById('weekEnd').value;
+  if(!s)return;
+  var d=new Date(s+'T12:00:00');d.setDate(d.getDate()+dir*7);
+  var d2=new Date(e+'T12:00:00');d2.setDate(d2.getDate()+dir*7);
+  document.getElementById('weekStart').value=d.toISOString().split('T')[0];
+  document.getElementById('weekEnd').value=d2.toISOString().split('T')[0];
+  loadHours();
+}
+function loadSummary(days){
+  days = days || 30;
+  var now = new Date();
+  document.getElementById('hrs-range-label').textContent = 'Last ' + days + ' days';
+  fetch('/api/workers/hours?days='+days).then(function(r){return r.json();}).then(function(rows){
+    var tb = document.getElementById('summaryBody');
+    if(!rows.length){
+      tb.innerHTML='<tr><td colspan="4" style="color:var(--muted);text-align:center;padding:24px;">No check-in data found</td></tr>';
+      return;
+    }
+    tb.innerHTML = rows.map(function(w){
+      var hoursDisplay = w.total_hours > 0
+        ? '<strong>'+w.total_hours.toFixed(1)+'h</strong>'
+        : '<span style="color:var(--muted)">—</span>';
+      return '<tr>'
+        + '<td><strong>'+esc(w.worker_name)+'</strong></td>'
+        + '<td style="text-align:center">'+w.days+'</td>'
+        + '<td style="text-align:center">'+hoursDisplay+'</td>'
+        + '<td style="color:var(--muted);font-size:12px">'+esc(w.last_seen||'—')+'</td>'
+        + '</tr>';
+    }).join('');
+  }).catch(function(){
+    document.getElementById('summaryBody').innerHTML='<tr><td colspan="4" style="color:var(--muted);text-align:center;padding:24px;">Error loading data</td></tr>';
+  });
+}
+
+function loadHours(){
+  var s=document.getElementById('weekStart').value,e=document.getElementById('weekEnd').value;
+  if(!s||!e)return;
+  fetch('/api/checkins/week?start='+s+'&end='+e).then(function(r){return r.json();}).then(function(rows){
+    var tb=document.getElementById('hoursBody');
+    if(!rows.length){
+      tb.innerHTML='<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:24px;">No check-ins for this week</td></tr>';
+      document.getElementById('h-total').textContent='0';
+      document.getElementById('h-workers').textContent='0';
+      document.getElementById('h-days').textContent='0';
+      return;
+    }
+    var totalH=0,workers=new Set(),days=new Set();
+    rows.forEach(function(r){if(r.hours)totalH+=r.hours;if(r.worker_name)workers.add(r.worker_name);if(r.date)days.add(r.date);});
+    document.getElementById('h-total').textContent=totalH.toFixed(1);
+    document.getElementById('h-workers').textContent=workers.size;
+    document.getElementById('h-days').textContent=days.size;
+    tb.innerHTML=rows.map(function(r){
+      var inT=r.checked_in_at?new Date(r.checked_in_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'—';
+      var outT=r.checked_out_at?new Date(r.checked_out_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'<em style="color:var(--yellow)">Active</em>';
+      var h=r.hours!=null?r.hours.toFixed(2):'—';
+      return '<tr><td>'+esc(r.worker_name||'')+'</td><td>'+esc(r.position||'')+'</td><td>'+esc(r.date||'')+'</td><td>'+inT+'</td><td>'+outT+'</td><td><strong>'+h+'</strong></td></tr>';
+    }).join('');
+  });
+}
+
+/* ─── ROLE PERMISSIONS ─── */
+function loadPerms(){
+  fetch('/api/config/role_permissions').then(function(r){return r.json();}).then(function(d){
+    if(d.ok&&d.value){
+      // Merge with defaults so new pages are always included
+      var v=d.value;
+      ['boss','admin','lead','worker'].forEach(function(role){
+        PAGES.forEach(function(pg){
+          if(PERMS[role]&&v[role]&&v[role][pg.id]!==undefined)PERMS[role][pg.id]=v[role][pg.id];
+        });
+      });
+    }
+    renderMatrix();
+  }).catch(function(){renderMatrix();});
+}
+function renderMatrix(){
+  var tb=document.getElementById('matrixBody');
+  tb.innerHTML=PAGES.map(function(pg){
+    var rowClass=pg.parent?'sub-row':'';
+    var cells=['admin','boss','inventory','lead','worker'].map(function(role){
+      var val=PERMS[role]&&PERMS[role][pg.id]!==undefined?PERMS[role][pg.id]:0;
+      // Boss and admin always have settings
+      var locked=(pg.locked&&(role==='admin'||role==='boss'))||(pg.id==='settings'&&role!=='admin'&&role!=='boss');
+      var cls='toggle-cell '+(val?'on':'off')+(locked?' locked':'');
+      var icon=val?'✓':'○';
+      var onclick=locked?'':' onclick="togglePerm(\''+pg.id+'\',\''+role+'\')"';
+      return '<td><span class="'+cls+'" id="cell-'+pg.id+'-'+role+'"'+onclick+'>'+icon+'</span></td>';
+    }).join('');
+    return '<tr class="'+rowClass+'"><td>'+pg.label+'</td>'+cells+'</tr>';
+  }).join('');
+}
+function togglePerm(pgId,role){
+  var locked=(pgId==='settings'&&role!=='admin'&&role!=='boss');
+  var adminLocked=(pgId==='settings'&&(role==='admin'||role==='boss'));
+  if(locked||adminLocked)return;
+  PERMS[role][pgId]=PERMS[role][pgId]?0:1;
+  var cell=document.getElementById('cell-'+pgId+'-'+role);
+  cell.className='toggle-cell '+(PERMS[role][pgId]?'on':'off');
+  cell.textContent=PERMS[role][pgId]?'✓':'○';
+}
+function savePerms(){
+  fetch('/api/config/role_permissions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({value:PERMS})})
+    .then(function(r){return r.json();}).then(function(d){
+      if(d.ok)showToast('Permissions saved ✓');
+      else showToast(d.error||'Could not save — table may need to be created',true);
+    });
+}
+
+/* ─── UTILS ─── */
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function showToast(msg,err){var t=document.getElementById('toast');t.textContent=msg;t.className=err?'err':'';t.style.display='block';setTimeout(function(){t.style.display='none';},3500);}
+
+/* ─── INIT ─── */
+(function(){
+  var role = localStorage.getItem('mbrRole') || '';
+  var name = localStorage.getItem('mbrAuth') || '';
+  if(!name) { location.href = '/login'; return; }
+
+  var roleLevel = {admin:5,boss:4,inventory:3,lead:2,worker:1};
+  var level = roleLevel[role] || 1;
+
+  curAdmin = name;
+  var el = document.getElementById('adminWho');
+  if(el) el.textContent = '— ' + name;
+  var lb = document.getElementById('logoutBtn');
+  if(lb) lb.style.display = '';
+
+  if(level < 4) {
+    // Workers, leads, inventory: hide admin tabs, show only Mi Perfil
+    ['tab-btn-users','tab-btn-hours','tab-btn-roles'].forEach(function(id){
+      var b = document.getElementById(id);
+      if(b) b.style.display = 'none';
+    });
+    // Remove active from Users tab, activate Mi Perfil
+    var uBtn = document.getElementById('tab-btn-users');
+    if(uBtn) uBtn.classList.remove('active');
+    var uPanel = document.getElementById('tab-users');
+    if(uPanel) uPanel.classList.remove('active');
+    var cBtn = document.getElementById('tab-btn-contractor');
+    if(cBtn) cBtn.classList.add('active');
+    var cPanel = document.getElementById('tab-contractor');
+    if(cPanel) cPanel.classList.add('active');
+    // Load contractor area
+    loadContractorArea();
+    // Failsafe: set name/avatar immediately without waiting for async
+    (function(){
+      var av2 = document.getElementById('ca-avatar');
+      var dn2 = document.getElementById('ca-display-name');
+      var dr2 = document.getElementById('ca-display-role');
+      var ini = name.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase()||name.charAt(0).toUpperCase();
+      if(av2) av2.textContent = ini;
+      if(dn2) dn2.textContent = name;
+      if(dr2) dr2.textContent = role;
+    })();
+  } else {
+    // Admin / Boss: load all tabs normally
+    loadUsers(); loadWorkers(); loadPerms(); setThisWeek();
+    // Show force logout button for Admin only
+    if(level >= 4){
+      var nas = document.getElementById('notifAdminSection');
+      if(nas) nas.style.display = 'block';
+    }
+    if(level >= 5){
+      var fls = document.getElementById('forceLogoutSection');
+      if(fls) fls.style.display = 'block';
+    }
+    // Pre-load My Profile data for when admin clicks that tab
+    loadContractorArea();
+  }
+})();
+</script>
+<!-- GNAV -->
+<nav class="gnav" id="gnav"></nav>
+<script>
+(function(){
+  var role=localStorage.getItem('mbrRole')||'admin';
+  var lvl={admin:5,boss:4,inventory:3,lead:2,worker:1}[role]||1;
+  var all=[
+    {h:'/home',icon:'🏠',label:'Home'},
+    {h:'/log',icon:'📋',label:'Log'},
+    {h:'/dashboard',icon:'📊',label:'Dashboard',min:3},
+    {h:'/timesheet',icon:'🕐',label:'Timesheet'},
+    {h:'/inventory',icon:'📦',label:'Inventory'},
+    {h:'/issues-log',icon:'⚠️',label:'Issues',min:2},
+    {h:'/settings',icon:'⚙️',label:'Settings',min:4}
+  ];
+  var p=location.pathname;
+  var nav=document.getElementById('gnav');
+  all.forEach(function(item){
+    if(item.min&&lvl<item.min)return;
+    var a=document.createElement('a');
+    a.href=item.h;a.className='gnav-link';
+    if(item.h==='/'?p===item.h:p===item.h||p.startsWith(item.h))a.classList.add('gna');
+    a.innerHTML='<span class="gi">'+item.icon+'</span>'+item.label;
+    nav.appendChild(a);
+  });
+})();
+
+var resetPwTarget = null;
+function openResetPw(nk, displayName) {
+  resetPwTarget = decodeURIComponent(nk);
+  document.getElementById('resetPwTitle').textContent = 'Reset Password — ' + displayName;
+  document.getElementById('rp-pass').value = '';
+  document.getElementById('rp-pass2').value = '';
+  document.getElementById('rp-err').style.display = 'none';
+  document.getElementById('resetPwModal').classList.add('open');
+}
+function saveResetPw() {
+  var pw  = document.getElementById('rp-pass').value.trim();
+  var pw2 = document.getElementById('rp-pass2').value.trim();
+  var err = document.getElementById('rp-err');
+  err.style.display = 'none';
+  if (!pw || pw.length < 4) { err.textContent = 'Password must be at least 4 characters.'; err.style.display = 'block'; return; }
+  if (pw !== pw2)            { err.textContent = 'Passwords do not match.'; err.style.display = 'block'; return; }
+  fetch('/api/reset-password', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({name: resetPwTarget, password: pw})
+  }).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){ closeModal('resetPwModal'); showToast('Password updated ✓'); }
+    else { err.textContent = d.error || 'Failed to reset password.'; err.style.display = 'block'; }
+  });
+}
+
+
+function togglePwS(id, btn) {
+  var inp = document.getElementById(id);
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+}
+
+// ── PIN Management ──────────────────────────────────────────────────────────
+var _pinTarget = null;
+function openSetPin(userId, name){
+  _pinTarget = {id: userId, name: name};
+  document.getElementById('setPinTitle').textContent = 'Worker: ' + name;
+  document.getElementById('pinInput').value = '';
+  document.getElementById('pinErr').style.display = 'none';
+  document.getElementById('setPinModal').style.display = 'flex';
+  setTimeout(function(){ document.getElementById('pinInput').focus(); }, 100);
+}
+function closeSetPin(){
+  document.getElementById('setPinModal').style.display = 'none';
+  _pinTarget = null;
+}
+async function savePin(){
+  var pin = document.getElementById('pinInput').value.trim();
+  var err = document.getElementById('pinErr');
+  err.style.display = 'none';
+  if(!/^[0-9]{4}$/.test(pin)){
+    err.textContent = 'PIN must be exactly 4 digits.';
+    err.style.display = 'block'; return;
+  }
+  if(!_pinTarget) return;
+  try{
+    var r = await fetch('/api/workers/'+_pinTarget.id, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({pin: pin})
+    });
+    var d = await r.json();
+    if(d.ok){
+      closeSetPin();
+      var st = document.getElementById('usersStatus');
+      if(st){ st.textContent = '✓ PIN set for '+_pinTarget.name; st.style.color='#22c55e'; setTimeout(function(){st.textContent='';},3000); }
+    } else {
+      err.textContent = (d.error||'').includes('unique') ? 'That PIN is already in use — choose another.' : (d.error||'Error saving PIN.');
+      err.style.display = 'block';
+    }
+  }catch(e){ err.textContent='Network error.'; err.style.display='block'; }
+}
+
+
+// ── CONTRACTOR AREA ──────────────────────────────────────────────────────────
+var _caWorkerId = null;
+
+async function loadContractorArea(){
+  var name = localStorage.getItem('mbrAuth') || '';
+  var role = localStorage.getItem('mbrRole') || '';
+  if(!name) return;
+
+  // --- Profile header ---
+  var initials = name.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+  var av = document.getElementById('ca-avatar');
+  if(av) av.textContent = initials;
+  var dn = document.getElementById('ca-display-name');
+  if(dn) dn.textContent = name;
+  var dr = document.getElementById('ca-display-role');
+  if(dr) dr.textContent = role;
+
+  // --- PIN badge ---
+  try {
+    var pr = await fetch('/api/contractor/profile?name='+encodeURIComponent(name));
+    var pd = await pr.json();
+    var badge = document.getElementById('ca-pin-badge');
+    var banner = document.getElementById('pin-setup-banner');
+    if(pd.ok && !pd.pin_set){
+      if(badge){ badge.style.display='inline'; badge.textContent='No PIN'; badge.style.background='#fef2f2'; badge.style.color='#ef4444'; }
+      if(banner) banner.style.display='block';
+      if(localStorage) localStorage.setItem('mbrPinRequired','1');
+    } else {
+      if(badge){ badge.style.display='inline'; badge.textContent='✓ PIN set'; badge.style.background='#f0fdf4'; badge.style.color='#16a34a'; }
+      if(banner) banner.style.display='none';
+      if(localStorage) localStorage.removeItem('mbrPinRequired');
+    }
+  } catch(e){}
+
+  // --- Check-in status in profile card ---
+  try {
+    var cr = await fetch('/api/contractor/status?name='+encodeURIComponent(name));
+    var cd = await cr.json();
+    var chip = document.getElementById('ca-ci-chip');
+    var dot  = document.getElementById('ca-ci-dot');
+    var lbl  = document.getElementById('ca-ci-label');
+    if(chip && dot && lbl){
+      if(cd.checked_in){
+        chip.style.background='rgba(34,197,94,0.1)'; chip.style.color='#16a34a'; chip.style.borderColor='rgba(34,197,94,0.3)';
+        dot.style.background='#22c55e';
+        lbl.textContent = cd.since ? 'Checked In since ' + cd.since : 'Checked In';
+      } else {
+        chip.style.background='rgba(239,68,68,0.08)'; chip.style.color='#ef4444'; chip.style.borderColor='rgba(239,68,68,0.2)';
+        dot.style.background='#ef4444';
+        lbl.textContent = 'Not Checked In';
+      }
+      // Sync bar chip directly from same response — no second fetch
+      var barChip=document.getElementById('mbr-checkin-chip');
+      var barDot=document.getElementById('chip-dot');
+      var barLbl=document.getElementById('chip-label');
+      if(barChip&&barDot&&barLbl){
+        if(cd.checked_in){
+          barChip.className='mbr-checkin-chip chip-in';
+          barDot.className='chip-dot dot-in';
+          barLbl.textContent=cd.since?'Checked In · '+cd.since:'Checked In';
+        } else {
+          barChip.className='mbr-checkin-chip chip-out';
+          barDot.className='chip-dot dot-out';
+          barLbl.textContent='Not Checked In';
+        }
+      }
+    }
+  } catch(e){
+    // Network error — show retry state
+    var lbl2=document.getElementById('ca-ci-label');
+    var dot2=document.getElementById('ca-ci-dot');
+    var chip2=document.getElementById('ca-ci-chip');
+    if(lbl2) lbl2.textContent='—';
+    if(dot2) dot2.style.background='#64748b';
+    if(chip2){ chip2.style.background='rgba(255,255,255,0.04)'; chip2.style.color='#64748b'; chip2.style.cursor='pointer'; chip2.title='Tap to retry'; chip2.onclick=function(){loadContractorArea();}; }
+  }
+
+  // --- Hours: load current week ---
+  caWeekOffset = 0;
+  loadContractorHours();
+}
+
+var caWeekOffset = 0;
+
+function getWeekStart(offset){
+  var now = new Date();
+  var day = now.getDay(); // 0=Sun
+  var diff = (day === 0) ? -6 : 1 - day; // Monday
+  var mon = new Date(now);
+  mon.setDate(now.getDate() + diff + (offset * 7));
+  return mon.toISOString().slice(0,10);
+}
+
+async function loadContractorHours(){
+  var name = localStorage.getItem('mbrAuth') || '';
+  var ws = getWeekStart(caWeekOffset);
+  var we = new Date(ws); we.setDate(we.getDate()+6);
+  var weStr = we.toISOString().slice(0,10);
+
+  // Week label
+  var label = document.getElementById('ca-week-label');
+  var opts = {month:'short', day:'numeric'};
+  if(label){
+    var d1 = new Date(ws+'T12:00:00'); var d2 = new Date(weStr+'T12:00:00');
+    label.textContent = d1.toLocaleDateString('en-US',opts) + ' – ' + d2.toLocaleDateString('en-US',opts);
+  }
+
+  var grid = document.getElementById('ca-hours-grid');
+  var total = document.getElementById('ca-total-hours');
+  if(grid) grid.innerHTML = '<div style="font-size:12px;color:var(--muted);">Loading...</div>';
+
+  try {
+    var r = await fetch('/api/contractor/hours?name='+encodeURIComponent(name)+'&week_start='+ws);
+    var d = await r.json();
+    if(!d.ok){ if(total) total.textContent='—'; return; }
+
+    if(total) total.textContent = d.total_hours || '0';
+
+    var dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    var rows = '';
+    for(var i=0;i<7;i++){
+      var dayDate = new Date(ws+'T12:00:00');
+      dayDate.setDate(dayDate.getDate()+i);
+      var dateStr = dayDate.toISOString().slice(0,10);
+      var rec = d.days.find(function(x){return x.date===dateStr;});
+      var hrs = rec && rec.hours != null ? rec.hours+'h' : '—';
+      var ci  = rec && rec.checked_in  ? rec.checked_in  : '—';
+      var co  = rec && rec.checked_out ? rec.checked_out : '—';
+      var autoTag = rec && rec.auto_checkout ? ' <span style="font-size:10px;color:#f59e0b;">(auto)</span>' : '';
+      var isToday = dateStr === new Date().toISOString().slice(0,10);
+      var bg = isToday ? 'background:var(--surface-2);border:1px solid var(--accent);' : 'background:var(--surface);border:1px solid var(--border);';
+      if(i >= 5 && !rec) continue; // skip empty weekend days
+      rows += '<div style="display:grid;grid-template-columns:48px 1fr 1fr 52px;gap:8px;align-items:center;padding:8px 12px;border-radius:8px;'+bg+'">'
+        +'<span style="font-size:12px;font-weight:600;color:var(--muted);">'+dayNames[i]+'<br><span style="font-weight:400;font-size:10px;">'+dateStr.slice(5)+'</span></span>'
+        +'<span style="font-size:12px;color:var(--muted);">In: <b style="color:var(--text);">'+ci+'</b></span>'
+        +'<span style="font-size:12px;color:var(--muted);">Out: <b style="color:var(--text);">'+co+'</b>'+autoTag+'</span>'
+        +'<span style="font-size:13px;font-weight:700;color:var(--text);text-align:right;">'+hrs+'</span>'
+        +'</div>';
+    }
+    if(grid) grid.innerHTML = rows || '<div style="font-size:12px;color:var(--muted);padding:8px 0;">No check-in records for this week.</div>';
+  } catch(e){
+    if(grid) grid.innerHTML = '<div style="font-size:12px;color:#ef4444;">Error loading hours.</div>';
+  }
+}
+
+function changeWeek(dir){
+  caWeekOffset += dir;
+  // Don't allow future weeks
+  if(caWeekOffset > 0) caWeekOffset = 0;
+  loadContractorHours();
+}
+
+function openChangePw(){
+  var modal = document.getElementById('changePwModal');
+  if(modal) modal.style.display='flex';
+}
+function closeChangePw(){
+  var modal = document.getElementById('changePwModal');
+  if(modal) modal.style.display='none';
+  ['cp-current','cp-new','cp-confirm'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.value='';
+  });
+  var err=document.getElementById('cp-err'); if(err){err.style.display='none';err.textContent='';}
+}
+async function saveChangePw(){
+  var name = localStorage.getItem('mbrAuth')||'';
+  var curr = (document.getElementById('cp-current')||{}).value||'';
+  var nw   = (document.getElementById('cp-new')||{}).value||'';
+  var conf = (document.getElementById('cp-confirm')||{}).value||'';
+  var err  = document.getElementById('cp-err');
+  if(nw !== conf){ err.style.display='block'; err.textContent='New passwords do not match.'; return; }
+  if(nw.length < 4){ err.style.display='block'; err.textContent='Password must be at least 4 characters.'; return; }
+  var r = await fetch('/api/contractor/password',{method:'PATCH',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:name,current_password:curr,new_password:nw})});
+  var d = await r.json();
+  if(d.ok){ closeChangePw(); showToast('Password updated successfully.'); }
+  else { err.style.display='block'; err.textContent = d.error||'Error updating password.'; }
+}
+
+async function sendNotification(){
+  var title  = (document.getElementById('notif-title')||{}).value||'';
+  var body   = (document.getElementById('notif-body')||{}).value||'';
+  var target = (document.getElementById('notif-target')||{}).value||'all';
+  var st     = document.getElementById('notif-status');
+  if(!title.trim()){ st.style.display='block';st.style.color='#ef4444';st.textContent='Title is required.';return; }
+  var auth = localStorage.getItem('mbrAuth')||'';
+  var r = await fetch('/api/notifications',{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({title:title.trim(),body:body.trim(),target:target,created_by:auth})});
+  var d = await r.json();
+  st.style.display='block';
+  if(d.ok){
+    st.style.color='#22c55e'; st.textContent='Notification sent!';
+    document.getElementById('notif-title').value='';
+    document.getElementById('notif-body').value='';
+    setTimeout(function(){st.style.display='none';},3000);
+  } else { st.style.color='#ef4444'; st.textContent='Error sending.'; }
+}
+
+async function contractorResetPin(){
+  if(!confirm('Reset your PIN? You will need to set a new one.')) return;
+  var name = localStorage.getItem('mbrAuth')||'';
+  var r = await fetch('/api/contractor/reset-pin',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:name})});
+  var d = await r.json();
+  if(d.ok){
+    localStorage.setItem('mbrPinRequired','1');
+    showToast('PIN reset. Please set a new PIN below.');
+    loadContractorArea();
+    // Failsafe: set name/avatar immediately without waiting for async
+    (function(){
+      var av2 = document.getElementById('ca-avatar');
+      var dn2 = document.getElementById('ca-display-name');
+      var dr2 = document.getElementById('ca-display-role');
+      var ini = name.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase()||name.charAt(0).toUpperCase();
+      if(av2) av2.textContent = ini;
+      if(dn2) dn2.textContent = name;
+      if(dr2) dr2.textContent = role;
+    })();
+  } else { alert('Error resetting PIN.'); }
+}
+
+
+// Hook into switchTab to load contractor data when tab opens
+var _origSwitchTab = switchTab;
+switchTab = function(name, btn){
+  _origSwitchTab(name, btn);
+  if(name === 'contractor') loadContractorArea();
+};
+
+// On page load: update bar chip directly (independent of which tab is active)
+(function(){
+  var _auth = localStorage.getItem('mbrAuth')||'';
+  if(!_auth) return;
+  function _updateBarChip(){
+    fetch('/api/contractor/status?name='+encodeURIComponent(_auth))
+      .then(function(r){return r.json();})
+      .then(function(d){
+        var bc=document.getElementById('mbr-checkin-chip');
+        var bd=document.getElementById('chip-dot');
+        var bl=document.getElementById('chip-label');
+        if(!bc||!bd||!bl) return;
+        if(d.checked_in){
+          bc.className='mbr-checkin-chip chip-in'; bd.className='chip-dot dot-in';
+          bl.textContent=d.since?'Checked In · '+d.since:'Checked In';
+        } else {
+          bc.className='mbr-checkin-chip chip-out'; bd.className='chip-dot dot-out';
+          bl.textContent='Not Checked In';
+        }
+      }).catch(function(){ setTimeout(_updateBarChip, 5000); });
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', _updateBarChip);
+  } else { _updateBarChip(); }
+  setInterval(_updateBarChip, 60000);
+})();
+
+// First-login PIN enforcement: if flag is set, open contractor tab on load
+(function(){
+  if(localStorage.getItem('mbrPinRequired')){
+    document.addEventListener('DOMContentLoaded', function(){
+      var btn = document.getElementById('tab-btn-contractor');
+      if(btn) btn.click();
+    });
+  }
+})();
+
+</script>
+
+<!-- PIN Modal -->
+<div id="setPinModal" style="display:none;position:fixed;inset:0;background:#00000088;z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:340px;max-width:90vw;">
+    <h3 style="margin-bottom:6px;font-size:16px;">📟 Set Worker PIN</h3>
+    <p id="setPinTitle" style="font-size:13px;color:var(--muted);margin-bottom:18px;"></p>
+    <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px;">4-Digit PIN</label>
+    <input id="pinInput" type="text" inputmode="numeric" maxlength="4" pattern="[0-9]{4}"
+      placeholder="0000"
+      style="width:100%;padding:12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:28px;text-align:center;letter-spacing:10px;font-weight:700;margin-bottom:8px;">
+    <div id="pinErr" style="color:#ef4444;font-size:12px;margin-bottom:10px;display:none;"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost btn-sm" onclick="closeSetPin()" style="flex:1">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="savePin()" style="flex:1">Save PIN</button>
+    </div>
+  </div>
+</div>
+
+<!-- Change Password Modal (Contractor) -->
+<div id="changePwModal" style="display:none;position:fixed;inset:0;background:#00000088;z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:340px;max-width:90vw;">
+    <h3 style="margin-bottom:16px;font-size:16px;">🔑 Change Password</h3>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:5px;">Current Password</label>
+      <input id="cp-current" type="password" placeholder="Current password"
+        style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;">
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:5px;">New Password</label>
+      <input id="cp-new" type="password" placeholder="New password"
+        style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;">
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:5px;">Confirm New Password</label>
+      <input id="cp-confirm" type="password" placeholder="Confirm new password"
+        style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;">
+    </div>
+    <div id="cp-err" style="color:#ef4444;font-size:12px;margin-bottom:10px;display:none;"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost btn-sm" onclick="closeChangePw()" style="flex:1">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveChangePw()" style="flex:1">Save</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

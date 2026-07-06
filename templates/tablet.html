@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MBR Texas — Check-In / Check-Out</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#0a0f1a;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden;touch-action:manipulation}
+body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px 20px;gap:0}
+
+.header{text-align:center;margin-bottom:20px}
+.logo{font-size:19px;font-weight:800;color:#e2e8f0}
+.logo span{color:#378ADD}
+.clock{font-size:42px;font-weight:200;color:#94a3b8;font-variant-numeric:tabular-nums;letter-spacing:3px;margin-top:2px}
+.date-lbl{font-size:12px;color:#334155;margin-top:2px}
+
+.hint-box{background:#111827;border:1px solid #1e2d45;border-radius:12px;padding:12px 20px;margin-bottom:18px;text-align:center;width:280px}
+.hint-box p{font-size:13px;color:#475569;line-height:1.5}
+.hint-box p b{color:#94a3b8}
+
+/* PIN dots */
+.pin-display{display:flex;gap:16px;margin-bottom:22px;justify-content:center}
+.pin-dot{width:20px;height:20px;border-radius:50%;border:2px solid #1e2d45;background:transparent;transition:all .1s}
+.pin-dot.filled{background:#378ADD;border-color:#378ADD;box-shadow:0 0 10px #378ADD55}
+
+/* Keypad */
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:280px}
+.key{height:70px;border:none;border-radius:14px;font-size:26px;font-weight:600;cursor:pointer;transition:transform .08s,background .08s;user-select:none;-webkit-tap-highlight-color:transparent}
+.key:active{transform:scale(.91)}
+.key-num{background:#111827;color:#f1f5f9;border:1.5px solid #1e2d45}
+.key-num:active{background:#1a2540}
+.key-del{background:#1a1d2e;color:#64748b;font-size:20px;border:1.5px solid #1e2d45}
+.key-enter{background:#1e40af;color:#fff;font-size:16px;font-weight:700;border:none}
+.key-enter:not(:disabled):active{background:#1d4ed8}
+.key-enter:disabled{background:#111827;color:#334155;cursor:not-allowed}
+
+/* Result */
+.result{margin-top:20px;width:280px;border-radius:14px;padding:20px;text-align:center;display:none}
+.result.ok-out{background:#052e16cc;border:1px solid #16a34a55}
+.result.ok-in {background:#0f172acc;border:1px solid #3b82f655}
+.result.err   {background:#1c0a0acc;border:1px solid #dc262655}
+.r-icon{font-size:40px;margin-bottom:8px}
+.r-name{font-size:21px;font-weight:800;color:#f1f5f9;margin-bottom:3px}
+.r-sub{font-size:13px;color:#94a3b8}
+.r-time{font-size:14px;font-weight:600;margin-top:5px}
+
+.auto-note{margin-top:14px;font-size:11px;color:#1e2d45;text-align:center}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">MBR Texas <span>/ TDG</span></div>
+  <div class="clock" id="clock">--:--</div>
+  <div class="date-lbl" id="dateLbl"></div>
+</div>
+
+<div class="hint-box">
+  <p>Enter your <b>4-digit PIN</b><br>to check in or check out</p>
+</div>
+
+<div class="pin-display">
+  <div class="pin-dot" id="d0"></div>
+  <div class="pin-dot" id="d1"></div>
+  <div class="pin-dot" id="d2"></div>
+  <div class="pin-dot" id="d3"></div>
+</div>
+
+<div class="keypad">
+  <button class="key key-num" onclick="pressKey('1')">1</button>
+  <button class="key key-num" onclick="pressKey('2')">2</button>
+  <button class="key key-num" onclick="pressKey('3')">3</button>
+  <button class="key key-num" onclick="pressKey('4')">4</button>
+  <button class="key key-num" onclick="pressKey('5')">5</button>
+  <button class="key key-num" onclick="pressKey('6')">6</button>
+  <button class="key key-num" onclick="pressKey('7')">7</button>
+  <button class="key key-num" onclick="pressKey('8')">8</button>
+  <button class="key key-num" onclick="pressKey('9')">9</button>
+  <button class="key key-del" onclick="pressDelete()">⌫</button>
+  <button class="key key-num" onclick="pressKey('0')">0</button>
+  <button class="key key-enter" id="enterBtn" onclick="submitPIN()" disabled>✓</button>
+</div>
+
+<div class="result" id="result">
+  <div class="r-icon" id="r-icon"></div>
+  <div class="r-name" id="r-name"></div>
+  <div class="r-sub"  id="r-sub"></div>
+  <div class="r-time" id="r-time"></div>
+</div>
+
+<div class="auto-note">Auto check-out at 6:00 PM if not registered</div>
+
+<script>
+var pin='', busy=false, resetTimer=null;
+
+function tick(){
+  var d=new Date();
+  document.getElementById('clock').textContent=d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('dateLbl').textContent=d.toLocaleDateString([],{weekday:'long',month:'long',day:'numeric'});
+}
+tick(); setInterval(tick,1000);
+
+function updateDots(){
+  for(var i=0;i<4;i++) document.getElementById('d'+i).classList.toggle('filled',i<pin.length);
+  document.getElementById('enterBtn').disabled=pin.length<4;
+}
+
+function pressKey(k){
+  if(busy||pin.length>=4) return;
+  clearTimer();
+  pin+=k; updateDots();
+  if(pin.length===4) submitPIN();
+}
+
+function pressDelete(){
+  if(busy) return;
+  clearTimer(); pin=pin.slice(0,-1); updateDots(); hideResult();
+}
+
+function clearTimer(){ if(resetTimer){clearTimeout(resetTimer);resetTimer=null;} }
+
+function reset(ms){
+  clearTimer();
+  resetTimer=setTimeout(function(){ pin=''; updateDots(); hideResult(); busy=false; },ms||4000);
+}
+
+function showResult(type,icon,name,sub,time){
+  var el=document.getElementById('result');
+  el.className='result '+type;
+  document.getElementById('r-icon').textContent=icon;
+  document.getElementById('r-name').textContent=name;
+  document.getElementById('r-sub').textContent=sub;
+  document.getElementById('r-time').textContent=time||'';
+  el.style.display='block';
+}
+function hideResult(){ document.getElementById('result').style.display='none'; }
+
+async function submitPIN(){
+  if(pin.length<4||busy) return;
+  busy=true;
+  document.getElementById('enterBtn').disabled=true;
+  try{
+    var r=await fetch('/api/checkin/by-pin',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({pin:pin})
+    });
+    var d=await r.json();
+    if(d.ok){
+      if(d.action==='checkout'){
+        var inT=d.checked_in_at?new Date(d.checked_in_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'';
+        var outT=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+        showResult('ok-out','👋',d.worker_name,'Checked out — see you tomorrow!',
+          inT?'In: '+inT+' → Out: '+outT:'Out: '+outT);
+      } else {
+        var nowT=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+        showResult('ok-in','✅',d.worker_name,'Checked in — late arrival recorded.','In: '+nowT);
+      }
+      reset(4000);
+    } else {
+      var msg=d.error==='PIN not found'?'PIN not recognized.\nSee your supervisor.':(d.error||'Error — try again.');
+      showResult('err','❌','',msg,'');
+      pin=''; updateDots(); reset(3500);
+    }
+  } catch(e){
+    showResult('err','❌','','Network error — try again.','');
+    pin=''; updateDots(); reset(3000);
+  }
+  busy=false;
+}
+
+document.addEventListener('keydown',function(e){
+  if(e.key>='0'&&e.key<='9') pressKey(e.key);
+  else if(e.key==='Backspace') pressDelete();
+  else if(e.key==='Enter'&&pin.length===4) submitPIN();
+});
+</script>
+</body>
+</html>

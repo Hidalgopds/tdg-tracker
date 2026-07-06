@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Section B – Live Map</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0c1f3a;color:#fff;min-height:100vh;padding:20px;}
+  .top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+  .top-bar h1{font-size:18px;font-weight:700;color:#fff;}
+  .top-bar .sub{font-size:12px;color:#7a9cc4;margin-top:2px;}
+  .refresh-btn{background:#1a3f6f;border:none;color:#7ab3d4;font-size:12px;padding:6px 14px;border-radius:8px;cursor:pointer;transition:.2s;}
+  .refresh-btn:hover{background:#234f8a;color:#fff;}
+  .last-updated{font-size:11px;color:#456;margin-bottom:16px;}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;max-width:600px;margin:0 auto;}
+  .unit-cell{
+    background:#152944;
+    border:1.5px solid #1e3a5a;
+    border-radius:12px;
+    padding:12px 14px;
+    transition:.2s;
+    cursor:default;
+  }
+  .unit-cell.occupied{border-color:#1abc9c;background:#0d2e20;}
+  .unit-cell.occupied:hover{background:#0f3525;}
+  .unit-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .unit-id{font-size:16px;font-weight:800;color:#e2eaf4;letter-spacing:1px;}
+  .unit-count{
+    font-size:11px;font-weight:700;
+    background:#1a3f6f;color:#7ab3d4;
+    padding:2px 8px;border-radius:999px;
+  }
+  .unit-count.has-workers{background:#1abc9c22;color:#1abc9c;}
+  .workers-list{display:flex;flex-direction:column;gap:4px;}
+  .worker-chip{
+    font-size:11px;
+    background:#1e3a5a;
+    color:#a0c4e0;
+    padding:3px 8px;
+    border-radius:6px;
+    display:flex;align-items:center;gap:5px;
+  }
+  .worker-chip .dot{width:5px;height:5px;border-radius:50%;background:#1abc9c;flex-shrink:0;}
+  .no-workers{font-size:11px;color:#2e4a6a;font-style:italic;}
+  .section-header{
+    text-align:center;
+    background:#0f2540;
+    border:1px solid #1e3a5a;
+    border-radius:10px;
+    padding:10px;
+    margin-bottom:14px;
+    font-size:13px;
+    font-weight:700;
+    color:#7a9cc4;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    max-width:600px;
+    margin-left:auto;
+    margin-right:auto;
+  }
+  .summary-bar{
+    display:flex;gap:16px;margin-bottom:16px;max-width:600px;margin-left:auto;margin-right:auto;
+    flex-wrap:wrap;
+  }
+  .summary-pill{
+    background:#0f2540;border:1px solid #1e3a5a;border-radius:8px;
+    padding:8px 16px;font-size:12px;color:#7a9cc4;
+  }
+  .summary-pill strong{color:#fff;font-size:16px;display:block;}
+  .back-link{font-size:12px;color:#456;text-decoration:none;}
+  .back-link:hover{color:#7a9cc4;}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div>
+    <h1>&#128205; Section B — Live Map</h1>
+    <div class="sub">TDG Yard · Katy, TX</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <button class="refresh-btn" onclick="loadMap()">&#8635; Refresh</button>
+    <a href="/" class="back-link">&#8592; Home</a>
+  </div>
+</div>
+
+<div id="summary-bar" class="summary-bar"></div>
+<div class="section-header">Section B &middot; TDG Yard &middot; 28 Positions</div>
+<div class="grid" id="grid"></div>
+
+<div class="last-updated" style="text-align:center;margin-top:14px;" id="last-updated"></div>
+
+<script>
+var UNITS = [];
+for(var i=1;i<=28;i++) UNITS.push((i<10?'0':'')+i+'B');
+
+async function loadMap(){
+  try {
+    var r = await fetch('/api/worker/locations');
+    var locs = await r.json();
+
+    // Group by unit
+    var byUnit = {};
+    UNITS.forEach(function(u){ byUnit[u]=[]; });
+    locs.forEach(function(l){
+      var u = l.unit;
+      if(byUnit[u]) byUnit[u].push(l.worker_name);
+      else byUnit[u] = [l.worker_name];
+    });
+
+    // Summary
+    var totalWorkers = locs.length;
+    var occupiedUnits = Object.values(byUnit).filter(function(a){return a.length>0;}).length;
+    document.getElementById('summary-bar').innerHTML =
+      '<div class="summary-pill"><strong>' + totalWorkers + '</strong>Workers on field</div>' +
+      '<div class="summary-pill"><strong>' + occupiedUnits + '</strong>Units occupied</div>' +
+      '<div class="summary-pill"><strong>' + (28-occupiedUnits) + '</strong>Units empty</div>';
+
+    // Render grid
+    var html = '';
+    UNITS.forEach(function(unit){
+      var workers = byUnit[unit] || [];
+      var occupied = workers.length > 0;
+      html += '<div class="unit-cell' + (occupied?' occupied':'') + '">';
+      html += '<div class="unit-header">';
+      html += '<span class="unit-id">' + unit + '</span>';
+      html += '<span class="unit-count' + (occupied?' has-workers':'') + '">' + workers.length + '</span>';
+      html += '</div>';
+      if(occupied){
+        html += '<div class="workers-list">';
+        workers.forEach(function(w){
+          html += '<div class="worker-chip"><span class="dot"></span>' + w + '</div>';
+        });
+        html += '</div>';
+      } else {
+        html += '<div class="no-workers">Empty</div>';
+      }
+      html += '</div>';
+    });
+    document.getElementById('grid').innerHTML = html;
+    document.getElementById('last-updated').textContent =
+      'Last updated: ' + new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+  } catch(e){
+    document.getElementById('grid').innerHTML = '<div style="color:#e74c3c;text-align:center;padding:20px;">Error loading data</div>';
+  }
+}
+
+loadMap();
+// Auto-refresh every 30 seconds
+setInterval(loadMap, 30000);
+</script>
+</body>
+</html>
