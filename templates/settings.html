@@ -320,6 +320,23 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 .np-time{font-size:10px;color:rgba(255,255,255,0.3);margin-top:5px;}
 .np-empty{padding:24px;text-align:center;font-size:12px;color:rgba(255,255,255,0.3);}
 body{padding-top:48px!important;}
+
+/* ── Mobile responsive ── */
+@media (max-width: 640px) {
+  .topbar { padding: 10px 14px !important; }
+  #main { padding: 12px 14px !important; }
+  .gate-card { width: 100% !important; max-width: 100% !important; padding: 24px 16px !important; }
+  .section-card { padding: 16px 14px !important; }
+  .section-card h2 { font-size: 15px !important; }
+  /* Role matrix: allow horizontal scroll */
+  .role-matrix-wrap, table { overflow-x: auto; display: block; }
+  /* Profile chip area */
+  #mbr-checkin-chip { font-size: 10px !important; padding: 2px 7px !important; }
+  /* Tabs on settings */
+  .tab-bar, .settings-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .gnav a { font-size: 9px !important; min-width: 36px !important; }
+  .gnav a .gi { font-size: 17px !important; }
+}
 </style>
 <div id="mbr-status-bar">
   <!-- Left: navigation -->

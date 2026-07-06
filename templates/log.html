@@ -364,6 +364,24 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 .roles-grid{border-color:#e2e8f0 !important;}
 .rg-header{background:#f8fafc !important;color:#475569 !important;}
 .rg-cell{border-top-color:#f1f5f9 !important;}
+
+/* ── Mobile responsive ── */
+@media (max-width: 640px) {
+  /* Nav bar at top: hide text, keep back arrow */
+  #log-nav-bar span:not([id]) { display: none !important; }
+  #log-nav-bar { gap: 6px !important; padding: 0 10px !important; }
+  /* Controls bar: stack into 2 rows */
+  .top-bar { flex-wrap: wrap !important; gap: 6px !important; padding: 8px !important; }
+  .top-bar label, .top-bar select, .top-bar input { font-size: 12px !important; }
+  /* Submit button full width on mobile */
+  #submitBtn { width: 100% !important; margin-top: 4px !important; }
+  /* Table: already has overflow-x auto in .table-wrap, just ensure it */
+  .table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
+  table { min-width: 520px; }
+  /* Bottom nav */
+  .gnav a { font-size: 9px !important; min-width: 36px !important; }
+  .gnav a .gi { font-size: 17px !important; }
+}
 </style>
 
 </head>
