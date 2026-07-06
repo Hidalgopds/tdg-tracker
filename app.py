@@ -9,6 +9,32 @@ from flask import Flask, request, jsonify, render_template, Response
 import requests
 import uuid
 
+# ── Kiosk IP restriction ─────────────────────────────────────────────────────
+KIOSK_IPS = set(
+    ip.strip() for ip in
+    os.environ.get("KIOSK_IPS", "174.202.224.245").split(",")
+    if ip.strip()
+)
+
+def get_client_ip():
+    """Real client IP, accounting for Render's reverse proxy."""
+    xff = request.headers.get("X-Forwarded-For", "")
+    if xff:
+        return xff.split(",")[0].strip()
+    return request.remote_addr or ""
+
+def kiosk_allowed():
+    """Returns True if request is from an allowed kiosk IP or bypass key matches."""
+    ip = get_client_ip()
+    if ip in KIOSK_IPS or ip == "127.0.0.1":
+        return True
+    # Admin bypass: ?key=KIOSK_BYPASS_KEY (set in Render env vars)
+    bypass = os.environ.get("KIOSK_BYPASS_KEY", "")
+    if bypass and request.args.get("key") == bypass:
+        return True
+    return False
+
+
 CDT = timezone(timedelta(hours=-5))  # Houston = CDT (UTC-5) in summer; CST (UTC-6) in winter
 
 def utc_to_cdt(iso_str):
@@ -1969,6 +1995,8 @@ def auto_checkout():
 
 @app.route("/api/checkin/by-pin", methods=["POST"])
 def checkin_by_pin():
+    if not kiosk_allowed():
+        return jsonify({"ok": False, "error": "Unauthorized IP"}), 403
     """Look up worker by 4-digit PIN and check them in or out."""
     import datetime as dt
     data = request.get_json() or {}
@@ -2105,7 +2133,15 @@ def update_contractor_name():
 
 @app.route("/tablet")
 def tablet_page():
-    """Tablet check-in/out kiosk — shared device in common area."""
+    """Tablet check-in/out kiosk — restricted to job site IP."""
+    if not kiosk_allowed():
+        ip = get_client_ip()
+        return f"""<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>body{{font-family:sans-serif;background:#0f172a;color:#e2e8f0;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;flex-direction:column;gap:16px;text-align:center;padding:24px;}}
+h1{{font-size:28px;color:#ef4444;}}p{{color:#94a3b8;font-size:14px;max-width:340px;}}</style></head>
+<body><h1>🔒 Access Restricted</h1>
+<p>This kiosk is only accessible from the authorized job site network.</p>
+<p style="font-size:12px;color:#475569;">Your IP: {ip}</p></body></html>""", 403
     return render_template("tablet.html")
 
 @app.route("/api/config/<key>", methods=["GET"])
