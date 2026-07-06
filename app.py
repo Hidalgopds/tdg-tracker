@@ -2268,6 +2268,61 @@ def get_sent_units():
 
 
 
+# -- Safety Meeting: bulk check-in
+@app.route("/api/safety-meeting/bulk-checkin", methods=["POST"])
+def safety_meeting_bulk_checkin():
+    data = request.get_json() or {}
+    workers   = data.get("workers", [])
+    time_val  = data.get("time", "")      # "HH:MM" CDT from client
+    supervisor = data.get("supervisor", "")
+    if not workers:
+        return jsonify({"ok": False, "error": "No workers"}), 400
+
+    today = date.today().isoformat()
+
+    # Convert HH:MM CDT → UTC ISO
+    if time_val and ":" in time_val:
+        try:
+            h, m = map(int, time_val.split(":"))
+            y, mo, d_ = int(today[:4]), int(today[5:7]), int(today[8:])
+            local_dt = datetime(y, mo, d_, h, m, 0, tzinfo=timezone(timedelta(hours=-5)))
+            now_iso = local_dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+        except Exception:
+            now_iso = datetime.utcnow().isoformat() + "Z"
+    else:
+        now_iso = datetime.utcnow().isoformat() + "Z"
+
+    # Already in safety meeting today
+    r_sm = requests.get(f"{SUPABASE_URL}/rest/v1/{SM_TABLE}?date=eq.{today}&select=worker_name", headers=sb_headers())
+    already_sm = {r["worker_name"] for r in (r_sm.json() if r_sm.ok and isinstance(r_sm.json(), list) else [])}
+
+    # Already checked in via checkins table
+    r_ci = requests.get(f"{SUPABASE_URL}/rest/v1/{CHECKINS_TABLE}?date=eq.{today}&checked_out_at=is.null&select=worker_name", headers=sb_headers())
+    already_ci = {r["worker_name"] for r in (r_ci.json() if r_ci.ok and isinstance(r_ci.json(), list) else [])}
+
+    # Has attendance record today (skip these)
+    r_att = requests.get(f"{SUPABASE_URL}/rest/v1/attendance_reports?report_date=eq.{today}&select=worker_name", headers=sb_headers())
+    has_att = {r["worker_name"] for r in (r_att.json() if r_att.ok and isinstance(r_att.json(), list) else [])}
+
+    checked_in, skipped = 0, 0
+    for name in workers:
+        if not name: continue
+        if name in already_sm or name in already_ci:
+            skipped += 1; continue
+        if name in has_att:
+            skipped += 1; continue
+        # Insert safety_meeting record
+        requests.post(f"{SUPABASE_URL}/rest/v1/{SM_TABLE}",
+            json={"worker_name": name, "supervisor": supervisor, "date": today, "checked_in_at": now_iso},
+            headers={**sb_headers(), "Prefer": "return=minimal"})
+        # Insert checkins record
+        requests.post(f"{SUPABASE_URL}/rest/v1/{CHECKINS_TABLE}",
+            json={"worker_name": name, "position": "Safety Meeting", "date": today, "checked_in_at": now_iso},
+            headers={**sb_headers(), "Prefer": "return=minimal"})
+        checked_in += 1
+
+    return jsonify({"ok": True, "checked_in": checked_in, "skipped": skipped})
+
 # -- Contractor: today check-in status
 @app.route("/api/contractor/status", methods=["GET"])
 def contractor_status():

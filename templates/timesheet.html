@@ -571,6 +571,15 @@ function timeAgo(iso){
         <div class="no-data" style="grid-column:1/-1">Loading crew…</div>
       </div>
 
+      <!-- Bulk Check-In / Check-Out (Boss/Admin only) -->
+      <div id="smBulkRow" class="sm-boss-only" style="display:none;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0;">
+        <label style="font-size:12px;color:#94a3b8;font-weight:600;">Check-in time:</label>
+        <input type="time" id="smBulkTime" style="padding:5px 8px;border:1px solid #334155;border-radius:8px;background:#0f172a;color:#e2e8f0;font-size:13px;">
+        <button onclick="allCheckIn()" style="padding:6px 14px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✓ All Check In</button>
+        <button onclick="allCheckOut()" style="padding:6px 14px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✗ All Check Out</button>
+        <span id="smBulkStatus" style="font-size:12px;color:#60a5fa;"></span>
+      </div>
+
       <div class="add-row sm-boss-only" style="display:none;">
         <input class="add-inp" type="text" id="newWorkerName" placeholder="Add crew member not on list…" autocomplete="off">
         <button class="add-btn" onclick="addWorker()">＋ Add</button>
@@ -962,15 +971,21 @@ function switchTab(name,btn){document.querySelectorAll('.tab-btn').forEach(funct
 var DEFAULT_CREW=['Michael Garza','John Garza','Jason Remington','Ryan Elsby','Daniel Bowdell','Daniel Bobadilla','Robert Hernandez','Kevin','Joseph Lizotte','Tigris Dunn','Luis Lopez','Victor Ivanez','Ricardo Andrade','Steven Lucero','Fabio Hernandez','Julian Nieva','Axell Pequeno','Christian Morales','Miguel Castillo','Jesse Centeno','Jake Salazar','Ulises Nava','Junior Gonzalez','Kevin Hernandez','Ryan Jones','Jesse Adams','Alex Flores','Jonas Sonner','Christopher Jones','Luis Lopez II','Jon Paul Bronin','Frank Rojas','Joe Garza','Kevin B.','Henry','Aracelys','Markis','Wilton Brown','Sebastian','Jailen','Junior G (w)','Kenry','Fernando','Gerardo','Melbin','Ivan','Gary Jones','Anthony Jordan','Ernesto','Daniel H.'];
 
 // ── State ─────────────────────────────────────────────────────────────────────
-var smWorkers=[],smPresent={},smFiltered=[],smPhase='meeting',editMode=false,renameTarget=null;
+var smWorkers=[],smPresent={},smFiltered=[],smAttendance={},smPhase='meeting',editMode=false,renameTarget=null;
 
 // ── Load ──────────────────────────────────────────────────────────────────────
 async function loadSafetyMeeting(){
   document.getElementById('smDateLabel').textContent=todayLabel();
+  // Default bulk time to current local time
+  (function(){var t=new Date();var inp=document.getElementById('smBulkTime');if(inp)inp.value=String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');})();
   checkSavedToday();
   try{
-    var[wRes,attRes]=await Promise.all([fetch('/api/workers'),fetch('/api/safety-meeting')]);
+    var today=todayISO();
+    var[wRes,attRes,absRes]=await Promise.all([fetch('/api/workers'),fetch('/api/safety-meeting'),fetch('/api/attendance?report_date=eq.'+today)]);
     var dbW=wRes.ok?await wRes.json():[];var att=attRes.ok?await attRes.json():[];
+    var absRows=absRes.ok?await absRes.json():[];
+    smAttendance={};
+    if(Array.isArray(absRows)){absRows.forEach(function(r){smAttendance[r.worker_name]={type:r.type||'absent'};});}
     smWorkers=(Array.isArray(dbW)&&dbW.length>0)?dbW:DEFAULT_CREW.map(function(n){return{id:'',name:n,role:''};});
     if(Array.isArray(att)){att.forEach(function(r){if(!smWorkers.find(function(w){return w.name===r.worker_name;}))smWorkers.push({id:'',name:r.worker_name,role:''});});smPresent={};att.forEach(function(r){smPresent[r.worker_name]=r;});}
   }catch(e){smWorkers=DEFAULT_CREW.map(function(n){return{id:'',name:n,role:''};});smPresent={};}
@@ -997,8 +1012,12 @@ function renderWorkerCards(){
     var p=smPresent[w.name],isP=!!p;
     if(editMode){return '<div class="worker-card edit-card"><div class="wc-name" style="font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:8px;text-align:center;">'+escH(w.name)+'</div><div class="edit-btns"><button class="eb eb-edit" onclick="openRename(\''+escJ(w.id)+'\',\''+escJ(w.name)+'\')">✏️ Rename</button><button class="eb eb-del" onclick="deleteWorker(\''+escJ(w.id)+'\',\''+escJ(w.name)+'\')">🗑️ Remove</button></div></div>';}
     var sigCls=smPhase==='signin'?' signin-mode':'';
-    var lbl=isP?'✓ '+fmtCheckin(p.checked_in_at)+' · '+elapsed(p.checked_in_at):(smPhase==='signin'?'tap to sign in':'tap to check in');
-    return '<div class="worker-card'+(isP?' present':'')+sigCls+'" onclick="toggleWorker(\''+escJ(w.name)+'\')" ><div class="wc-status">'+(isP?'✅':'👤')+'</div><div class="wc-name">'+escH(w.name)+'</div><div class="wc-time">'+lbl+'</div></div>';
+    var att=smAttendance[w.name];
+    var attBadge='';
+    if(att){var attColors={late:'background:#92400e;color:#fef3c7',absent:'background:#991b1b;color:#fee2e2',vacation:'background:#5b21b6;color:#ede9fe'};var ac=attColors[att.type]||attColors.absent;attBadge='<span style="font-size:9px;font-weight:800;padding:1px 6px;border-radius:999px;'+ac+';text-transform:uppercase;margin-left:4px;">'+att.type+'</span>';}
+    var lbl=isP?'✓ '+fmtCheckin(p.checked_in_at)+' · '+elapsed(p.checked_in_at):(att?(smAttendance[w.name].type==='late'?'running late':'not expected'):(smPhase==='signin'?'tap to sign in':'tap to check in'));
+    var cardStyle=att&&!isP?' style="opacity:0.6;"':'';
+    return '<div class="worker-card'+(isP?' present':'')+sigCls+'"'+cardStyle+' onclick="toggleWorker(\''+escJ(w.name)+'\')" ><div class="wc-status">'+(isP?'✅':(att?'⚠️':'👤'))+'</div><div class="wc-name">'+escH(w.name)+attBadge+'</div><div class="wc-time">'+lbl+'</div></div>';
   }).join('');
 }
 
@@ -1026,6 +1045,39 @@ if(smPresent[name]){var rec=smPresent[name];if(rec.id){try{await fetch('/api/saf
 // ── Add worker ────────────────────────────────────────────────────────────────
 async function addWorker(){var inp=document.getElementById('newWorkerName');var name=inp.value.trim();if(!name)return;if(!smWorkers.find(function(w){return w.name===name;})){smWorkers.push({id:'',name:name,role:''});smFiltered=smWorkers.slice();}inp.value='';try{var r=await fetch('/api/workers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name})});var d=await r.json();if(d.ok&&d.worker&&d.worker.id){var w=smWorkers.find(function(x){return x.name===name;});if(w)w.id=d.worker.id;}}catch(e){}renderWorkerCards();}
 document.getElementById('newWorkerName').addEventListener('keydown',function(e){if(e.key==='Enter')addWorker();});
+
+// ── All Check In / All Check Out ──────────────────────────────────────────────
+async function allCheckIn(){
+  var inp=document.getElementById('smBulkTime');
+  var timeVal=inp?inp.value:'';
+  var st=document.getElementById('smBulkStatus');
+  if(st)st.textContent='Checking in all…';
+  var toCheckin=smFiltered.filter(function(w){return !smPresent[w.name]&&!smAttendance[w.name];}).map(function(w){return w.name;});
+  if(!toCheckin.length){if(st)st.textContent='All eligible workers already checked in.';return;}
+  try{
+    var r=await fetch('/api/safety-meeting/bulk-checkin',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({workers:toCheckin,time:timeVal,supervisor:curUser||''})});
+    var d=await r.json();
+    if(d.ok){
+      if(st)st.textContent='✓ '+d.checked_in+' checked in'+(d.skipped?' ('+d.skipped+' skipped)':'');
+      await loadSafetyMeeting();
+    }else{if(st)st.textContent='Error: '+(d.error||'Unknown');}
+  }catch(e){if(st)st.textContent='Network error.';}
+}
+
+async function allCheckOut(){
+  if(!confirm('Remove ALL safety meeting check-ins for today? This cannot be undone.'))return;
+  var st=document.getElementById('smBulkStatus');
+  if(st)st.textContent='Removing…';
+  var names=Object.keys(smPresent);
+  var ok=0;
+  for(var i=0;i<names.length;i++){
+    var rec=smPresent[names[i]];
+    if(rec&&rec.id){try{await fetch('/api/safety-meeting/'+rec.id,{method:'DELETE'});ok++;}catch(e){}}
+  }
+  if(st)st.textContent='✓ '+ok+' check-ins removed.';
+  await loadSafetyMeeting();
+}
 
 // ── Complete meeting ──────────────────────────────────────────────────────────
 function completeMeeting(){
@@ -1353,6 +1405,7 @@ async function qrLoadActiveList(){
   try{
     var r = await fetch('/api/active-checkins');
     var rows = await r.json();
+    if(!Array.isArray(rows)) rows=[];
     if(!rows.length){
       body.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px;">No one currently checked in.</div>';
       return;
