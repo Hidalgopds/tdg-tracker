@@ -4,10 +4,23 @@ import io
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from datetime import date
+from datetime import date, datetime, timezone, timedelta
 from flask import Flask, request, jsonify, render_template, Response
 import requests
 import uuid
+
+CDT = timezone(timedelta(hours=-5))  # Houston = CDT (UTC-5) in summer; CST (UTC-6) in winter
+
+def utc_to_cdt(iso_str):
+    """Convert UTC ISO string to Houston CDT h:mm AM/PM format."""
+    if not iso_str:
+        return ""
+    try:
+        dt = datetime.fromisoformat(iso_str.replace("Z", "+00:00"))
+        local = dt.astimezone(CDT)
+        return local.strftime("%-I:%M %p")   # e.g. "7:15 AM"
+    except Exception:
+        return iso_str[11:16]  # fallback: raw HH:MM
 
 # ── Email config (set SMTP_EMAIL + SMTP_PASSWORD in Render env) ──
 SMTP_EMAIL    = os.environ.get("SMTP_EMAIL", "")
@@ -2135,7 +2148,7 @@ SENT_TABLE = "sent_units"
 @app.route("/api/unit-sent/<position>", methods=["POST"])
 def mark_unit_sent(position):
     import io, csv
-    from datetime import date as dt_date
+    from datetime import date, datetime, timezone, timedelta as dt_date
     from flask import send_file
     data = request.json or {}
     editor     = data.get("editor", "Unknown")
@@ -2270,7 +2283,7 @@ def contractor_status():
     rows = r.json() if r.ok else []
     if rows:
         ci = rows[0].get("checked_in_at","")
-        return jsonify({"ok":True,"checked_in":True,"since":ci[11:16] if ci else ""})
+        return jsonify({"ok":True,"checked_in":True,"since":utc_to_cdt(ci)})
     # Fallback: check safety_meetings table (covers day safety meeting attended but checkins INSERT failed)
     sm = requests.get(
         f"{SUPABASE_URL}/rest/v1/{SM_TABLE}"
@@ -2281,7 +2294,7 @@ def contractor_status():
     sm_rows = sm.json() if sm.ok else []
     if sm_rows:
         ci = sm_rows[0].get("checked_in_at","")
-        return jsonify({"ok":True,"checked_in":True,"since":ci[11:16] if ci else ""})
+        return jsonify({"ok":True,"checked_in":True,"since":utc_to_cdt(ci)})
     return jsonify({"ok":True,"checked_in":False})
 
 # -- Notifications
@@ -2337,7 +2350,7 @@ def contractor_hours():
     if not name or not week_start:
         return jsonify({"error":"name and week_start required"}),400
     try:
-        from datetime import date, timedelta, datetime
+        from datetime import date, datetime, timezone, timedelta, timedelta, datetime
         ws = date.fromisoformat(week_start)
         we = ws + timedelta(days=6)
     except:
@@ -2360,7 +2373,7 @@ def contractor_hours():
         hrs = None
         if ci and co:
             try:
-                from datetime import datetime
+                from datetime import date, datetime, timezone, timedeltatime
                 fmt = "%Y-%m-%dT%H:%M:%S"
                 ci_dt = datetime.fromisoformat(ci[:19])
                 co_dt = datetime.fromisoformat(co[:19])
@@ -2477,7 +2490,7 @@ def update_worker_location():
     unit = data.get("unit","").strip().upper()
     if not name or not unit:
         return jsonify({"error":"name and unit required"}),400
-    from datetime import datetime, timezone
+    from datetime import date, datetime, timezone, timedeltatime, timezone
     now_iso = datetime.now(timezone.utc).isoformat()
     # Upsert current location
     r = requests.post(
@@ -2520,7 +2533,7 @@ def section_b_map():
 # ── Location history PDF report ───────────────────────────────────────────────
 @app.route("/api/reports/location-history")
 def location_history_pdf():
-    from datetime import datetime, timezone, date as dt_date
+    from datetime import date, datetime, timezone, timedeltatime, timezone, date as dt_date
     from reportlab.lib.pagesizes import letter
     from reportlab.pdfgen import canvas as rl_canvas
     from reportlab.lib.colors import HexColor, white, black
@@ -2601,7 +2614,7 @@ def location_history_pdf():
         ts = row.get("recorded_at","")
         # Convert UTC to CT (UTC-5 or -6; use -5 for CDT)
         try:
-            from datetime import datetime as _dt
+            from datetime import date, datetime, timezone, timedeltatime as _dt
             dt_utc = _dt.fromisoformat(ts.replace("Z","+00:00"))
             dt_ct  = dt_utc.replace(tzinfo=None)
             # rough CT offset
