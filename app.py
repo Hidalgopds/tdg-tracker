@@ -1581,6 +1581,14 @@ def set_pin():
     pin = str(data.get("pin", ""))
     if not pin or len(pin) != 4 or not pin.isdigit():
         return jsonify({"error": "PIN must be 4 digits"}), 400
+    # Uniqueness check — no two users can share a PIN
+    chk = requests.get(
+        f"{SUPABASE_URL}/rest/v1/app_users?pin=eq.{pin}&select=name&limit=1",
+        headers=sb_headers()
+    )
+    taken = [r for r in (chk.json() if chk.ok else []) if r.get("name") != name]
+    if taken:
+        return jsonify({"error": "PIN already taken — choose another"}), 409
     # Preserve existing role — only set "lead" if no role yet
     url = f"{SUPABASE_URL}/rest/v1/app_users"
     existing = requests.get(f"{url}?name=eq.{requests.utils.quote(name)}&select=role", headers=sb_headers())
@@ -2004,12 +2012,19 @@ def checkin_by_pin():
     if len(pin) != 4 or not pin.isdigit():
         return jsonify({"ok": False, "error": "Invalid PIN"}), 400
 
-    # Find worker with this PIN
+    # Find worker with this PIN — look in app_users first, fall back to workers table
     r = requests.get(
-        f"{SUPABASE_URL}/rest/v1/workers?pin=eq.{pin}&select=id,name,pin&limit=1",
+        f"{SUPABASE_URL}/rest/v1/app_users?pin=eq.{pin}&approved=eq.true&select=name&limit=1",
         headers=sb_headers()
     )
     rows = r.json() if r.ok else []
+    if not rows:
+        # Fallback: legacy pins stored in workers table
+        r2 = requests.get(
+            f"{SUPABASE_URL}/rest/v1/workers?pin=eq.{pin}&select=name&limit=1",
+            headers=sb_headers()
+        )
+        rows = r2.json() if r2.ok else []
     if not rows:
         return jsonify({"ok": False, "error": "PIN not found"}), 404
 

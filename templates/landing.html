@@ -619,5 +619,153 @@ function timeAgo(iso){
   setInterval(_upd,60000);
 })();
 </script>
+
+<style>
+/* ── Kiosk PIN Setup Overlay ─────────────────────────────── */
+#pinSetupOverlay{position:fixed;inset:0;background:#0a0f1aee;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px)}
+#pinSetupOverlay h2{font-size:20px;font-weight:800;color:#e2e8f0;text-align:center;margin-bottom:6px}
+#pinSetupOverlay .ps-sub{font-size:13px;color:#64748b;text-align:center;margin-bottom:20px;max-width:300px;line-height:1.5}
+.ps-card{background:#111827;border:1px solid #1e2d45;border-radius:16px;padding:24px 20px;display:flex;flex-direction:column;align-items:center;gap:0;width:100%;max-width:300px}
+.ps-step-label{font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;font-weight:600}
+.ps-dots{display:flex;gap:14px;margin-bottom:20px}
+.ps-dot{width:18px;height:18px;border-radius:50%;border:2px solid #1e2d45;background:transparent;transition:all .12s}
+.ps-dot.on{background:#378ADD;border-color:#378ADD;box-shadow:0 0 8px #378ADD66}
+.ps-dot.err{background:#dc2626;border-color:#dc2626}
+.ps-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%}
+.ps-key{height:60px;border:none;border-radius:12px;font-size:22px;font-weight:600;cursor:pointer;transition:transform .08s;user-select:none;-webkit-tap-highlight-color:transparent}
+.ps-key:active{transform:scale(.91)}
+.ps-key-num{background:#1a2035;color:#f1f5f9;border:1.5px solid #1e2d45}
+.ps-key-del{background:#151c2c;color:#64748b;border:1.5px solid #1e2d45;font-size:18px}
+.ps-key-ok{background:#1e40af;color:#fff;font-size:14px;font-weight:700}
+.ps-key-ok:disabled{background:#111827;color:#334155;cursor:not-allowed}
+.ps-msg{font-size:12px;min-height:18px;margin-top:8px;color:#f87171;text-align:center}
+.ps-success{font-size:14px;color:#4ade80;text-align:center;margin-top:8px;font-weight:600}
+</style>
+
+<!-- ── Kiosk PIN Setup Overlay ──────────────────────────────── -->
+<div id="pinSetupOverlay" style="display:none">
+  <h2>🔑 Create Your Kiosk PIN</h2>
+  <p class="ps-sub">You'll use this 4-digit PIN on the job site tablet to check in if you arrive after the safety meeting.</p>
+  <div class="ps-card">
+    <div class="ps-step-label" id="psStepLabel">Choose a PIN</div>
+    <div class="ps-dots">
+      <div class="ps-dot" id="pd0"></div>
+      <div class="ps-dot" id="pd1"></div>
+      <div class="ps-dot" id="pd2"></div>
+      <div class="ps-dot" id="pd3"></div>
+    </div>
+    <div class="ps-keypad">
+      <button class="ps-key ps-key-num" onclick="psKey('1')">1</button>
+      <button class="ps-key ps-key-num" onclick="psKey('2')">2</button>
+      <button class="ps-key ps-key-num" onclick="psKey('3')">3</button>
+      <button class="ps-key ps-key-num" onclick="psKey('4')">4</button>
+      <button class="ps-key ps-key-num" onclick="psKey('5')">5</button>
+      <button class="ps-key ps-key-num" onclick="psKey('6')">6</button>
+      <button class="ps-key ps-key-num" onclick="psKey('7')">7</button>
+      <button class="ps-key ps-key-num" onclick="psKey('8')">8</button>
+      <button class="ps-key ps-key-num" onclick="psKey('9')">9</button>
+      <button class="ps-key ps-key-del" onclick="psDel()">⌫</button>
+      <button class="ps-key ps-key-num" onclick="psKey('0')">0</button>
+      <button class="ps-key ps-key-ok" id="psOkBtn" onclick="psConfirm()" disabled>✓</button>
+    </div>
+    <div class="ps-msg" id="psMsg"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var _auth = localStorage.getItem('mbrAuth') || '';
+  var _role = localStorage.getItem('mbrRole') || 'worker';
+  var _lvl  = {admin:5,boss:4,inventory:3,lead:2,worker:1}[_role] || 1;
+  // Only prompt workers, leads, inventory (not boss/admin)
+  if(!_auth || _lvl >= 4) return;
+
+  var psPin1='', psPin2='', psStep=1, psBusy=false;
+
+  function psUpdateDots(p){
+    for(var i=0;i<4;i++){
+      var d=document.getElementById('pd'+i);
+      d.classList.toggle('on', i<p.length);
+      d.classList.remove('err');
+    }
+    document.getElementById('psOkBtn').disabled = p.length < 4;
+  }
+  window.psKey = function(k){
+    if(psBusy) return;
+    var cur = psStep===1 ? psPin1 : psPin2;
+    if(cur.length >= 4) return;
+    cur += k;
+    if(psStep===1) psPin1=cur; else psPin2=cur;
+    psUpdateDots(cur);
+    if(cur.length===4) psConfirm();
+  };
+  window.psDel = function(){
+    if(psBusy) return;
+    if(psStep===1){ psPin1=psPin1.slice(0,-1); psUpdateDots(psPin1); }
+    else { psPin2=psPin2.slice(0,-1); psUpdateDots(psPin2); }
+    document.getElementById('psMsg').textContent='';
+  };
+  window.psConfirm = async function(){
+    if(psBusy) return;
+    var cur = psStep===1 ? psPin1 : psPin2;
+    if(cur.length < 4) return;
+    if(psStep===1){
+      // Move to confirm step
+      psStep=2; psPin2='';
+      document.getElementById('psStepLabel').textContent='Confirm your PIN';
+      document.getElementById('psMsg').textContent='';
+      psUpdateDots('');
+      return;
+    }
+    // Step 2: compare
+    if(psPin2 !== psPin1){
+      for(var i=0;i<4;i++) document.getElementById('pd'+i).classList.add('err');
+      document.getElementById('psMsg').textContent="PINs don't match — try again";
+      setTimeout(function(){
+        psStep=1; psPin1=''; psPin2='';
+        document.getElementById('psStepLabel').textContent='Choose a PIN';
+        document.getElementById('psMsg').textContent='';
+        psUpdateDots('');
+      }, 1500);
+      return;
+    }
+    // Save PIN
+    psBusy=true;
+    document.getElementById('psOkBtn').disabled=true;
+    try{
+      var r=await fetch('/api/users/set-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:_auth,pin:psPin1})});
+      var d=await r.json();
+      if(d.ok || d.error===undefined){
+        document.getElementById('psMsg').innerHTML='<span style="color:#4ade80">✓ PIN saved! You're all set.</span>';
+        setTimeout(function(){document.getElementById('pinSetupOverlay').style.display='none';}, 1800);
+      } else if(d.error && d.error.indexOf('taken')!==-1){
+        document.getElementById('psMsg').textContent='That PIN is taken — choose a different one';
+        psStep=1; psPin1=''; psPin2=''; psBusy=false;
+        document.getElementById('psStepLabel').textContent='Choose a PIN';
+        psUpdateDots('');
+        document.getElementById('psOkBtn').disabled=false;
+      } else {
+        document.getElementById('psMsg').textContent=d.error||'Error saving — try again';
+        psBusy=false; document.getElementById('psOkBtn').disabled=false;
+      }
+    } catch(e){
+      document.getElementById('psMsg').textContent='Network error — try again';
+      psBusy=false; document.getElementById('psOkBtn').disabled=false;
+    }
+  };
+
+  // Check if user already has a PIN
+  fetch('/api/users/has-pin?name='+encodeURIComponent(_auth))
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(!d.has_pin){
+        document.getElementById('pinSetupOverlay').style.display='flex';
+        psUpdateDots('');
+      }
+    })
+    .catch(function(){});
+})();
+</script>
+
 </body>
 </html>

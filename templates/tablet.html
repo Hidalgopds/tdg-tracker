@@ -7,29 +7,21 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:#0a0f1a;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden;touch-action:manipulation}
+body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px 20px;gap:0}
 
-/* ── SCREENS ─────────────────────────────────────────────────────── */
-.screen{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px 20px;gap:0}
-.screen.active{display:flex}
-
-/* ── SHARED HEADER ───────────────────────────────────────────────── */
 .logo{font-size:19px;font-weight:800;color:#e2e8f0;text-align:center}
 .logo span{color:#378ADD}
-.clock{font-size:42px;font-weight:200;color:#94a3b8;font-variant-numeric:tabular-nums;letter-spacing:3px;margin-top:2px;text-align:center}
-.date-lbl{font-size:12px;color:#334155;margin-top:2px;text-align:center;margin-bottom:20px}
+.clock{font-size:42px;font-weight:200;color:#94a3b8;font-variant-numeric:tabular-nums;letter-spacing:3px;margin-top:2px}
+.date-lbl{font-size:12px;color:#334155;margin-top:2px;margin-bottom:20px}
 
-/* ── HINT BOX ────────────────────────────────────────────────────── */
 .hint-box{background:#111827;border:1px solid #1e2d45;border-radius:12px;padding:12px 20px;margin-bottom:18px;text-align:center;width:280px}
 .hint-box p{font-size:13px;color:#475569;line-height:1.5}
 .hint-box p b{color:#94a3b8}
 
-/* ── PIN DOTS ────────────────────────────────────────────────────── */
 .pin-display{display:flex;gap:16px;margin-bottom:22px;justify-content:center}
 .pin-dot{width:20px;height:20px;border-radius:50%;border:2px solid #1e2d45;background:transparent;transition:all .1s}
 .pin-dot.filled{background:#378ADD;border-color:#378ADD;box-shadow:0 0 10px #378ADD55}
-.pin-dot.error{background:#dc2626;border-color:#dc2626;box-shadow:0 0 10px #dc262655}
 
-/* ── KEYPAD ──────────────────────────────────────────────────────── */
 .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:280px}
 .key{height:70px;border:none;border-radius:14px;font-size:26px;font-weight:600;cursor:pointer;transition:transform .08s,background .08s;user-select:none;-webkit-tap-highlight-color:transparent}
 .key:active{transform:scale(.91)}
@@ -40,183 +32,76 @@ html,body{height:100%;background:#0a0f1a;color:#e2e8f0;font-family:'Segoe UI',sy
 .key-enter:not(:disabled):active{background:#1d4ed8}
 .key-enter:disabled{background:#111827;color:#334155;cursor:not-allowed}
 
-/* ── RESULT ──────────────────────────────────────────────────────── */
 .result{margin-top:20px;width:280px;border-radius:14px;padding:20px;text-align:center;display:none}
 .result.ok-out{background:#052e16cc;border:1px solid #16a34a55}
 .result.ok-in {background:#0f172acc;border:1px solid #3b82f655}
-.result.ok-pin{background:#1e1b4bcc;border:1px solid #6366f155}
 .result.err   {background:#1c0a0acc;border:1px solid #dc262655}
 .r-icon{font-size:40px;margin-bottom:8px}
 .r-name{font-size:21px;font-weight:800;color:#f1f5f9;margin-bottom:3px}
 .r-sub{font-size:13px;color:#94a3b8}
 .r-time{font-size:14px;font-weight:600;margin-top:5px}
-
 .auto-note{margin-top:14px;font-size:11px;color:#1e2d45;text-align:center}
-
-/* ── NAMES SCREEN ────────────────────────────────────────────────── */
-#screenNames{justify-content:flex-start;padding-top:28px;overflow-y:auto}
-.names-header{text-align:center;margin-bottom:16px;width:100%}
-.names-header h2{font-size:17px;font-weight:700;color:#e2e8f0;margin-bottom:4px}
-.names-header p{font-size:12px;color:#475569}
-.names-hint{background:#1e2d45;border-radius:10px;padding:10px 16px;text-align:center;
-  font-size:12px;color:#60a5fa;margin-bottom:14px;width:100%;max-width:340px}
-.names-hint b{color:#93c5fd}
-.name-list{width:100%;max-width:340px;display:flex;flex-direction:column;gap:8px;flex:1;overflow-y:auto;padding-bottom:8px}
-.name-btn{background:#111827;border:1.5px solid #1e2d45;border-radius:12px;padding:16px 18px;
-  font-size:15px;font-weight:600;color:#e2e8f0;cursor:pointer;text-align:left;
-  transition:background .1s,border-color .1s;-webkit-tap-highlight-color:transparent}
-.name-btn:active{background:#1a2540;border-color:#378ADD}
-.names-empty{color:#475569;font-size:14px;text-align:center;padding:32px 0}
-.back-link{margin-top:12px;font-size:13px;color:#475569;cursor:pointer;padding:10px 20px;
-  border:1px solid #1e2d45;border-radius:10px;background:transparent;-webkit-tap-highlight-color:transparent}
-.back-link:active{color:#e2e8f0}
-
-/* ── CONFIRM SCREEN ──────────────────────────────────────────────── */
-.confirm-who{background:#1e2d45;border-radius:10px;padding:10px 16px;text-align:center;
-  margin-bottom:4px;width:280px}
-.confirm-who .cw-label{font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:.5px}
-.confirm-who .cw-name{font-size:18px;font-weight:800;color:#93c5fd;margin-top:2px}
-.confirm-hint{font-size:12px;color:#475569;margin-bottom:16px;text-align:center;width:280px}
-.mismatch-msg{font-size:12px;color:#f87171;margin-bottom:10px;text-align:center;min-height:18px}
 </style>
 </head>
 <body>
 
-<!-- ════════════════════════════════════════════════════════════════
-     SCREEN 1 — Normal PIN entry
-     ════════════════════════════════════════════════════════════════ -->
-<div class="screen active" id="screenMain">
-  <div class="logo">MBR Texas <span>/ TDG</span></div>
-  <div class="clock" id="clock">--:--</div>
-  <div class="date-lbl" id="dateLbl"></div>
+<div class="logo">MBR Texas <span>/ TDG</span></div>
+<div class="clock" id="clock">--:--</div>
+<div class="date-lbl" id="dateLbl"></div>
 
-  <div class="hint-box">
-    <p>Enter your <b>4-digit PIN</b><br>to check in or check out</p>
-  </div>
-
-  <div class="pin-display">
-    <div class="pin-dot" id="d0"></div>
-    <div class="pin-dot" id="d1"></div>
-    <div class="pin-dot" id="d2"></div>
-    <div class="pin-dot" id="d3"></div>
-  </div>
-
-  <div class="keypad" id="keypadMain">
-    <button class="key key-num" onclick="pressKey('1')">1</button>
-    <button class="key key-num" onclick="pressKey('2')">2</button>
-    <button class="key key-num" onclick="pressKey('3')">3</button>
-    <button class="key key-num" onclick="pressKey('4')">4</button>
-    <button class="key key-num" onclick="pressKey('5')">5</button>
-    <button class="key key-num" onclick="pressKey('6')">6</button>
-    <button class="key key-num" onclick="pressKey('7')">7</button>
-    <button class="key key-num" onclick="pressKey('8')">8</button>
-    <button class="key key-num" onclick="pressKey('9')">9</button>
-    <button class="key key-del" onclick="pressDelete()">⌫</button>
-    <button class="key key-num" onclick="pressKey('0')">0</button>
-    <button class="key key-enter" id="enterBtn" onclick="submitPIN()" disabled>✓</button>
-  </div>
-
-  <div class="result" id="result">
-    <div class="r-icon" id="r-icon"></div>
-    <div class="r-name" id="r-name"></div>
-    <div class="r-sub"  id="r-sub"></div>
-    <div class="r-time" id="r-time"></div>
-  </div>
-
-  <div class="auto-note">Auto check-out at 6:00 PM if not registered</div>
+<div class="hint-box">
+  <p>Enter your <b>4-digit PIN</b><br>to check in or check out</p>
 </div>
 
-<!-- ════════════════════════════════════════════════════════════════
-     SCREEN 2 — Name selection (PIN not found → create new)
-     ════════════════════════════════════════════════════════════════ -->
-<div class="screen" id="screenNames">
-  <div class="names-header">
-    <h2>🔑 New PIN Setup</h2>
-    <p>PIN not recognized — select your name to create one</p>
-  </div>
-  <div class="names-hint">
-    Your PIN will be <b id="newPinPreview">----</b> &nbsp;·&nbsp; Tap your name to confirm
-  </div>
-  <div class="name-list" id="nameList">
-    <div class="names-empty">Loading…</div>
-  </div>
-  <button class="back-link" onclick="goToMain()">← Try Again / Cancel</button>
+<div class="pin-display">
+  <div class="pin-dot" id="d0"></div>
+  <div class="pin-dot" id="d1"></div>
+  <div class="pin-dot" id="d2"></div>
+  <div class="pin-dot" id="d3"></div>
 </div>
 
-<!-- ════════════════════════════════════════════════════════════════
-     SCREEN 3 — PIN confirmation (enter same PIN again)
-     ════════════════════════════════════════════════════════════════ -->
-<div class="screen" id="screenConfirm">
-  <div class="logo">MBR Texas <span>/ TDG</span></div>
-  <div class="clock" id="clockC">--:--</div>
-
-  <div class="confirm-who" style="margin-top:16px">
-    <div class="cw-label">Setting PIN for</div>
-    <div class="cw-name" id="confirmName">—</div>
-  </div>
-  <p class="confirm-hint" style="margin-top:10px">Re-enter your PIN to confirm</p>
-
-  <div class="mismatch-msg" id="mismatchMsg"></div>
-
-  <div class="pin-display">
-    <div class="pin-dot" id="c0"></div>
-    <div class="pin-dot" id="c1"></div>
-    <div class="pin-dot" id="c2"></div>
-    <div class="pin-dot" id="c3"></div>
-  </div>
-
-  <div class="keypad">
-    <button class="key key-num" onclick="pressConfirm('1')">1</button>
-    <button class="key key-num" onclick="pressConfirm('2')">2</button>
-    <button class="key key-num" onclick="pressConfirm('3')">3</button>
-    <button class="key key-num" onclick="pressConfirm('4')">4</button>
-    <button class="key key-num" onclick="pressConfirm('5')">5</button>
-    <button class="key key-num" onclick="pressConfirm('6')">6</button>
-    <button class="key key-num" onclick="pressConfirm('7')">7</button>
-    <button class="key key-num" onclick="pressConfirm('8')">8</button>
-    <button class="key key-num" onclick="pressConfirm('9')">9</button>
-    <button class="key key-del" onclick="deleteConfirm()">⌫</button>
-    <button class="key key-num" onclick="pressConfirm('0')">0</button>
-    <button class="key key-enter" id="confirmEnterBtn" disabled>✓</button>
-  </div>
-
-  <button class="back-link" style="margin-top:12px" onclick="goToNames()">← Back</button>
+<div class="keypad">
+  <button class="key key-num" onclick="pressKey('1')">1</button>
+  <button class="key key-num" onclick="pressKey('2')">2</button>
+  <button class="key key-num" onclick="pressKey('3')">3</button>
+  <button class="key key-num" onclick="pressKey('4')">4</button>
+  <button class="key key-num" onclick="pressKey('5')">5</button>
+  <button class="key key-num" onclick="pressKey('6')">6</button>
+  <button class="key key-num" onclick="pressKey('7')">7</button>
+  <button class="key key-num" onclick="pressKey('8')">8</button>
+  <button class="key key-num" onclick="pressKey('9')">9</button>
+  <button class="key key-del" onclick="pressDelete()">⌫</button>
+  <button class="key key-num" onclick="pressKey('0')">0</button>
+  <button class="key key-enter" id="enterBtn" onclick="submitPIN()" disabled>✓</button>
 </div>
+
+<div class="result" id="result">
+  <div class="r-icon" id="r-icon"></div>
+  <div class="r-name" id="r-name"></div>
+  <div class="r-sub"  id="r-sub"></div>
+  <div class="r-time" id="r-time"></div>
+</div>
+
+<div class="auto-note">No PIN? Log in to the app to create one.</div>
 
 <script>
-// ── State ─────────────────────────────────────────────────────────
-var pin='', confirmPin='', busy=false, resetTimer=null;
-var pendingWorker=null; // {id, name}
+var pin='', busy=false, resetTimer=null;
 
-// ── Clock ─────────────────────────────────────────────────────────
 function tick(){
-  var s=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-  var dl=document.getElementById('dateLbl');
-  ['clock','clockC'].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=s;});
-  if(dl)dl.textContent=new Date().toLocaleDateString([],{weekday:'long',month:'long',day:'numeric'});
+  var d=new Date();
+  document.getElementById('clock').textContent=d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('dateLbl').textContent=d.toLocaleDateString([],{weekday:'long',month:'long',day:'numeric'});
 }
 tick(); setInterval(tick,1000);
 
-// ── Screen helpers ────────────────────────────────────────────────
-function showScreen(id){
-  document.querySelectorAll('.screen').forEach(function(el){el.classList.remove('active');});
-  document.getElementById(id).classList.add('active');
-}
-function goToMain(){
-  pin=''; updateDots(); hideResult(); busy=false; confirmPin=''; pendingWorker=null;
-  clearTimer(); showScreen('screenMain');
-}
-function goToNames(){confirmPin=''; updateConfirmDots(); showScreen('screenNames');}
-
-// ── Main PIN screen ───────────────────────────────────────────────
 function updateDots(){
   for(var i=0;i<4;i++) document.getElementById('d'+i).classList.toggle('filled',i<pin.length);
   document.getElementById('enterBtn').disabled=pin.length<4;
 }
-function pressKey(k){if(busy||pin.length>=4)return; clearTimer(); pin+=k; updateDots(); if(pin.length===4)submitPIN();}
-function pressDelete(){if(busy)return; clearTimer(); pin=pin.slice(0,-1); updateDots(); hideResult();}
-function clearTimer(){if(resetTimer){clearTimeout(resetTimer);resetTimer=null;}}
-function reset(ms){clearTimer(); resetTimer=setTimeout(function(){pin='';updateDots();hideResult();busy=false;},ms||4000);}
+function pressKey(k){ if(busy||pin.length>=4)return; clearTimer(); pin+=k; updateDots(); if(pin.length===4)submitPIN(); }
+function pressDelete(){ if(busy)return; clearTimer(); pin=pin.slice(0,-1); updateDots(); hideResult(); }
+function clearTimer(){ if(resetTimer){clearTimeout(resetTimer);resetTimer=null;} }
+function reset(ms){ clearTimer(); resetTimer=setTimeout(function(){pin='';updateDots();hideResult();busy=false;},ms||4000); }
 function showResult(type,icon,name,sub,time){
   var el=document.getElementById('result');
   el.className='result '+type;
@@ -226,7 +111,7 @@ function showResult(type,icon,name,sub,time){
   document.getElementById('r-time').textContent=time||'';
   el.style.display='block';
 }
-function hideResult(){document.getElementById('result').style.display='none';}
+function hideResult(){ document.getElementById('result').style.display='none'; }
 
 async function submitPIN(){
   if(pin.length<4||busy) return;
@@ -242,133 +127,25 @@ async function submitPIN(){
         showResult('ok-out','👋',d.worker_name,'Checked out — see you tomorrow!',inT?'In: '+inT+' → Out: '+outT:'Out: '+outT);
       } else {
         var nowT=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-        showResult('ok-in','✅',d.worker_name,'Checked in — late arrival recorded.','In: '+nowT);
+        showResult('ok-in','✅',d.worker_name,'Checked in successfully.','In: '+nowT);
       }
       reset(4000);
-      busy=false;
-    } else if(d.error==='PIN not found'){
-      // ── PIN doesn't exist → start creation flow ──
-      busy=false;
-      openNameSelection();
     } else {
-      var msg=d.error||'Error — try again.';
+      var msg=d.error==='PIN not found'?'PIN not recognized.\nLog in to the app to set your PIN.':(d.error||'Error — try again.');
       showResult('err','❌','',msg,'');
-      pin=''; updateDots(); reset(3500); busy=false;
+      pin=''; updateDots(); reset(4000);
     }
   } catch(e){
     showResult('err','❌','','Network error — try again.','');
-    pin=''; updateDots(); reset(3000); busy=false;
-  }
-}
-
-// ── Name selection screen ─────────────────────────────────────────
-async function openNameSelection(){
-  document.getElementById('newPinPreview').textContent=pin.split('').map(function(){return '●';}).join(' ');
-  document.getElementById('nameList').innerHTML='<div class="names-empty">Loading…</div>';
-  showScreen('screenNames');
-  try{
-    var r=await fetch('/api/workers/no-pin');
-    var workers=r.ok?await r.json():[];
-    var list=document.getElementById('nameList');
-    if(!workers.length){
-      list.innerHTML='<div class="names-empty">All workers already have a PIN.<br>See your supervisor.</div>';
-      return;
-    }
-    list.innerHTML='';
-    workers.forEach(function(w){
-      var btn=document.createElement('button');
-      btn.className='name-btn';
-      btn.textContent=w.name;
-      btn.onclick=function(){selectWorker(w);};
-      list.appendChild(btn);
-    });
-  } catch(e){
-    document.getElementById('nameList').innerHTML='<div class="names-empty">Network error. Try again.</div>';
-  }
-}
-
-function selectWorker(w){
-  pendingWorker=w;
-  confirmPin='';
-  document.getElementById('confirmName').textContent=w.name;
-  document.getElementById('mismatchMsg').textContent='';
-  updateConfirmDots();
-  showScreen('screenConfirm');
-}
-
-// ── Confirm PIN screen ────────────────────────────────────────────
-function updateConfirmDots(){
-  for(var i=0;i<4;i++){
-    var d=document.getElementById('c'+i);
-    d.classList.toggle('filled',i<confirmPin.length);
-    d.classList.remove('error');
-  }
-  document.getElementById('confirmEnterBtn').disabled=confirmPin.length<4;
-}
-
-function pressConfirm(k){
-  if(busy||confirmPin.length>=4) return;
-  confirmPin+=k; updateConfirmDots();
-  if(confirmPin.length===4) finishPinSetup();
-}
-function deleteConfirm(){if(busy)return; confirmPin=confirmPin.slice(0,-1); updateConfirmDots();}
-
-async function finishPinSetup(){
-  if(!pendingWorker||confirmPin.length<4) return;
-  // Check match
-  if(confirmPin!==pin){
-    // Flash dots red
-    for(var i=0;i<4;i++) document.getElementById('c'+i).classList.add('error');
-    document.getElementById('mismatchMsg').textContent="PINs don't match — try again";
-    setTimeout(function(){confirmPin=''; updateConfirmDots(); document.getElementById('mismatchMsg').textContent='';},1400);
-    return;
-  }
-  busy=true;
-  document.getElementById('confirmEnterBtn').disabled=true;
-  try{
-    // Save PIN
-    var sr=await fetch('/api/workers/'+pendingWorker.id+'/set-kiosk-pin',{
-      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:pin})
-    });
-    var sd=await sr.json();
-    if(!sd.ok){
-      document.getElementById('mismatchMsg').textContent=sd.error||'Could not save PIN — see supervisor';
-      busy=false;
-      document.getElementById('confirmEnterBtn').disabled=false;
-      return;
-    }
-    // PIN saved — now check in via same API
-    var cr=await fetch('/api/checkin/by-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:pin})});
-    var cd=await cr.json();
-    var nowT=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-    // Go back to main and show result
-    showScreen('screenMain');
-    if(cd.ok){
-      showResult('ok-pin','🔑',pendingWorker.name,'PIN created & checked in!','In: '+nowT);
-    } else {
-      showResult('ok-pin','🔑',pendingWorker.name,'PIN saved! Check in manually.','');
-    }
-    pin=''; confirmPin=''; pendingWorker=null;
-    updateDots();
-    reset(5000);
-  } catch(e){
-    document.getElementById('mismatchMsg').textContent='Network error — try again';
+    pin=''; updateDots(); reset(3000);
   }
   busy=false;
-  document.getElementById('confirmEnterBtn').disabled=false;
 }
 
-// ── Keyboard support ──────────────────────────────────────────────
 document.addEventListener('keydown',function(e){
-  var active=document.querySelector('.screen.active').id;
-  if(active==='screenMain'){
-    if(e.key>='0'&&e.key<='9') pressKey(e.key);
-    else if(e.key==='Backspace') pressDelete();
-    else if(e.key==='Enter'&&pin.length===4) submitPIN();
-  } else if(active==='screenConfirm'){
-    if(e.key>='0'&&e.key<='9') pressConfirm(e.key);
-    else if(e.key==='Backspace') deleteConfirm();
-  }
+  if(e.key>='0'&&e.key<='9') pressKey(e.key);
+  else if(e.key==='Backspace') pressDelete();
+  else if(e.key==='Enter'&&pin.length===4) submitPIN();
 });
 </script>
 </body>
