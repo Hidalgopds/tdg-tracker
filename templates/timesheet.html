@@ -368,6 +368,15 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 
 <style>
 #mbr-status-bar{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 14px;background:#1e3a5f;border-bottom:1px solid rgba(255,255,255,0.1);height:48px;}
+@media(max-width:480px){
+  #mbr-status-bar{padding:0 8px;gap:4px;}
+  .hlogo{display:none!important;}
+  #mbr-checkin-chip{font-size:9px!important;padding:2px 5px!important;max-width:80px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .user-pill{font-size:10px!important;padding:2px 6px!important;max-width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .user-pill button{display:none!important;}
+  .role-label{display:none!important;}
+  #mbr-loc-chip{display:none!important;}
+}
 #mbr-checkin-chip{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px;cursor:default;transition:.3s;}
 .chip-in{background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);}
 .chip-out{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.45);border:1px solid rgba(255,255,255,0.1);}
@@ -911,7 +920,7 @@ function applyTabVisibility(){
 
 function showMain(){
   showAdminManualBtn();
-  applyTabVisibility();populateAttWorkers();document.getElementById('mainContent').style.display='block';(function(){var el=document.getElementById('userPill');var r=localStorage.getItem('mbrRole')||'';var cap=r?r.charAt(0).toUpperCase()+r.slice(1):'';el.innerHTML='<span style="font-weight:700;">'+curUser+(cap?' &middot; '+cap:'')+'</span>';el.style.display='inline-flex';el.style.gap='10px';el.style.alignItems='center';el.innerHTML+='<button onclick="localStorage.removeItem(\'mbrAuth\');localStorage.removeItem(\'mbrRole\');location.href=\'/login\';" style="padding:4px 10px;background:#1e2d45;border:1px solid #2d3f57;border-radius:8px;color:#94a3b8;font-size:11px;cursor:pointer;">Sign Out</button>';})();loadSafetyMeeting();}
+  applyTabVisibility();populateAttWorkers();document.getElementById('mainContent').style.display='block';(function(){var el=document.getElementById('userPill');var r=localStorage.getItem('mbrRole')||'';var cap=r?r.charAt(0).toUpperCase()+r.slice(1):'';el.innerHTML='<span style="font-weight:700;">'+curUser+(cap?' &middot; '+cap:'')+'</span>';el.style.display='inline-flex';el.style.gap='10px';el.style.alignItems='center';el.innerHTML+='<button onclick="localStorage.removeItem(\'mbrAuth\');localStorage.removeItem(\'mbrRole\');location.href=\'/login\';" style="padding:4px 10px;background:#1e2d45;border:1px solid #2d3f57;border-radius:8px;color:#94a3b8;font-size:11px;cursor:pointer;">Sign Out</button>';})();loadSafetyMeeting();if(isSupervisor()) setTimeout(checkTodayAlerts,1200);}
 function doLogout(){localStorage.removeItem('mbrAuth');localStorage.removeItem('mbrRole');curUser=null;location.href='/login';}
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
@@ -1542,7 +1551,37 @@ async function submitAbsent(){
 
 function isAdmin(){
   var r = localStorage.getItem('mbrRole') || 'lead';
-  return r === 'admin' || r === 'supervisor';
+  return r === 'admin' || r === 'supervisor' || r === 'boss';
+}
+function isSupervisor(){
+  var r = localStorage.getItem('mbrRole') || 'lead';
+  return ['admin','supervisor','boss','lead'].includes(r);
+}
+
+async function checkTodayAlerts(){
+  try{
+    var r = await fetch('/api/attendance/today');
+    var rows = await r.json();
+    if(!rows || !rows.length) return;
+    var typeIcons = {late:'🕐',absent:'❌',vacation:'🏖'};
+    var typeColors = {late:'#92400e',absent:'#991b1b',vacation:'#5b21b6'};
+    var typeBg = {late:'#fef3c7',absent:'#fee2e2',vacation:'#ede9fe'};
+    var html = rows.map(function(row){
+      var icon = typeIcons[row.type]||'📋';
+      var col  = typeColors[row.type]||'#334155';
+      var bg   = typeBg[row.type]||'#f8fafc';
+      var statusTxt = (row.status==='approved') ? '<span style="color:#166534;font-size:10px;font-weight:700;"> ✓ Approved</span>' : (row.type!=='late' ? '<span style="color:#854d0e;font-size:10px;font-weight:700;"> ⏳ Pending</span>' : '');
+      return '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:'+bg+';border-radius:10px;margin-bottom:8px;">'
+        +'<span style="font-size:22px;line-height:1;">'+icon+'</span>'
+        +'<div style="flex:1;min-width:0;">'
+        +'<div style="font-weight:700;color:#1e293b;font-size:14px;">'+row.worker_name+statusTxt+'</div>'
+        +'<div style="font-size:12px;color:'+col+';font-weight:600;text-transform:uppercase;margin:2px 0;">'+row.type+(row.type==='late'&&row.arrival_time?' · Arrives '+row.arrival_time:'')+'</div>'
+        +'<div style="font-size:12px;color:#475569;">'+(row.reason||'—')+'</div>'
+        +'</div></div>';
+    }).join('');
+    document.getElementById('attAlertBody').innerHTML = html;
+    document.getElementById('attAlertModal').style.display = 'flex';
+  }catch(e){}
 }
 
 async function loadAttendance(){
@@ -1550,8 +1589,8 @@ async function loadAttendance(){
   loadCalendar();
   // Show admin panel only for admins
   var panel = document.getElementById('attAdminPanel');
-  if(panel) panel.style.display = isAdmin() ? '' : 'none';
-  if(!isAdmin()) return;
+  if(panel) panel.style.display = isSupervisor() ? '' : 'none';
+  if(!isSupervisor()) return;
 
   var body = document.getElementById('attRecentBody');
   body.innerHTML = '<div class="att-empty">Loading…</div>';
@@ -1574,12 +1613,73 @@ async function loadAttendance(){
     body.innerHTML = rows.map(function(row){
       var badge = '<span class="att-badge '+row.type+'">'+row.type.toUpperCase()+'</span>';
       var extra = row.type==='late' ? ' · Arr: '+(row.arrival_time||'?') : (row.return_date ? ' → Return: '+row.return_date : '');
-      return '<div class="att-row">'+badge+
+      var statusBadge = '';
+      if(row.status==='approved') statusBadge='<span style="font-size:10px;font-weight:700;background:#dcfce7;color:#166534;border-radius:8px;padding:1px 7px;margin-left:4px;">✓ Approved</span>';
+      else if(row.type!=='late') statusBadge='<span style="font-size:10px;font-weight:700;background:#fef9c3;color:#854d0e;border-radius:8px;padding:1px 7px;margin-left:4px;">⏳ Pending</span>';
+      var approveBtn = (row.type!=='late' && row.status!=='approved') ?
+        '<button onclick="approveAtt('+row.id+')" style="margin-left:4px;padding:2px 8px;font-size:10px;font-weight:700;border:1px solid #16a34a;background:#f0fdf4;color:#166534;border-radius:6px;cursor:pointer;">✓ Approve</button>' : '';
+      var editBtn = '<button onclick="editAtt('+row.id+',''+row.type+'',''+row.worker_name.replace(/'/g,"\'")+'')" style="margin-left:4px;padding:2px 8px;font-size:10px;border:1px solid #3b82f6;background:#eff6ff;color:#1d4ed8;border-radius:6px;cursor:pointer;">✎ Edit</button>';
+      var delBtn  = '<button onclick="deleteAtt('+row.id+')" style="margin-left:4px;padding:2px 8px;font-size:10px;border:1px solid #ef4444;background:#fef2f2;color:#991b1b;border-radius:6px;cursor:pointer;">✕</button>';
+      return '<div class="att-row" style="flex-wrap:wrap;gap:4px;" data-att-id="'+row.id+'">'+badge+statusBadge+
         '<span class="att-name">'+row.worker_name+'</span>'+
         '<span class="att-reason">'+(row.reason||'—')+'</span>'+
-        '<span class="att-date">'+(row.report_date||'')+extra+'</span></div>';
+        '<span class="att-date">'+(row.report_date||'')+extra+'</span>'+
+        '<span style="margin-left:auto;display:flex;align-items:center;gap:0;">'+approveBtn+editBtn+delBtn+'</span></div>';
     }).join('');
   }catch(e){ body.innerHTML='<div class="att-empty">Error loading reports.</div>'; }
+}
+
+// ── Attendance edit/approve/delete ───────────────────────────────────────────
+async function approveAtt(id){
+  if(!confirm('Mark this report as approved?')) return;
+  try{
+    var r = await fetch('/api/attendance/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'approved'})});
+    var d = await r.json();
+    if(d.ok){ loadAttendance(); }
+    else{ alert('Error approving: '+JSON.stringify(d)); }
+  }catch(e){ alert('Network error: '+e.message); }
+}
+
+async function deleteAtt(id){
+  if(!confirm('Delete this attendance record? This cannot be undone.')) return;
+  try{
+    var r = await fetch('/api/attendance/'+id,{method:'DELETE'});
+    var d = await r.json();
+    if(d.ok){ loadAttendance(); }
+    else{ alert('Error deleting.'); }
+  }catch(e){ alert('Network error: '+e.message); }
+}
+
+var _editAttId = null;
+function editAtt(id, type, workerName){
+  _editAttId = id;
+  document.getElementById('editAttWorker').textContent = workerName;
+  document.getElementById('editAttType').value = type;
+  document.getElementById('editAttReason').value = '';
+  document.getElementById('editAttDate').value = '';
+  document.getElementById('editAttReturn').value = '';
+  document.getElementById('editAttStatus').textContent = '';
+  document.getElementById('editAttModal').style.display = 'flex';
+}
+function closeEditAtt(){ document.getElementById('editAttModal').style.display='none'; _editAttId=null; }
+async function saveEditAtt(){
+  if(!_editAttId) return;
+  var payload = {
+    type: document.getElementById('editAttType').value,
+    reason: document.getElementById('editAttReason').value.trim(),
+  };
+  var d2 = document.getElementById('editAttDate').value;
+  var ret = document.getElementById('editAttReturn').value;
+  if(d2) payload.report_date = d2;
+  if(ret) payload.return_date = ret;
+  if(!payload.reason){ document.getElementById('editAttStatus').textContent='Reason is required.'; return; }
+  document.getElementById('editAttStatus').textContent='Saving…';
+  try{
+    var r = await fetch('/api/attendance/'+_editAttId,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    var d = await r.json();
+    if(d.ok){ closeEditAtt(); loadAttendance(); }
+    else{ document.getElementById('editAttStatus').textContent='Error: '+JSON.stringify(d); }
+  }catch(e){ document.getElementById('editAttStatus').textContent='Network error: '+e.message; }
 }
 
 function exportAttPDF(){
@@ -1809,5 +1909,45 @@ if(curUser){ showMain(); }
   setInterval(_upd,60000);
 })();
 </script>
+<!-- ── Edit Attendance Modal ─────────────────────────────────────────── -->
+<div id="editAttModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#0f172a;border:1px solid #1e3a5f;border-radius:14px;padding:24px;max-width:420px;width:93%;box-shadow:0 8px 32px rgba(0,0,0,.6);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <span style="font-size:16px;font-weight:800;color:#e2e8f0;">✎ Edit Attendance</span>
+      <button onclick="closeEditAtt()" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <div style="font-size:13px;color:#94a3b8;margin-bottom:12px;">Worker: <strong id="editAttWorker" style="color:#e2e8f0;"></strong></div>
+    <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Type</label>
+    <select id="editAttType" style="width:100%;padding:8px 10px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:13px;margin-bottom:12px;">
+      <option value="late">🕐 Late</option>
+      <option value="absent">❌ Absent</option>
+      <option value="vacation">🏖 Vacation</option>
+    </select>
+    <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Reason <span style="color:#ef4444;">*</span></label>
+    <textarea id="editAttReason" rows="3" style="width:100%;padding:8px 10px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:13px;resize:vertical;margin-bottom:12px;" placeholder="Updated reason…"></textarea>
+    <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Date (leave blank to keep original)</label>
+    <input id="editAttDate" type="date" style="width:100%;padding:8px 10px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:13px;margin-bottom:12px;">
+    <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Return Date</label>
+    <input id="editAttReturn" type="date" style="width:100%;padding:8px 10px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:13px;margin-bottom:16px;">
+    <div style="display:flex;gap:10px;">
+      <button onclick="saveEditAtt()" style="flex:1;padding:10px;background:#1d4ed8;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer;font-size:14px;">💾 Save</button>
+      <button onclick="closeEditAtt()" style="padding:10px 18px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;cursor:pointer;font-size:14px;">Cancel</button>
+    </div>
+    <div id="editAttStatus" style="margin-top:8px;font-size:12px;color:#ef4444;text-align:center;"></div>
+  </div>
+</div>
+
+<!-- ── Daily Alert Popup (leads/boss/admin) ───────────────────────────────── -->
+<div id="attAlertModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9998;align-items:center;justify-content:center;">
+  <div style="background:#0f172a;border:1px solid #1e3a5f;border-radius:14px;padding:24px;max-width:440px;width:93%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.6);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <span style="font-size:16px;font-weight:800;color:#e2e8f0;">📋 Today's Attendance Alerts</span>
+      <button onclick="document.getElementById('attAlertModal').style.display='none'" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <div id="attAlertBody"></div>
+    <button onclick="document.getElementById('attAlertModal').style.display='none';switchTab('daysoff',document.getElementById('tab-btn-daysoff'));loadAttendance();" style="width:100%;margin-top:16px;padding:10px;background:#1e3a5f;border:1px solid #2563eb;border-radius:8px;color:#93c5fd;font-weight:700;cursor:pointer;font-size:13px;">View Full Attendance Log →</button>
+  </div>
+</div>
+
 </body>
 </html>

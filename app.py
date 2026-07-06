@@ -1453,12 +1453,60 @@ def post_attendance():
             )
         except Exception:
             pass
+        # Create in-app notification for leads/boss/admin
+        try:
+            type_labels = {"late": "🕐 Running Late", "absent": "❌ Absent", "vacation": "🏖 Vacation"}
+            tlabel = type_labels.get(payload["type"], payload["type"].upper())
+            notif_title = f"{tlabel} — {payload['worker_name']}"
+            notif_body  = f"{payload.get('reason','—')} | {payload.get('report_date','')}"
+            requests.post(
+                f"{SUPABASE_URL}/rest/v1/notifications",
+                json={"title": notif_title, "body": notif_body,
+                      "target": "supervisor", "created_by": payload["worker_name"]},
+                headers={**sb_headers(), "Prefer": "return=minimal"},
+                timeout=5
+            )
+        except Exception:
+            pass
         return jsonify({"ok": True})
     try:
         err_detail = resp.json()
     except Exception:
         err_detail = resp.text
     return jsonify({"error": str(err_detail)}), 500
+
+@app.route("/api/attendance/<int:att_id>", methods=["PATCH"])
+def patch_attendance(att_id):
+    data = request.get_json() or {}
+    allowed = {"type","reason","report_date","return_date","arrival_time","status"}
+    payload = {k: v for k,v in data.items() if k in allowed}
+    if not payload:
+        return jsonify({"error": "Nothing to update"}), 400
+    r = requests.patch(
+        f"{SUPABASE_URL}/rest/v1/attendance_reports?id=eq.{att_id}",
+        json=payload,
+        headers={**sb_headers(), "Prefer": "return=minimal"}
+    )
+    return jsonify({"ok": r.ok, "status": r.status_code})
+
+@app.route("/api/attendance/<int:att_id>", methods=["DELETE"])
+def delete_attendance(att_id):
+    r = requests.delete(
+        f"{SUPABASE_URL}/rest/v1/attendance_reports?id=eq.{att_id}",
+        headers=sb_headers()
+    )
+    return jsonify({"ok": r.ok})
+
+@app.route("/api/attendance/today", methods=["GET"])
+def get_attendance_today():
+    from datetime import date as _d
+    today = _d.today().isoformat()
+    r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/attendance_reports"
+        f"?report_date=eq.{today}&select=*&order=created_at.desc",
+        headers=sb_headers(), timeout=5
+    )
+    return jsonify(r.json() if r.ok else [])
 
 @app.route("/timesheet")
 def timesheet_page():
@@ -2532,7 +2580,7 @@ def contractor_hours():
         hrs = None
         if ci and co:
             try:
-                from datetime import date, datetime, timezone, timedeltatime
+                from datetime import date, datetime, timezone
                 fmt = "%Y-%m-%dT%H:%M:%S"
                 ci_dt = datetime.fromisoformat(ci[:19])
                 co_dt = datetime.fromisoformat(co[:19])
@@ -2649,7 +2697,7 @@ def update_worker_location():
     unit = data.get("unit","").strip().upper()
     if not name or not unit:
         return jsonify({"error":"name and unit required"}),400
-    from datetime import date, datetime, timezone, timedeltatime, timezone
+    from datetime import datetime, timezone
     now_iso = datetime.now(timezone.utc).isoformat()
     # Upsert current location
     r = requests.post(
@@ -2692,7 +2740,7 @@ def section_b_map():
 # ── Location history PDF report ───────────────────────────────────────────────
 @app.route("/api/reports/location-history")
 def location_history_pdf():
-    from datetime import date, datetime, timezone, timedeltatime, timezone, date as dt_date
+    from datetime import datetime, timezone, date as dt_date
     from reportlab.lib.pagesizes import letter
     from reportlab.pdfgen import canvas as rl_canvas
     from reportlab.lib.colors import HexColor, white, black
@@ -2773,8 +2821,8 @@ def location_history_pdf():
         ts = row.get("recorded_at","")
         # Convert UTC to CT (UTC-5 or -6; use -5 for CDT)
         try:
-            from datetime import date, datetime, timezone, timedeltatime as _dt
-            dt_utc = _dt.fromisoformat(ts.replace("Z","+00:00"))
+            from datetime import date, datetime, timezone
+            dt_utc = datetime.fromisoformat(ts.replace("Z","+00:00"))
             dt_ct  = dt_utc.replace(tzinfo=None)
             # rough CT offset
             time_str = dt_ct.strftime("%I:%M:%S %p")
