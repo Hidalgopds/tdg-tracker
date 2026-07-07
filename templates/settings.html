@@ -1527,12 +1527,12 @@ async function savePin(){
 // ── CONTRACTOR AREA ──────────────────────────────────────────────────────────
 var _caWorkerId = null;
 
-async function loadContractorArea(){
+function loadContractorArea(){
   var name = localStorage.getItem('mbrAuth') || '';
   var role = localStorage.getItem('mbrRole') || '';
   if(!name) return;
 
-  // --- Profile header ---
+  // --- Profile header (synchronous, no fetch needed) ---
   var initials = name.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
   var av = document.getElementById('ca-avatar');
   if(av) av.textContent = initials;
@@ -1541,24 +1541,14 @@ async function loadContractorArea(){
   var dr = document.getElementById('ca-display-role');
   if(dr) dr.textContent = role;
 
-  // --- PIN badge ---
-  try {
-    var pr = await fetch('/api/contractor/profile?name='+encodeURIComponent(name));
-    var pd = await pr.json();
-    var badge = document.getElementById('ca-pin-badge');
-    var banner = document.getElementById('pin-setup-banner');
-    if(pd.ok && !pd.pin_set){
-      if(badge){ badge.style.display='inline'; badge.textContent='No PIN'; badge.style.background='#fef2f2'; badge.style.color='#ef4444'; }
-      if(banner) banner.style.display='block';
-      if(localStorage) localStorage.setItem('mbrPinRequired','1');
-    } else {
-      if(badge){ badge.style.display='inline'; badge.textContent='✓ PIN set'; badge.style.background='#f0fdf4'; badge.style.color='#16a34a'; }
-      if(banner) banner.style.display='none';
-      if(localStorage) localStorage.removeItem('mbrPinRequired');
-    }
-  } catch(e){}
+  // Fire all three independently — no blocking each other
+  _caLoadCheckinStatus(name);
+  _caLoadPinBadge(name);
+  caWeekOffset = 0;
+  loadContractorHours();
+}
 
-  // --- Check-in status in profile card ---
+async function _caLoadCheckinStatus(name){
   try {
     var cr = await fetch('/api/contractor/status?name='+encodeURIComponent(name));
     var cd = await cr.json();
@@ -1575,7 +1565,7 @@ async function loadContractorArea(){
         dot.style.background='#ef4444';
         lbl.textContent = 'Not Checked In';
       }
-      // Sync bar chip directly from same response — no second fetch
+      // Sync status bar chip from same response
       var barChip=document.getElementById('mbr-checkin-chip');
       var barDot=document.getElementById('chip-dot');
       var barLbl=document.getElementById('chip-label');
@@ -1592,18 +1582,31 @@ async function loadContractorArea(){
       }
     }
   } catch(e){
-    // Network error — show retry state
     var lbl2=document.getElementById('ca-ci-label');
     var dot2=document.getElementById('ca-ci-dot');
     var chip2=document.getElementById('ca-ci-chip');
     if(lbl2) lbl2.textContent='—';
     if(dot2) dot2.style.background='#64748b';
-    if(chip2){ chip2.style.background='rgba(255,255,255,0.04)'; chip2.style.color='#64748b'; chip2.style.cursor='pointer'; chip2.title='Tap to retry'; chip2.onclick=function(){loadContractorArea();}; }
+    if(chip2){ chip2.style.background='rgba(255,255,255,0.04)'; chip2.style.color='#64748b'; chip2.style.cursor='pointer'; chip2.title='Tap to retry'; chip2.onclick=function(){_caLoadCheckinStatus(localStorage.getItem('mbrAuth')||'');}; }
   }
+}
 
-  // --- Hours: load current week ---
-  caWeekOffset = 0;
-  loadContractorHours();
+async function _caLoadPinBadge(name){
+  try {
+    var pr = await fetch('/api/contractor/profile?name='+encodeURIComponent(name));
+    var pd = await pr.json();
+    var badge = document.getElementById('ca-pin-badge');
+    var banner = document.getElementById('pin-setup-banner');
+    if(pd.ok && !pd.pin_set){
+      if(badge){ badge.style.display='inline'; badge.textContent='No PIN'; badge.style.background='#fef2f2'; badge.style.color='#ef4444'; }
+      if(banner) banner.style.display='block';
+      if(localStorage) localStorage.setItem('mbrPinRequired','1');
+    } else {
+      if(badge){ badge.style.display='inline'; badge.textContent='✓ PIN set'; badge.style.background='#f0fdf4'; badge.style.color='#16a34a'; }
+      if(banner) banner.style.display='none';
+      if(localStorage) localStorage.removeItem('mbrPinRequired');
+    }
+  } catch(e){}
 }
 
 var caWeekOffset = 0;
