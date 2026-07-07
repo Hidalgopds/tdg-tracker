@@ -3068,10 +3068,6 @@ def reset_locations():
     ok = _do_reset_locations()
     return jsonify({"ok": ok})
 
-# ── /health — lightweight keep-alive endpoint ────────────────────────────────
-@app.route("/health")
-def health():
-    return jsonify({"ok": True}), 200
 
 # ── Nightly APScheduler job ───────────────────────────────────────────────────
 def _nightly_report_and_reset():
