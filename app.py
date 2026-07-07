@@ -2237,10 +2237,29 @@ def auto_checkout():
 
     Handles late execution: if the job runs after midnight UTC, it also
     sweeps the previous calendar day so no open checkins are left unclosed.
+
+    Optional: POST /api/auto-checkout?date=YYYY-MM-DD
+      → closes only that specific date, skips absent-marking.
+        Use this to manually close a past day without affecting today.
     """
     import datetime as dt
     today = dt.date.today().isoformat()
     yesterday = (dt.date.today() - dt.timedelta(days=1)).isoformat()
+
+    # Optional single-date override (close one day only, no absent-marking)
+    target_only = request.args.get("date", "").strip()
+    if target_only:
+        checkout_time = target_only + "T23:00:00"
+        co = requests.patch(
+            f"{SUPABASE_URL}/rest/v1/{CHECKINS_TABLE}"
+            f"?date=eq.{target_only}&checked_out_at=is.null",
+            json={"checked_out_at": checkout_time, "auto_checkout": True},
+            headers={**sb_headers(), "Prefer": "return=representation"}
+        )
+        closed = len(co.json()) if co.ok and co.json() else 0
+        return jsonify({"ok": True, "date": target_only,
+                        "auto_checked_out": closed, "auto_marked_absent": 0,
+                        "absent_workers": []})
 
     # ── 1. Auto-checkout open check-ins (today AND yesterday) ────────────────
     checked_out = 0
