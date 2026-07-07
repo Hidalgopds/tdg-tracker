@@ -8,10 +8,12 @@
 :root{--bg:#0a0f1a;--card:#0d1520;--border:#1a2535;--text:#e8edf2;--muted:#64748b;--accent:#1a6bc4;--green:#22c55e;--amber:#f59e0b;--red:#ef4444;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;padding-bottom:80px;}
-.header{background:#060c18;border-bottom:2px solid #1e2d3d;padding:11px 14px;display:flex;align-items:center;gap:8px;position:sticky;top:0;z-index:100;}
+.header{background:#060c18;border-bottom:2px solid #1e2d3d;position:sticky;top:0;z-index:100;display:flex;flex-direction:column;}
+.header-primary{display:flex;align-items:center;gap:8px;padding:9px 14px;}
+.header-search{padding:0 14px 9px;}
 .hlogo{font-size:14px;font-weight:900;color:var(--accent);white-space:nowrap;}
-.back-btn{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 6px;}
-.search-wrap{flex:1;position:relative;}
+.back-btn{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 6px;flex-shrink:0;}
+.search-wrap{position:relative;}
 .search-input{width:100%;height:36px;background:#111d2b;border:1px solid var(--border);border-radius:8px;padding:0 10px 0 30px;color:var(--text);font-size:13px;}
 .si{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:12px;pointer-events:none;}
 .editor-btn{height:36px;padding:0 10px;background:#1a1a2e;border:1px solid #2a3a5c;border-radius:8px;color:#7db4ff;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;}
@@ -26,6 +28,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .share-btn{background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;}
 .inv-grid{padding:12px 14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;}
 @media(max-width:400px){.inv-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:520px){.hdr-name{display:none;}}
 .inv-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:5px;touch-action:manipulation;}
 .ic-cat{font-size:9px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);}
 .ic-name{font-size:12px;font-weight:600;color:var(--text);line-height:1.35;flex:1;}
@@ -354,16 +357,20 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 
 <!-- HEADER -->
 <div class="header">
-  <button class="back-btn" onclick="window.location='/'">◀</button>
-  <span class="hlogo">📦 Inventory</span>
-  <div class="search-wrap">
-    <span class="si">🔍</span>
-    <input class="search-input" id="srch" type="text" placeholder="Search..." oninput="doFilter()">
+  <div class="header-primary">
+    <button class="back-btn" onclick="window.location='/'">◀</button>
+    <span class="hlogo">📦 Inventory</span>
+    <button class="editor-btn" id="edBtn" onclick="openAuth()" style="margin-left:auto;">🔒 Editor</button>
+    <div id="headerUser" style="display:flex;align-items:center;gap:8px;flex-shrink:0;"></div>
   </div>
-  <button class="editor-btn" id="edBtn" onclick="openAuth()">🔒 Editor</button>
-  <div id="headerUser" style="display:flex;align-items:center;gap:8px;margin-left:auto;"></div>
+  <div class="header-search">
+    <div class="search-wrap">
+      <span class="si">🔍</span>
+      <input class="search-input" id="srch" type="text" placeholder="Search items..." oninput="doFilter()">
+    </div>
+  </div>
 </div>
-<script>(function(){var n=localStorage.getItem('mbrAuth')||'';var r=localStorage.getItem('mbrRole')||'';var el=document.getElementById('headerUser');if(!el||!n)return;var cap=r?r.charAt(0).toUpperCase()+r.slice(1):'';el.innerHTML='<span style="font-size:12px;font-weight:700;color:#94a3b8;">'+n+(cap?' &middot; '+cap:'')+' </span>'+'<button onclick="localStorage.removeItem(\'mbrAuth\');localStorage.removeItem(\'mbrRole\');location.href=\'/login\';" '+'style="padding:5px 12px;background:#1e2d45;border:1px solid #2d3f57;border-radius:8px;color:#94a3b8;font-size:12px;cursor:pointer;">Sign Out</button>';})();</script>
+<script>(function(){var n=localStorage.getItem('mbrAuth')||'';var r=localStorage.getItem('mbrRole')||'';var el=document.getElementById('headerUser');if(!el||!n)return;var cap=r?r.charAt(0).toUpperCase()+r.slice(1):'';el.innerHTML='<span class="hdr-name" style="font-size:12px;font-weight:700;color:#94a3b8;white-space:nowrap;">'+n+(cap?' · '+cap:'')+'</span>'+'<button onclick="localStorage.removeItem(\'mbrAuth\');localStorage.removeItem(\'mbrRole\');location.href=\'/login\';" style="padding:4px 10px;background:#1e2d45;border:1px solid #2d3f57;border-radius:8px;color:#94a3b8;font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0;">Sign Out</button>';})();</script>
 <script>
 (function(){
   var _a=localStorage.getItem('mbrAuth')||'';
@@ -1294,7 +1301,4 @@ async function deleteMaterial(id){
 </nav>
 <script>
 (function(){var p=location.pathname;document.querySelectorAll('.gnav-link').forEach(function(a){var h=a.getAttribute('href');if(h==='/'?p===h:p===h||p.startsWith(h))a.classList.add('gna');});})();
-(function(){var r=localStorage.getItem('mbrRole')||'worker';var lv={admin:5,boss:4,inventory:3,lead:2,worker:1}[r]||1;var rules={'/log':2,'/dashboard':4,'/inventory':2,'/issues-log':2,'/settings':4};document.querySelectorAll('.gnav-link').forEach(function(a){var h=a.getAttribute('href');if(rules[h]&&lv<rules[h]){a.href='/home';a.style.opacity='0.45';}});})();
-</script>
-</body>
-</html>
+(function(){var r=localStorage.getItem('mbrRole')||'worker'
