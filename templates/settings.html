@@ -340,6 +340,12 @@ body{padding-top:48px!important;}
   .gnav a { font-size: 9px !important; min-width: 36px !important; }
   .gnav a .gi { font-size: 17px !important; }
 }
+@media (max-width: 520px) {
+  .hdr-name { display: none !important; }
+  .hdr-signout { font-size: 0 !important; padding: 5px 8px !important; }
+  .hdr-signout::after { content: '✕'; font-size: 12px; }
+  #mbr-status-bar { padding: 0 10px; gap: 5px; }
+}
 </style>
 <div id="mbr-status-bar">
   <!-- Left: navigation -->
@@ -482,7 +488,7 @@ function timeAgo(iso){
 </script>
 
 
-<script>(function(){var n=localStorage.getItem('mbrAuth')||'';var r=localStorage.getItem('mbrRole')||'';var el=document.getElementById('headerUser');if(!el||!n)return;var cap=r?r.charAt(0).toUpperCase()+r.slice(1):'';el.innerHTML='<span style="font-size:12px;font-weight:700;color:#94a3b8;">'+n+(cap?' &middot; '+cap:'')+'</span>'+'<button onclick="localStorage.removeItem(\'mbrAuth\');localStorage.removeItem(\'mbrRole\');location.href=\'/login\';" '+'style="padding:5px 12px;background:#1e2d45;border:1px solid #2d3f57;border-radius:8px;color:#94a3b8;font-size:12px;cursor:pointer;">Sign Out</button>';})();</script>
+<script>(function(){var n=localStorage.getItem('mbrAuth')||'';var r=localStorage.getItem('mbrRole')||'';var el=document.getElementById('headerUser');if(!el||!n)return;var cap=r?r.charAt(0).toUpperCase()+r.slice(1):'';el.innerHTML='<span class="hdr-name" style="font-size:12px;font-weight:700;color:#94a3b8;">'+n+(cap?' &middot; '+cap:'')+'</span>'+'<button class="hdr-signout" onclick="localStorage.removeItem(\'mbrAuth\');localStorage.removeItem(\'mbrRole\');location.href=\'/login\';" '+'style="padding:5px 12px;background:#1e2d45;border:1px solid #2d3f57;border-radius:8px;color:#94a3b8;font-size:12px;cursor:pointer;">Sign Out</button>';})();</script>
 
 <script>
 /* Profile name/avatar — DOMContentLoaded ensures elements exist even inside hidden tabs */
@@ -1888,8 +1894,4 @@ function forceLogoutAll() {
 </div>
 
 <!-- Change Password Modal (Contractor) -->
-<div id="changePwModal" style="display:none;position:fixed;inset:0;background:#00000088;z-index:1000;align-items:center;justify-content:center;">
-  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:340px;max-width:90vw;">
-    <h3 style="margin-bottom:16px;font-size:16px;">🔑 Change Password</h3>
-    <div style="margin-bottom:12px;">
-      <label style="font-size:12px;co
+<div id="changePwModal" style="display:none;position:fixed;inset:0;background:#00000088;z-index:1000;align-items:center;justify-content:ce

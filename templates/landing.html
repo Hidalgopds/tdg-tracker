@@ -35,6 +35,13 @@
   .card-arrow { color: #4f8ef7; font-size: 18px; }
   footer { text-align: center; padding: 20px; color: #334155; font-size: 12px; border-top: 1px solid #1e2533; }
   @media (max-width: 600px) { .hero h2 { font-size: 22px; } .cards { gap: 14px; } .card { padding: 22px 18px 18px; max-width: 100%; } }
+  @media (max-width: 520px) {
+    .hdr-name { display: none !important; }
+    .hdr-signout { font-size: 0 !important; padding: 6px 8px !important; }
+    .hdr-signout::after { content: '✕'; font-size: 12px; }
+    #mbr-status-bar { padding: 0 10px; gap: 5px; }
+    .hdr-left-text { display: none !important; }
+  }
 </style>
 
 <style id="gnav-style">
@@ -242,21 +249,15 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 .np-body{font-size:12px;color:rgba(255,255,255,0.5);line-height:1.4;}
 .np-time{font-size:10px;color:rgba(255,255,255,0.3);margin-top:5px;}
 .np-empty{padding:24px;text-align:center;font-size:12px;color:rgba(255,255,255,0.3);}
+.np-read-btn{padding:2px 10px;font-size:11px;font-weight:600;background:rgba(14,165,233,0.12);border:1px solid rgba(14,165,233,0.3);border-radius:4px;color:#0ea5e9;cursor:pointer;line-height:1.6;white-space:nowrap;}
+.np-read-btn:hover{background:rgba(14,165,233,0.25);}
 body{padding-top:56px!important;}
-
-/* ── Mobile responsive (supplement existing) ── */
-@media (max-width: 640px) {
-  /* Top bar chip overflow fix */
-  #mbr-checkin-chip { font-size: 10px !important; padding: 2px 7px !important; }
-  .gnav a { font-size: 9px !important; min-width: 36px !important; }
-  .gnav a .gi { font-size: 17px !important; }
-}
 </style>
 <div id="mbr-status-bar">
   <!-- Left: logo + branding -->
   <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
     <div style="width:36px;height:36px;background:#1a6bc4;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;">MBR</div>
-    <div style="min-width:0;">
+    <div class="hdr-left-text" style="min-width:0;">
       <div style="font-size:14px;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">MBR Texas — TDG Operations</div>
       <div style="font-size:10px;color:#64748b;white-space:nowrap;">Data Center Project Tracking System</div>
     </div>
@@ -268,8 +269,8 @@ body{padding-top:56px!important;}
       <span class="chip-dot dot-out" id="chip-dot"></span>
       <span id="chip-label">Not Checked In</span>
     </div>
-    <span id="role-badge" style="font-size:12px;color:#64748b;"></span>
-    <button id="logout-btn" style="background:#1e2d45;color:#94a3b8;border:1px solid #2d3f57;padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;">Sign Out</button>
+    <span id="role-badge" class="hdr-name" style="font-size:12px;color:#64748b;"></span>
+    <button id="logout-btn" class="hdr-signout" style="background:#1e2d45;color:#94a3b8;border:1px solid #2d3f57;padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;">Sign Out</button>
     <button id="mbr-bell-btn" onclick="toggleNotifPanel()" title="Notifications" style="position:relative;background:none;border:none;cursor:pointer;font-size:16px;padding:4px;color:#94a3b8;line-height:1;">🔔<div id="mbr-bell-badge"></div></button>
   </div>
 </div>
@@ -347,10 +348,16 @@ function loadNotifications(){
       if(notifs.length===0){list.innerHTML='<div class="np-empty">No notifications</div>';return;}
       list.innerHTML = notifs.map(function(n){
         var ago = timeAgo(n.created_at);
-        return '<div class="np-item '+(n.read?'read':'unread')+'" onclick="markRead(''+n.id+'')">'
+        var readBtn = !n.read
+          ? '<button class="np-read-btn" onclick="markRead(\''+n.id+'\');event.stopPropagation()">Read</button>'
+          : '';
+        return '<div class="np-item '+(n.read?'read':'unread')+'" data-notif-id="'+n.id+'">'
           +'<div class="np-title">'+escHtml(n.title)+'</div>'
           +(n.body?'<div class="np-body">'+escHtml(n.body)+'</div>':'')
-          +'<div class="np-time">'+ago+'</div></div>';
+          +'<div style="display:flex;align-items:center;justify-content:space-between;margin-top:5px;">'
+          +'<div class="np-time">'+ago+'</div>'
+          +readBtn
+          +'</div></div>';
       }).join('');
     }).catch(function(){});
 }
@@ -366,9 +373,10 @@ function markAllRead(){
   var items = document.querySelectorAll('.np-item.unread');
   var ids = [];
   items.forEach(function(el){
-    var m = el.getAttribute('onclick').match(/'([^']+)'/);
-    if(m) ids.push(m[1]);
+    var id = el.getAttribute('data-notif-id');
+    if(id) ids.push(id);
   });
+  if(!ids.length){ loadNotifications(); return; }
   Promise.all(ids.map(function(id){
     return fetch('/api/notifications/'+id+'/read',{method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -596,176 +604,4 @@ function timeAgo(iso){
   if(!_a)return;
   function _upd(){
     fetch('/api/contractor/status?name='+encodeURIComponent(_a))
-      .then(function(r){return r.json();})
-      .then(function(d){
-        var bc=document.getElementById('mbr-checkin-chip');
-        var bd=document.getElementById('chip-dot');
-        var bl=document.getElementById('chip-label');
-        if(!bc||!bd||!bl)return;
-        if(d.checked_in){
-          bc.style.background='rgba(34,197,94,0.15)';bc.style.color='#16a34a';bc.style.border='1px solid rgba(34,197,94,0.3)';
-          bd.style.background='#22c55e';
-          bl.textContent=d.since?'Checked In · '+d.since:'Checked In';
-        }else{
-          bc.style.background='rgba(100,116,139,0.15)';bc.style.color='#94a3b8';bc.style.border='1px solid rgba(100,116,139,0.2)';
-          bd.style.background='#64748b';
-          bl.textContent='Not Checked In';
-        }
-      }).catch(function(){setTimeout(_upd,5000);});
-  }
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',_upd);
-  }else{_upd();}
-  setInterval(_upd,60000);
-})();
-</script>
-
-<style>
-/* ── Kiosk PIN Setup Overlay ─────────────────────────────── */
-#pinSetupOverlay{position:fixed;inset:0;background:#0a0f1aee;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px)}
-#pinSetupOverlay h2{font-size:20px;font-weight:800;color:#e2e8f0;text-align:center;margin-bottom:6px}
-#pinSetupOverlay .ps-sub{font-size:13px;color:#64748b;text-align:center;margin-bottom:20px;max-width:300px;line-height:1.5}
-.ps-card{background:#111827;border:1px solid #1e2d45;border-radius:16px;padding:24px 20px;display:flex;flex-direction:column;align-items:center;gap:0;width:100%;max-width:300px}
-.ps-step-label{font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;font-weight:600}
-.ps-dots{display:flex;gap:14px;margin-bottom:20px}
-.ps-dot{width:18px;height:18px;border-radius:50%;border:2px solid #1e2d45;background:transparent;transition:all .12s}
-.ps-dot.on{background:#378ADD;border-color:#378ADD;box-shadow:0 0 8px #378ADD66}
-.ps-dot.err{background:#dc2626;border-color:#dc2626}
-.ps-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%}
-.ps-key{height:60px;border:none;border-radius:12px;font-size:22px;font-weight:600;cursor:pointer;transition:transform .08s;user-select:none;-webkit-tap-highlight-color:transparent}
-.ps-key:active{transform:scale(.91)}
-.ps-key-num{background:#1a2035;color:#f1f5f9;border:1.5px solid #1e2d45}
-.ps-key-del{background:#151c2c;color:#64748b;border:1.5px solid #1e2d45;font-size:18px}
-.ps-key-ok{background:#1e40af;color:#fff;font-size:14px;font-weight:700}
-.ps-key-ok:disabled{background:#111827;color:#334155;cursor:not-allowed}
-.ps-msg{font-size:12px;min-height:18px;margin-top:8px;color:#f87171;text-align:center}
-.ps-success{font-size:14px;color:#4ade80;text-align:center;margin-top:8px;font-weight:600}
-</style>
-
-<!-- ── Kiosk PIN Setup Overlay ──────────────────────────────── -->
-<div id="pinSetupOverlay" style="display:none">
-  <h2>🔑 Create Your Kiosk PIN</h2>
-  <p class="ps-sub">You'll use this 4-digit PIN on the job site tablet to check in if you arrive after the safety meeting.</p>
-  <div class="ps-card">
-    <div class="ps-step-label" id="psStepLabel">Choose a PIN</div>
-    <div class="ps-dots">
-      <div class="ps-dot" id="pd0"></div>
-      <div class="ps-dot" id="pd1"></div>
-      <div class="ps-dot" id="pd2"></div>
-      <div class="ps-dot" id="pd3"></div>
-    </div>
-    <div class="ps-keypad">
-      <button class="ps-key ps-key-num" onclick="psKey('1')">1</button>
-      <button class="ps-key ps-key-num" onclick="psKey('2')">2</button>
-      <button class="ps-key ps-key-num" onclick="psKey('3')">3</button>
-      <button class="ps-key ps-key-num" onclick="psKey('4')">4</button>
-      <button class="ps-key ps-key-num" onclick="psKey('5')">5</button>
-      <button class="ps-key ps-key-num" onclick="psKey('6')">6</button>
-      <button class="ps-key ps-key-num" onclick="psKey('7')">7</button>
-      <button class="ps-key ps-key-num" onclick="psKey('8')">8</button>
-      <button class="ps-key ps-key-num" onclick="psKey('9')">9</button>
-      <button class="ps-key ps-key-del" onclick="psDel()">⌫</button>
-      <button class="ps-key ps-key-num" onclick="psKey('0')">0</button>
-      <button class="ps-key ps-key-ok" id="psOkBtn" onclick="psConfirm()" disabled>✓</button>
-    </div>
-    <div class="ps-msg" id="psMsg"></div>
-  </div>
-</div>
-
-<script>
-(function(){
-  var _auth = localStorage.getItem('mbrAuth') || '';
-  var _role = localStorage.getItem('mbrRole') || 'worker';
-  var _lvl  = {admin:5,boss:4,inventory:3,lead:2,worker:1}[_role] || 1;
-  // Only prompt workers, leads, inventory (not boss/admin)
-  if(!_auth || _lvl >= 4) return;
-
-  var psPin1='', psPin2='', psStep=1, psBusy=false;
-
-  function psUpdateDots(p){
-    for(var i=0;i<4;i++){
-      var d=document.getElementById('pd'+i);
-      d.classList.toggle('on', i<p.length);
-      d.classList.remove('err');
-    }
-    document.getElementById('psOkBtn').disabled = p.length < 4;
-  }
-  window.psKey = function(k){
-    if(psBusy) return;
-    var cur = psStep===1 ? psPin1 : psPin2;
-    if(cur.length >= 4) return;
-    cur += k;
-    if(psStep===1) psPin1=cur; else psPin2=cur;
-    psUpdateDots(cur);
-    if(cur.length===4) psConfirm();
-  };
-  window.psDel = function(){
-    if(psBusy) return;
-    if(psStep===1){ psPin1=psPin1.slice(0,-1); psUpdateDots(psPin1); }
-    else { psPin2=psPin2.slice(0,-1); psUpdateDots(psPin2); }
-    document.getElementById('psMsg').textContent='';
-  };
-  window.psConfirm = async function(){
-    if(psBusy) return;
-    var cur = psStep===1 ? psPin1 : psPin2;
-    if(cur.length < 4) return;
-    if(psStep===1){
-      // Move to confirm step
-      psStep=2; psPin2='';
-      document.getElementById('psStepLabel').textContent='Confirm your PIN';
-      document.getElementById('psMsg').textContent='';
-      psUpdateDots('');
-      return;
-    }
-    // Step 2: compare
-    if(psPin2 !== psPin1){
-      for(var i=0;i<4;i++) document.getElementById('pd'+i).classList.add('err');
-      document.getElementById('psMsg').textContent="PINs don't match — try again";
-      setTimeout(function(){
-        psStep=1; psPin1=''; psPin2='';
-        document.getElementById('psStepLabel').textContent='Choose a PIN';
-        document.getElementById('psMsg').textContent='';
-        psUpdateDots('');
-      }, 1500);
-      return;
-    }
-    // Save PIN
-    psBusy=true;
-    document.getElementById('psOkBtn').disabled=true;
-    try{
-      var r=await fetch('/api/users/set-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:_auth,pin:psPin1})});
-      var d=await r.json();
-      if(d.ok || d.error===undefined){
-        document.getElementById('psMsg').innerHTML='<span style="color:#4ade80">✓ PIN saved! You're all set.</span>';
-        setTimeout(function(){document.getElementById('pinSetupOverlay').style.display='none';}, 1800);
-      } else if(d.error && d.error.indexOf('taken')!==-1){
-        document.getElementById('psMsg').textContent='That PIN is taken — choose a different one';
-        psStep=1; psPin1=''; psPin2=''; psBusy=false;
-        document.getElementById('psStepLabel').textContent='Choose a PIN';
-        psUpdateDots('');
-        document.getElementById('psOkBtn').disabled=false;
-      } else {
-        document.getElementById('psMsg').textContent=d.error||'Error saving — try again';
-        psBusy=false; document.getElementById('psOkBtn').disabled=false;
-      }
-    } catch(e){
-      document.getElementById('psMsg').textContent='Network error — try again';
-      psBusy=false; document.getElementById('psOkBtn').disabled=false;
-    }
-  };
-
-  // Check if user already has a PIN
-  fetch('/api/users/has-pin?name='+encodeURIComponent(_auth))
-    .then(function(r){return r.json();})
-    .then(function(d){
-      if(!d.has_pin){
-        document.getElementById('pinSetupOverlay').style.display='flex';
-        psUpdateDots('');
-      }
-    })
-    .catch(function(){});
-})();
-</script>
-
-</body>
-</html>
+      .then(function(r)
