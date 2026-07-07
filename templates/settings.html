@@ -320,6 +320,8 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 .np-body{font-size:12px;color:rgba(255,255,255,0.5);line-height:1.4;}
 .np-time{font-size:10px;color:rgba(255,255,255,0.3);margin-top:5px;}
 .np-empty{padding:24px;text-align:center;font-size:12px;color:rgba(255,255,255,0.3);}
+.np-read-btn{padding:2px 10px;font-size:11px;font-weight:600;background:rgba(14,165,233,0.12);border:1px solid rgba(14,165,233,0.3);border-radius:4px;color:#0ea5e9;cursor:pointer;line-height:1.6;white-space:nowrap;}
+.np-read-btn:hover{background:rgba(14,165,233,0.25);}
 body{padding-top:48px!important;}
 
 /* ── Mobile responsive ── */
@@ -431,10 +433,16 @@ function loadNotifications(){
       if(notifs.length===0){list.innerHTML='<div class="np-empty">No notifications</div>';return;}
       list.innerHTML = notifs.map(function(n){
         var ago = timeAgo(n.created_at);
-        return '<div class="np-item '+(n.read?'read':'unread')+'" onclick="markRead('+n.id+')">'
+        var readBtn = !n.read
+          ? '<button class="np-read-btn" onclick="markRead('+n.id+');event.stopPropagation()">Read</button>'
+          : '';
+        return '<div class="np-item '+(n.read?'read':'unread')+'" data-notif-id="'+n.id+'">'
           +'<div class="np-title">'+escHtml(n.title)+'</div>'
           +(n.body?'<div class="np-body">'+escHtml(n.body)+'</div>':'')
-          +'<div class="np-time">'+ago+'</div></div>';
+          +'<div style="display:flex;align-items:center;justify-content:space-between;margin-top:5px;">'
+          +'<div class="np-time">'+ago+'</div>'
+          +readBtn
+          +'</div></div>';
       }).join('');
     }).catch(function(){});
 }
@@ -450,9 +458,10 @@ function markAllRead(){
   var items = document.querySelectorAll('.np-item.unread');
   var ids = [];
   items.forEach(function(el){
-    var m = el.getAttribute('onclick').match(/'([^']+)'/);
-    if(m) ids.push(m[1]);
+    var id = el.getAttribute('data-notif-id');
+    if(id) ids.push(id);
   });
+  if(!ids.length){ loadNotifications(); return; }
   Promise.all(ids.map(function(id){
     return fetch('/api/notifications/'+id+'/read',{method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -1641,9 +1650,14 @@ async function loadContractorHours(){
   try {
     var r = await fetch('/api/contractor/hours?name='+encodeURIComponent(name)+'&week_start='+ws);
     var d = await r.json();
-    if(!d.ok){ if(total) total.textContent='—'; return; }
+    if(!d.ok){
+      console.error('contractor/hours error:', d);
+      if(total) total.textContent='—';
+      if(grid) grid.innerHTML='<div style="font-size:12px;color:#ef4444;display:flex;align-items:center;gap:8px;">Could not load hours. <button onclick="loadContractorHours()" style="padding:2px 8px;background:#1e2d45;border:1px solid #2d3f57;border-radius:5px;color:#94a3b8;font-size:11px;cursor:pointer;">Retry</button></div>';
+      return;
+    }
 
-    if(total) total.textContent = d.total_hours || '0';
+    if(total) total.textContent = (d.total_hours != null) ? d.total_hours : '0';
 
     var dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
     var rows = '';
@@ -1668,7 +1682,9 @@ async function loadContractorHours(){
     }
     if(grid) grid.innerHTML = rows || '<div style="font-size:12px;color:var(--muted);padding:8px 0;">No check-in records for this week.</div>';
   } catch(e){
-    if(grid) grid.innerHTML = '<div style="font-size:12px;color:#ef4444;">Error loading hours.</div>';
+    console.error('loadContractorHours exception:', e);
+    if(total) total.textContent='—';
+    if(grid) grid.innerHTML='<div style="font-size:12px;color:#ef4444;display:flex;align-items:center;gap:8px;">Error loading hours. <button onclick="loadContractorHours()" style="padding:2px 8px;background:#1e2d45;border:1px solid #2d3f57;border-radius:5px;color:#94a3b8;font-size:11px;cursor:pointer;">Retry</button></div>';
   }
 }
 
@@ -1877,26 +1893,4 @@ function forceLogoutAll() {
     <h3 style="margin-bottom:16px;font-size:16px;">🔑 Change Password</h3>
     <div style="margin-bottom:12px;">
       <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:5px;">Current Password</label>
-      <input id="cp-current" type="password" placeholder="Current password"
-        style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;">
-    </div>
-    <div style="margin-bottom:12px;">
-      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:5px;">New Password</label>
-      <input id="cp-new" type="password" placeholder="New password"
-        style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;">
-    </div>
-    <div style="margin-bottom:12px;">
-      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:5px;">Confirm New Password</label>
-      <input id="cp-confirm" type="password" placeholder="Confirm new password"
-        style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;">
-    </div>
-    <div id="cp-err" style="color:#ef4444;font-size:12px;margin-bottom:10px;display:none;"></div>
-    <div style="display:flex;gap:8px;">
-      <button class="btn btn-ghost btn-sm" onclick="closeChangePw()" style="flex:1">Cancel</button>
-      <button class="btn btn-primary btn-sm" onclick="saveChangePw()" style="flex:1">Save</button>
-    </div>
-  </div>
-</div>
-
-</body>
-</html>
+      <input id="cp-current" type="password" placeholder="Curr
