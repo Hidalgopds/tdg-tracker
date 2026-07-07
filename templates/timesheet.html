@@ -1051,7 +1051,7 @@ async function loadSafetyMeeting(){
   try{checkSavedToday();}catch(_e){}
   try{
     var today=todayISO();
-    var[wRes,attRes,absRes]=await Promise.all([fetch('/api/workers'),fetch('/api/safety-meeting'),fetch('/api/attendance?report_date=eq.'+today)]);
+    var[wRes,attRes,absRes]=await Promise.all([fetch('/api/workers'),fetch('/api/safety-meeting'),fetch('/api/attendance/active')]);
     var dbW=wRes.ok?await wRes.json():[];var att=attRes.ok?await attRes.json():[];
     var absRows=absRes.ok?await absRes.json():[];
     smAttendance={};
@@ -2223,7 +2223,7 @@ async function loadMyTeam(){
     // Also load today's attendance for badges
     var today = new Date().toISOString().slice(0,10);
     try{
-      var ar = await fetch('/api/attendance?report_date=eq.'+today);
+      var ar = await fetch('/api/attendance/active');
       var attRows = await ar.json();
       smAttendance = {};
       if(Array.isArray(attRows)) attRows.forEach(function(a){ smAttendance[a.worker_name]={type:a.type||'absent'}; });

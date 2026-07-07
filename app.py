@@ -1463,8 +1463,17 @@ def notify_leads_attendance(worker_name, att_type, report_date, return_date, rea
 
 @app.route("/api/attendance", methods=["GET"])
 def get_attendance():
+    # Pass Supabase-style filters from query string (e.g. report_date=eq.2026-07-07)
+    allowed = {"report_date", "worker_name", "type", "status"}
+    qs_parts = ["select=*", "order=created_at.desc", "limit=200"]
+    for key, val in request.args.items():
+        # accept both bare keys and PostgREST operators (key=eq.value)
+        col = key.split(".")[0] if "." in key else key
+        if col in allowed:
+            qs_parts.append(f"{key}={val}")
+    qs = "&".join(qs_parts)
     resp = requests.get(
-        f"{SUPABASE_URL}/rest/v1/attendance_reports?select=*&order=created_at.desc&limit=60",
+        f"{SUPABASE_URL}/rest/v1/attendance_reports?{qs}",
         headers=sb_headers()
     )
     return jsonify(resp.json() if resp.ok else [])
@@ -1552,6 +1561,57 @@ def get_attendance_today():
         headers=sb_headers(), timeout=5
     )
     return jsonify(r.json() if r.ok else [])
+
+@app.route("/api/attendance/active", methods=["GET"])
+def get_attendance_active():
+    """Returns attendance records that are active RIGHT NOW.
+
+    Rules:
+    - late:              report_date == today only
+    - absent / vacation: report_date <= today AND return_date > today
+                         (return_date is the day they come BACK, so they are
+                          absent up to but not including that date).
+                         If return_date is null, treat as single-day (report_date == today).
+    """
+    from datetime import date as _d
+    today = _d.today().isoformat()
+
+    # Fetch a window of recent records that could possibly be active:
+    # report_date <= today, going back up to 60 days.
+    import datetime as dt
+    sixty_ago = (dt.date.today() - dt.timedelta(days=60)).isoformat()
+    r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/attendance_reports"
+        f"?report_date=lte.{today}&report_date=gte.{sixty_ago}"
+        f"&select=*&order=created_at.desc&limit=500",
+        headers=sb_headers(), timeout=8
+    )
+    if not r.ok:
+        return jsonify([])
+
+    rows = r.json()
+    active = []
+    for row in rows:
+        t            = (row.get("type") or "absent").lower()
+        report_date  = row.get("report_date") or ""
+        return_date  = row.get("return_date") or ""
+
+        if t == "late":
+            # Late only applies on its own date
+            if report_date == today:
+                active.append(row)
+        else:
+            # absent / vacation: active if today is in [report_date, return_date)
+            if not return_date:
+                # No return date → treat as single-day absence
+                if report_date == today:
+                    active.append(row)
+            else:
+                # return_date is the day they come BACK → absent while today < return_date
+                if report_date <= today < return_date:
+                    active.append(row)
+
+    return jsonify(active)
 
 @app.route("/timesheet")
 def timesheet_page():
@@ -2054,20 +2114,26 @@ def auto_checkout():
     """6:15 PM daily job:
        1. Check out anyone still clocked in (logs 6:00 PM checkout).
        2. Mark as absent anyone with NO check-in record at all today.
+
+    Handles late execution: if the job runs after midnight UTC, it also
+    sweeps the previous calendar day so no open checkins are left unclosed.
     """
     import datetime as dt
     today = dt.date.today().isoformat()
-    # 6:00 PM CT = 23:00 UTC (CDT, UTC-5)
-    checkout_time = today + "T23:00:00"
+    yesterday = (dt.date.today() - dt.timedelta(days=1)).isoformat()
 
-    # ── 1. Auto-checkout open check-ins ───────────────────────────────────────
-    co = requests.patch(
-        f"{SUPABASE_URL}/rest/v1/{CHECKINS_TABLE}"
-        f"?date=eq.{today}&checked_out_at=is.null",
-        json={"checked_out_at": checkout_time, "auto_checkout": True},
-        headers={**sb_headers(), "Prefer": "return=representation"}
-    )
-    checked_out = len(co.json()) if co.ok and co.json() else 0
+    # ── 1. Auto-checkout open check-ins (today AND yesterday) ────────────────
+    checked_out = 0
+    for target_date in [yesterday, today]:
+        checkout_time = target_date + "T23:00:00"
+        co = requests.patch(
+            f"{SUPABASE_URL}/rest/v1/{CHECKINS_TABLE}"
+            f"?date=eq.{target_date}&checked_out_at=is.null",
+            json={"checked_out_at": checkout_time, "auto_checkout": True},
+            headers={**sb_headers(), "Prefer": "return=representation"}
+        )
+        if co.ok and co.json():
+            checked_out += len(co.json())
 
     # ── 2. Mark absent — workers with zero check-ins today ───────────────────
     # Get all active workers
