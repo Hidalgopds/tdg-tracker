@@ -588,6 +588,7 @@ function timeAgo(iso){
         <input type="time" id="smBulkTime" style="padding:5px 8px;border:1px solid #334155;border-radius:8px;background:#0f172a;color:#e2e8f0;font-size:13px;">
         <button onclick="allCheckIn()" style="padding:6px 14px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✓ All Check In</button>
         <button onclick="allCheckOut()" style="padding:6px 14px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✗ All Check Out</button>
+        <button onclick="openManualCheckin()" style="padding:6px 14px;background:#d97706;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">⏱ Manual Check-In</button>
         <span id="smBulkStatus" style="font-size:12px;color:#60a5fa;"></span>
       </div>
 
@@ -1975,6 +1976,35 @@ if(curUser){ showMain(); }
   setInterval(_upd,60000);
 })();
 </script>
+<!-- ── Manual Check-In Modal (Boss/Admin) ────────────────────────────── -->
+<div id="manualCheckinModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#0f172a;border:1px solid #d97706;border-radius:14px;padding:24px;max-width:400px;width:93%;box-shadow:0 8px 32px rgba(0,0,0,.6);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div style="font-size:15px;font-weight:700;color:#f59e0b;">⏱ Manual Check-In</div>
+      <button onclick="closeManualCheckin()" style="background:none;border:none;color:#64748b;font-size:20px;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <p style="font-size:12px;color:#94a3b8;margin:0 0 16px;">Use when a worker arrived late and wasn't checked in through the kiosk.</p>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Worker</label>
+      <select id="mcWorker" style="width:100%;padding:9px 12px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:14px;">
+        <option value="">— Select worker —</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:12px;">
+      <div style="flex:1;">
+        <label style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Date</label>
+        <input type="date" id="mcDate" style="width:100%;padding:9px 12px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:14px;">
+      </div>
+      <div style="flex:1;">
+        <label style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Arrived at</label>
+        <input type="time" id="mcTime" style="width:100%;padding:9px 12px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:14px;">
+      </div>
+    </div>
+    <div id="mcStatus" style="font-size:12px;color:#ef4444;margin-bottom:10px;display:none;"></div>
+    <button onclick="submitManualCheckin()" style="width:100%;padding:12px;background:#d97706;color:#000;border:none;border-radius:9px;font-size:14px;font-weight:800;cursor:pointer;">Check In Worker</button>
+  </div>
+</div>
+
 <!-- ── Edit Attendance Modal ─────────────────────────────────────────── -->
 <div id="editAttModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center;">
   <div style="background:#0f172a;border:1px solid #1e3a5f;border-radius:14px;padding:24px;max-width:420px;width:93%;box-shadow:0 8px 32px rgba(0,0,0,.6);">
@@ -2323,6 +2353,60 @@ async function loadMyTeam(){
     }
   });
 })();
+
+// ── Manual Check-In (Boss/Admin) ─────────────────────────────────────────────
+function openManualCheckin(){
+  var modal = document.getElementById('manualCheckinModal');
+  // Populate worker dropdown from smWorkers
+  var sel = document.getElementById('mcWorker');
+  sel.innerHTML = '<option value="">— Select worker —</option>';
+  var names = smWorkers.map(function(w){ return w.name; }).sort();
+  names.forEach(function(n){
+    var o = document.createElement('option');
+    o.value = n; o.textContent = n;
+    sel.appendChild(o);
+  });
+  // Default date = today, time = now
+  var now = new Date();
+  document.getElementById('mcDate').value = now.toISOString().slice(0,10);
+  document.getElementById('mcTime').value =
+    String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('mcStatus').style.display = 'none';
+  modal.style.display = 'flex';
+}
+function closeManualCheckin(){
+  document.getElementById('manualCheckinModal').style.display = 'none';
+}
+async function submitManualCheckin(){
+  var worker = document.getElementById('mcWorker').value;
+  var date   = document.getElementById('mcDate').value;
+  var time   = document.getElementById('mcTime').value;
+  var status = document.getElementById('mcStatus');
+  status.style.display = 'none';
+  if(!worker){ status.textContent='Please select a worker.'; status.style.display='block'; return; }
+  if(!time)  { status.textContent='Please enter the arrival time.'; status.style.display='block'; return; }
+  var caller = localStorage.getItem('mbrAuth') || '';
+  try {
+    var r = await fetch('/api/checkin/manual', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({caller_name:caller, worker_name:worker, checked_in_at:time, date:date})
+    });
+    var d = await r.json();
+    if(d.ok){
+      closeManualCheckin();
+      showToast('✓ ' + worker + ' checked in at ' + time);
+      // Refresh safety meeting view
+      if(typeof loadSafetyMeeting === 'function') loadSafetyMeeting();
+    } else {
+      status.textContent = d.error || 'Check-in failed.';
+      status.style.display = 'block';
+    }
+  } catch(e) {
+    status.textContent = 'Network error.';
+    status.style.display = 'block';
+  }
+}
 </script>
 </body>
 </html>

@@ -11,11 +11,14 @@ import uuid
 
 # ── Kiosk IP restriction ─────────────────────────────────────────────────────
 KIOSK_PASS = os.environ.get("KIOSK_ADMIN_PASS", "MBR2026admin")
-KIOSK_IPS = set(
+# KIOSK_IPS supports exact IPs and prefix patterns (e.g. "174.202." matches
+# any IP starting with that prefix). Comma-separated. Set in Render env vars.
+# Using a prefix like "174.202." handles dynamic IPs from the same ISP.
+KIOSK_IPS_RAW = [
     ip.strip() for ip in
-    os.environ.get("KIOSK_IPS", "174.202.224.245").split(",")
+    os.environ.get("KIOSK_IPS", "174.202.").split(",")
     if ip.strip()
-)
+]
 
 def get_client_ip():
     """Real client IP, accounting for Render's reverse proxy."""
@@ -25,10 +28,21 @@ def get_client_ip():
     return request.remote_addr or ""
 
 def kiosk_allowed():
-    """Returns True if request is from an allowed kiosk IP or bypass key matches."""
+    """Returns True if request is from an allowed kiosk IP or bypass key matches.
+    Supports exact IP match and prefix match (entry ending in '.').
+    """
     ip = get_client_ip()
-    if ip in KIOSK_IPS or ip == "127.0.0.1":
+    if ip == "127.0.0.1":
         return True
+    for pattern in KIOSK_IPS_RAW:
+        if pattern.endswith("."):
+            # Prefix match — e.g. "174.202." matches "174.202.x.x"
+            if ip.startswith(pattern):
+                return True
+        else:
+            # Exact match
+            if ip == pattern:
+                return True
     # Admin bypass: ?key=KIOSK_BYPASS_KEY (set in Render env vars)
     bypass = os.environ.get("KIOSK_BYPASS_KEY", "")
     if bypass and request.args.get("key") == bypass:
@@ -746,6 +760,65 @@ def api_checkout(checkin_id):
     if r.ok:
         return jsonify({"ok": True})
     return jsonify({"error": r.text}), 400
+
+@app.route("/api/checkin/manual", methods=["POST"])
+def api_manual_checkin():
+    """Boss/Admin: create a check-in for a worker with a specified time.
+    Used when a worker arrives late and needs to be checked in manually.
+    Body: { caller_name, worker_name, checked_in_at (HH:MM 24h), date (YYYY-MM-DD, optional) }
+    """
+    data = request.get_json() or {}
+    caller = data.get("caller_name", "").strip()
+    if not _verify_caller_is_admin(caller):
+        return jsonify({"error": "Admin access required"}), 403
+
+    worker_name = data.get("worker_name", "").strip()
+    time_str    = data.get("checked_in_at", "").strip()  # "HH:MM"
+    if not worker_name or not time_str:
+        return jsonify({"error": "worker_name and checked_in_at required"}), 400
+
+    import datetime as dt
+    target_date = data.get("date") or dt.date.today().isoformat()
+
+    # Build full ISO timestamp (treat as CDT = UTC-5)
+    try:
+        h, m = [int(x) for x in time_str.split(":")]
+        # Store as UTC: CDT is UTC-5, so add 5 hours
+        dt_cdt = dt.datetime(
+            *[int(p) for p in target_date.split("-")], h, m, 0
+        )
+        dt_utc = dt_cdt + dt.timedelta(hours=5)
+        checked_in_iso = dt_utc.strftime("%Y-%m-%dT%H:%M:%S")
+    except Exception as e:
+        return jsonify({"error": f"Invalid time format: {e}"}), 400
+
+    # Check for existing open check-in for this worker today
+    existing = requests.get(
+        f"{SUPABASE_URL}/rest/v1/{CHECKINS_TABLE}"
+        f"?worker_name=eq.{requests.utils.quote(worker_name)}"
+        f"&date=eq.{target_date}&checked_out_at=is.null&select=id&limit=1",
+        headers=sb_headers(), timeout=5
+    )
+    if existing.ok and existing.json():
+        return jsonify({"error": f"{worker_name} already has an open check-in today."}), 409
+
+    row = {
+        "worker_name":    worker_name,
+        "date":           target_date,
+        "checked_in_at":  checked_in_iso,
+        "position":       data.get("position", "Manual"),
+        "manual_entry":   True,
+        "entered_by":     caller,
+    }
+    r = requests.post(
+        f"{SUPABASE_URL}/rest/v1/{CHECKINS_TABLE}",
+        json=row,
+        headers={**sb_headers(), "Prefer": "return=representation"},
+        timeout=8
+    )
+    if r.ok:
+        return jsonify({"ok": True, "checkin": r.json()[0] if r.json() else {}})
+    return jsonify({"ok": False, "error": r.text}), 400
 
 @app.route("/api/active-checkins", methods=["GET"])
 def api_active_checkins():
