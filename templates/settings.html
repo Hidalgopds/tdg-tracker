@@ -1466,10 +1466,11 @@ function saveResetPw() {
   err.style.display = 'none';
   if (!pw || pw.length < 4) { err.textContent = 'Password must be at least 4 characters.'; err.style.display = 'block'; return; }
   if (pw !== pw2)            { err.textContent = 'Passwords do not match.'; err.style.display = 'block'; return; }
+  var _caller = localStorage.getItem('mbrAuth') || '';
   fetch('/api/reset-password', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({name: resetPwTarget, password: pw})
+    body: JSON.stringify({name: resetPwTarget, password: pw, caller_name: _caller})
   }).then(function(r){return r.json();}).then(function(d){
     if(d.ok){ closeModal('resetPwModal'); showToast('Password updated ✓'); }
     else { err.textContent = d.error || 'Failed to reset password.'; err.style.display = 'block'; }
@@ -1823,6 +1824,31 @@ function copyRegUrl(){
     showToast('Link copied!');
   }).catch(function(){
     prompt('Copy this link:', url);
+  });
+}
+
+// ── Force logout all users ──────────────────────────────────────────────────
+function forceLogoutAll() {
+  var caller = localStorage.getItem('mbrAuth') || '';
+  if (!caller) { showToast('Not logged in', true); return; }
+  var status = document.getElementById('forceLogoutStatus');
+  status.style.display = 'block';
+  status.textContent = 'Working…';
+  fetch('/api/admin/force-logout', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({caller_name: caller})
+  }).then(function(r){ return r.json(); }).then(function(d) {
+    if (d.ok) {
+      status.style.color = '#22c55e';
+      status.textContent = '✓ All users logged out. Session version updated.';
+    } else {
+      status.style.color = '#ef4444';
+      status.textContent = d.error || 'Failed to force logout.';
+    }
+  }).catch(function() {
+    status.style.color = '#ef4444';
+    status.textContent = 'Network error.';
   });
 }
 </script>

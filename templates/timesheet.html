@@ -989,7 +989,7 @@ var _ymInterval = null;
 function exportLocationPDF(){
   var picker = document.getElementById('ym-date-picker');
   var d = picker && picker.value ? picker.value : new Date().toISOString().slice(0,10);
-  window.open('/api/reports/location-history?date='+d, '_blank');
+  var _adminName = encodeURIComponent(localStorage.getItem('mbrAuth')||''); window.open('/api/reports/location-history?date='+d+'&admin='+_adminName, '_blank');
 }
 function loadYardMap(){
   var picker = document.getElementById('ym-date-picker');

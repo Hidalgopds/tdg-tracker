@@ -54,6 +54,41 @@ SMTP_EMAIL    = os.environ.get("SMTP_EMAIL", "")
 SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
 ADMIN_EMAIL   = os.environ.get("ADMIN_EMAIL", "dshidalgop@gmail.com")
 
+# ── Admin secret (machine-to-machine auth for destructive endpoints) ──
+CRON_SECRET = os.environ.get("CRON_SECRET", "")
+
+def require_admin_secret():
+    """Guard for machine-to-machine admin endpoints.
+    Accepts secret via X-Admin-Secret header OR ?key= query param
+    (query param allows browser access to HTML-form endpoints).
+    Returns 403 if secret is missing or wrong.
+    """
+    provided = (request.headers.get("X-Admin-Secret", "")
+                or request.args.get("key", ""))
+    if not CRON_SECRET or provided != CRON_SECRET:
+        from flask import abort
+        abort(403)
+
+def _verify_caller_is_admin(name):
+    """Check that name is an approved admin or boss in app_users.
+    Used to authenticate frontend-initiated admin actions where the
+    caller sends their logged-in name in the request body.
+    """
+    if not name:
+        return False
+    r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/app_users"
+        f"?name=eq.{requests.utils.quote(str(name))}"
+        f"&approved=eq.true&select=role&limit=1",
+        headers=sb_headers(), timeout=5
+    )
+    if not r.ok:
+        return False
+    users = r.json()
+    if not users:
+        return False
+    return (users[0].get("role") or "").lower() in ("admin", "boss")
+
 def send_registration_email(to_email, name, username, role="worker"):
     if not SMTP_EMAIL or not SMTP_PASSWORD:
         return  # Not configured — skip silently
@@ -341,6 +376,9 @@ def pending_users():
 def admin_reset_password():
     """Admin resets any user's password."""
     data = request.get_json() or {}
+    caller = data.get("caller_name", "").strip()
+    if not _verify_caller_is_admin(caller):
+        return jsonify({"error": "Admin access required"}), 403
     target_name = data.get("name","").strip()
     new_pw      = data.get("password","").strip()
     if not target_name or not new_pw:
@@ -753,6 +791,7 @@ def api_checkin_by_name():
 
 @app.route("/admin/fix-periods", methods=["GET","POST"])
 def admin_fix_periods():
+    require_admin_secret()
     """
     One-time fix: assign AM/PM to records that have null or empty period.
     Houston = CDT = UTC-5. Cutoff: noon CDT = 17:00 UTC → PM.
@@ -1023,6 +1062,7 @@ def unit_log(position):
 
 @app.route("/admin/wipe", methods=["GET", "POST"])
 def admin_wipe():
+    require_admin_secret()
     if request.method == "GET":
         return """<!DOCTYPE html><html><head><title>Admin - Wipe Logs</title>
         <style>body{background:#0d1117;color:#e2e8f0;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:20px;}
@@ -2805,6 +2845,10 @@ def get_session_version():
 # ── Force logout all sessions (Admin) ────────────────────────────────────────
 @app.route("/api/admin/force-logout", methods=["POST"])
 def force_logout_all():
+    data = request.get_json() or {}
+    caller = data.get("caller_name", "").strip()
+    if not _verify_caller_is_admin(caller):
+        return jsonify({"error": "Admin access required"}), 403
     import time
     new_ver = str(int(time.time()))
     requests.patch(
@@ -2862,9 +2906,11 @@ def location_page():
 def section_b_map():
     return render_template("sectionb.html")
 
-# ── Location history PDF report ───────────────────────────────────────────────
-@app.route("/api/reports/location-history")
-def location_history_pdf():
+# ── Location history PDF — standalone builder (usable without HTTP) ─────────
+def build_location_pdf(target_date=None):
+    """Build and return a BytesIO PDF for the given date (defaults to today).
+    Called by the HTTP route AND by the nightly APScheduler job.
+    """
     from datetime import datetime, timezone, date as dt_date
     from reportlab.lib.pagesizes import letter
     from reportlab.pdfgen import canvas as rl_canvas
@@ -2872,7 +2918,8 @@ def location_history_pdf():
     from reportlab.lib.units import inch
     import io as _io
 
-    target_date = request.args.get("date", dt_date.today().isoformat())
+    if target_date is None:
+        target_date = dt_date.today().isoformat()
 
     # Fetch history for the date
     r = requests.get(
@@ -2944,12 +2991,10 @@ def location_history_pdf():
             y = draw_col_headers(y)
 
         ts = row.get("recorded_at","")
-        # Convert UTC to CT (UTC-5 or -6; use -5 for CDT)
         try:
             from datetime import date, datetime, timezone
             dt_utc = datetime.fromisoformat(ts.replace("Z","+00:00"))
             dt_ct  = dt_utc.replace(tzinfo=None)
-            # rough CT offset
             time_str = dt_ct.strftime("%I:%M:%S %p")
         except:
             time_str = ts[11:19] if len(ts) > 18 else ts
@@ -2978,6 +3023,27 @@ def location_history_pdf():
 
     c.save()
     buf.seek(0)
+    return buf, target_date, len(rows)
+
+
+# ── Location history PDF route ───────────────────────────────────────────────
+@app.route("/api/reports/location-history")
+def location_history_pdf():
+    # Auth: accept CRON_SECRET (machine) OR verified admin name (?admin=name)
+    cron_provided = request.headers.get("X-Admin-Secret", "") or request.args.get("key", "")
+    if cron_provided:
+        if not CRON_SECRET or cron_provided != CRON_SECRET:
+            from flask import abort
+            abort(403)
+    else:
+        admin_name = request.args.get("admin", "").strip()
+        if not _verify_caller_is_admin(admin_name):
+            from flask import abort
+            abort(403)
+
+    from datetime import date as dt_date
+    target_date = request.args.get("date", dt_date.today().isoformat())
+    buf, target_date, _ = build_location_pdf(target_date)
     from flask import send_file
     return send_file(
         buf,
@@ -2987,11 +3053,113 @@ def location_history_pdf():
     )
 
 # ── Reset worker locations (Admin/Boss, or scheduled) ────────────────────────
-@app.route("/api/admin/reset-locations", methods=["POST"])
-def reset_locations():
+def _do_reset_locations():
+    """Direct Python call — no auth check, used by APScheduler and HTTP route."""
     r = requests.delete(
         f"{SUPABASE_URL}/rest/v1/worker_locations?worker_name=neq.PLACEHOLDER",
         headers={**sb_headers(), "Prefer": "return=minimal"},
         timeout=10
     )
-    return jsonify({"ok": r.ok})
+    return r.ok
+
+@app.route("/api/admin/reset-locations", methods=["POST"])
+def reset_locations():
+    require_admin_secret()
+    ok = _do_reset_locations()
+    return jsonify({"ok": ok})
+
+# ── /health — lightweight keep-alive endpoint ────────────────────────────────
+@app.route("/health")
+def health():
+    return jsonify({"ok": True}), 200
+
+# ── Nightly APScheduler job ───────────────────────────────────────────────────
+def _nightly_report_and_reset():
+    """Runs at 22:00 America/Chicago every day.
+    1. Generates today's location-movement PDF in-process.
+    2. Emails it to ADMIN_EMAIL as an attachment.
+    3. Clears the worker_locations table for the next day.
+    No HTTP round-trips — everything runs in-process.
+    """
+    import datetime as dt
+    import smtplib
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+    from email.mime.base import MIMEBase
+    from email import encoders
+
+    today = dt.date.today().isoformat()
+    print(f"[APScheduler] nightly_report_and_reset starting for {today}")
+
+    # 1. Build PDF
+    try:
+        buf, report_date, row_count = build_location_pdf(today)
+        pdf_bytes = buf.getvalue()
+        print(f"[APScheduler] PDF built — {row_count} movements for {report_date}")
+    except Exception as e:
+        print(f"[APScheduler] PDF generation failed: {e}")
+        pdf_bytes = None
+        report_date = today
+        row_count = 0
+
+    # 2. Email PDF to admin
+    if SMTP_EMAIL and SMTP_PASSWORD and ADMIN_EMAIL:
+        try:
+            msg = MIMEMultipart()
+            msg["Subject"] = f"MBR Texas — Location Report {report_date}"
+            msg["From"]    = SMTP_EMAIL
+            msg["To"]      = ADMIN_EMAIL
+
+            body_html = f"""
+            <div style="font-family:Arial,sans-serif;max-width:520px;background:#0f1117;color:#e2e8f0;padding:28px;border-radius:12px;">
+              <div style="background:#1a6bc4;width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;margin-bottom:16px;font-size:16px;">MBR</div>
+              <h2 style="margin:0 0 6px;">Location Report — {report_date}</h2>
+              <p style="color:#94a3b8;font-size:14px;margin:0 0 16px;">
+                {row_count} worker movements recorded today on the TDG Data Center project.
+                The full report is attached as a PDF.
+              </p>
+              <p style="color:#64748b;font-size:12px;">Worker location table has been cleared for tomorrow.</p>
+            </div>"""
+            msg.attach(MIMEText(body_html, "html"))
+
+            if pdf_bytes:
+                part = MIMEBase("application", "octet-stream")
+                part.set_payload(pdf_bytes)
+                encoders.encode_base64(part)
+                part.add_header(
+                    "Content-Disposition",
+                    f'attachment; filename="Location_Report_{report_date}.pdf"'
+                )
+                msg.attach(part)
+
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=15) as srv:
+                srv.login(SMTP_EMAIL, SMTP_PASSWORD)
+                srv.sendmail(SMTP_EMAIL, [ADMIN_EMAIL], msg.as_string())
+            print(f"[APScheduler] Report emailed to {ADMIN_EMAIL}")
+        except Exception as e:
+            print(f"[APScheduler] Email failed: {e}")
+    else:
+        print("[APScheduler] Email skipped — SMTP not configured")
+
+    # 3. Reset locations table
+    ok = _do_reset_locations()
+    print(f"[APScheduler] Location table reset: {'OK' if ok else 'FAILED'}")
+
+
+# Start APScheduler (gunicorn --workers=1 ensures this fires exactly once)
+try:
+    from apscheduler.schedulers.background import BackgroundScheduler
+    from apscheduler.triggers.cron import CronTrigger
+    import pytz
+    _scheduler = BackgroundScheduler(timezone=pytz.timezone("America/Chicago"))
+    _scheduler.add_job(
+        _nightly_report_and_reset,
+        CronTrigger(hour=22, minute=0, timezone=pytz.timezone("America/Chicago")),
+        id="nightly_report_reset",
+        replace_existing=True,
+        misfire_grace_time=3600  # fire up to 1 hr late if server was sleeping
+    )
+    _scheduler.start()
+    print("[APScheduler] Nightly job scheduled at 22:00 America/Chicago")
+except Exception as _e:
+    print(f"[APScheduler] Failed to start scheduler: {_e}")
