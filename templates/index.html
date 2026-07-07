@@ -18,7 +18,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .primary-actions { display: flex; gap: 6px; margin-left: auto; align-items: center; }
 .top-bar-details { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px 12px 8px; border-top: 1px solid #1e2d3d; }
 .top-bar-details.hidden { display: none; }
-.detail-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.detail-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+.clear-btn { height: 32px; padding: 0 14px; background: #3b1a1a; border: 1px solid #7f1d1d; border-radius: 7px; color: #f87171; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.clear-btn:hover { background: #4c1f1f; border-color: #ef4444; color: #fca5a5; }
 @media (max-width: 768px) {
   .top-bar-primary { gap: 6px; padding: 6px 10px; }
   .unit-select { font-size: 17px !important; width: 88px !important; }
@@ -504,10 +506,6 @@ button.fill-all-btn{height:28px !important;font-size:11px !important;padding:3px
     <button class="details-toggle" id="detailsToggle" onclick="toggleDetails()" title="Show/hide form fields">
       <span id="detailsArrow">▼</span> <span id="detailsLabel">Details</span>
     </button>
-    <div class="primary-actions">
-      <button class="submit-btn" id="submitBtn" onclick="submitAll()">Submit Update</button>
-      <button class="sent-btn" id="sentBtn" onclick="markUnitSent()" title="Archive this unit and download report">✓ Unit Sent</button>
-    </div>
   </div>
 
   <!-- DETAILS ROW: collapsible -->
@@ -546,9 +544,11 @@ button.fill-all-btn{height:28px !important;font-size:11px !important;padding:3px
       <input type="text" class="ctrl" id="buildingNo" placeholder="#" style="width:65px">
     </div>
     <div class="detail-actions">
-      <button class="issue-btn" id="issueBtn" onclick="openIssues()" title="Log an issue for this unit">&#9888; Create Issue</button>
-      <a href="/migrate" class="issue-btn" title="Migrate unit A→B" style="text-decoration:none;display:inline-flex;align-items:center">&#8644; Migrate</a>
       <button class="submit-btn" id="repeatBtn" onclick="repeatLastReport()" style="background:#0f766e;" title="Copy previous % values into inputs">📋 Repeat Last</button>
+      <a href="/migrate" class="issue-btn" title="Migrate unit A→B" style="text-decoration:none;display:inline-flex;align-items:center">&#8644; Migrate</a>
+      <button class="clear-btn" onclick="clearAll()" title="Clear all fields and free this unit">✕ Clear All</button>
+      <button class="submit-btn" id="submitBtn" onclick="submitAll()">Submit Update</button>
+      <button class="sent-btn" id="sentBtn" onclick="markUnitSent()" title="Archive this unit and download report">✓ Unit Sent</button>
     </div>
   </div>
 </div>
@@ -1165,6 +1165,13 @@ function openIssues() {
   if (!unit) { alert('Select a unit first.'); return; }
   window.location.href = '/issues/' + encodeURIComponent(unit);
 }
+function clearAll() {
+  if (!confirm('Clear all fields and free the unit?')) return;
+  document.getElementById('unit').value = '';
+  loadPrevious();
+  document.getElementById('statusBar').textContent = 'Unit cleared — select a unit to continue.';
+}
+
 function toggleDetails() {
   var panel = document.getElementById('topBarDetails');
   var btn   = document.getElementById('detailsToggle');
