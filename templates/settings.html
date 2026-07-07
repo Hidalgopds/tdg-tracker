@@ -434,7 +434,7 @@ function loadNotifications(){
       list.innerHTML = notifs.map(function(n){
         var ago = timeAgo(n.created_at);
         var readBtn = !n.read
-          ? '<button class="np-read-btn" onclick="markRead('+n.id+');event.stopPropagation()">Read</button>'
+          ? '<button class="np-read-btn" onclick="markRead(\''+n.id+'\');event.stopPropagation()">Read</button>'
           : '';
         return '<div class="np-item '+(n.read?'read':'unread')+'" data-notif-id="'+n.id+'">'
           +'<div class="np-title">'+escHtml(n.title)+'</div>'
@@ -1397,8 +1397,8 @@ function showToast(msg,err){var t=document.getElementById('toast');t.textContent
     if(cBtn) cBtn.classList.add('active');
     var cPanel = document.getElementById('tab-contractor');
     if(cPanel) cPanel.classList.add('active');
-    // Load contractor area
-    loadContractorArea();
+    // Load contractor area (deferred: function lives in a later <script> block)
+    setTimeout(function(){loadContractorArea();},0);
     // Failsafe: set name/avatar immediately without waiting for async
     (function(){
       var av2 = document.getElementById('ca-avatar');
@@ -1418,7 +1418,7 @@ function showToast(msg,err){var t=document.getElementById('toast');t.textContent
     var ab=document.getElementById('addUserBtn'); if(ab) ab.style.display='none';
     var nas = document.getElementById('notifAdminSection');
     if(nas) nas.style.display = 'block';
-    loadContractorArea();
+    setTimeout(function(){loadContractorArea();},0);
   } else {
     // Admin: full access
     loadUsers(); loadWorkers(); loadPerms(); setThisWeek();
@@ -1426,7 +1426,7 @@ function showToast(msg,err){var t=document.getElementById('toast');t.textContent
     if(nas) nas.style.display = 'block';
     var fls = document.getElementById('forceLogoutSection');
     if(fls) fls.style.display = 'block';
-    loadContractorArea();
+    setTimeout(function(){loadContractorArea();},0);
   }
 })();
 </script>
@@ -1892,5 +1892,4 @@ function forceLogoutAll() {
   <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:340px;max-width:90vw;">
     <h3 style="margin-bottom:16px;font-size:16px;">🔑 Change Password</h3>
     <div style="margin-bottom:12px;">
-      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:5px;">Current Password</label>
-      <input id="cp-current" type="password" placeholder="Curr
+      <label style="font-size:12px;co
