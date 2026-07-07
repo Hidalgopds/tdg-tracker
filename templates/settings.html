@@ -643,24 +643,8 @@ function timeAgo(iso){
   <!-- ═══ HOURS ═══ -->
   <div id="tab-hours" class="tab-panel">
 
-    <!-- Worker Summary (30-day rolling) -->
-    <div class="section-card" style="margin-bottom:20px;">
-      <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;">
-        <h3>Worker Hours Summary <span id="hrs-range-label" style="font-size:12px;font-weight:400;color:var(--muted);margin-left:8px;"></span></h3>
-        <div style="display:flex;gap:8px;">
-          <button class="btn btn-ghost btn-sm" onclick="loadSummary(7)">7 days</button>
-          <button class="btn btn-ghost btn-sm" onclick="loadSummary(14)">14 days</button>
-          <button class="btn btn-ghost btn-sm" onclick="loadSummary(30)" id="sumBtn30">30 days</button>
-        </div>
-      </div>
-      <table>
-        <thead><tr><th>Worker</th><th style="text-align:center">Days</th><th style="text-align:center">Total Hours</th><th>Last Seen</th></tr></thead>
-        <tbody id="summaryBody"><tr><td colspan="4" style="color:var(--muted);text-align:center;padding:24px;">Loading...</td></tr></tbody>
-      </table>
-    </div>
-
     <!-- Weekly Detail -->
-    <div class="section-card">
+    <div class="section-card" style="margin-bottom:20px;">
       <div class="section-header"><h3>Weekly Detail</h3></div>
       <div class="week-picker">
         <div>
@@ -680,11 +664,25 @@ function timeAgo(iso){
         <div class="summary-card"><div class="val" id="h-workers">—</div><div class="lbl">Workers</div></div>
         <div class="summary-card"><div class="val" id="h-days">—</div><div class="lbl">Days w/ Data</div></div>
       </div>
-
-
       <table>
         <thead><tr><th>Worker</th><th>Unit</th><th>Date</th><th>In</th><th>Out</th><th>Hours</th></tr></thead>
         <tbody id="hoursBody"><tr><td colspan="6" style="color:var(--muted);text-align:center;padding:24px;">Select a week above</td></tr></tbody>
+      </table>
+    </div>
+
+    <!-- Worker Summary (30-day rolling) -->
+    <div class="section-card">
+      <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <h3>Worker Hours Summary <span id="hrs-range-label" style="font-size:12px;font-weight:400;color:var(--muted);margin-left:8px;"></span></h3>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost btn-sm" onclick="loadSummary(7)">7 days</button>
+          <button class="btn btn-ghost btn-sm" onclick="loadSummary(14)">14 days</button>
+          <button class="btn btn-ghost btn-sm" onclick="loadSummary(30)" id="sumBtn30">30 days</button>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Worker</th><th style="text-align:center">Days</th><th style="text-align:center">Total Hours</th><th>Last Seen</th></tr></thead>
+        <tbody id="summaryBody"><tr><td colspan="4" style="color:var(--muted);text-align:center;padding:24px;">Loading...</td></tr></tbody>
       </table>
     </div>
 
