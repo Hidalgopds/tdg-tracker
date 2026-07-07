@@ -5,7 +5,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import date, datetime, timezone, timedelta
-from flask import Flask, request, jsonify, render_template, Response
+from flask import Flask, request, jsonify, render_template, Response, session
 import requests
 import uuid
 
@@ -28,9 +28,15 @@ def get_client_ip():
     return request.remote_addr or ""
 
 def kiosk_allowed():
-    """Returns True if request is from an allowed kiosk IP or bypass key matches.
+    """Returns True if request is from an allowed kiosk IP, bypass key, or admin session.
     Supports exact IP match and prefix match (entry ending in '.').
     """
+    # Session bypass: set when admin password is used to unlock /tablet
+    try:
+        if session.get('kiosk_bypass'):
+            return True
+    except RuntimeError:
+        pass  # Outside request context (e.g. scheduler)
     ip = get_client_ip()
     if ip == "127.0.0.1":
         return True
@@ -149,6 +155,7 @@ def send_registration_email(to_email, name, username, role="worker"):
         print(f"[Email] Error: {e}")
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "mbr-kiosk-2026")
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
@@ -2496,6 +2503,8 @@ button{{background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:10px
   <button type="submit">Unlock</button>
 </form>
 </body></html>""", 403
+    # Mark session as bypass-authorized so API calls (by-pin, etc.) also pass kiosk_allowed()
+    session['kiosk_bypass'] = True
     return render_template("tablet.html")
 
 @app.route("/api/config/<key>", methods=["GET"])
