@@ -8,7 +8,24 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; overflow: hidden; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1923; color: #e8edf2; display: flex; flex-direction: column; }
-.top-bar { background: #162030; border-bottom: 2px solid #1e2d3d; padding: 8px 12px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.top-bar { background: #162030; border-bottom: 2px solid #1e2d3d; flex-shrink: 0; display: flex; flex-direction: column; }
+.top-bar-primary { display: flex; align-items: center; gap: 8px; padding: 8px 12px; flex-wrap: nowrap; }
+.unit-group { gap: 6px; }
+.unit-select { width: 80px !important; font-size: 15px !important; font-weight: 700 !important; height: 38px !important; }
+.details-toggle { height: 34px; padding: 0 12px; background: #1a2d42; border: 1px solid #2a3d52; border-radius: 7px; color: #6b9fc4; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 5px; }
+.details-toggle:hover { background: #1e3650; color: #4da3ff; }
+.details-toggle.open { background: #1a3a5c; border-color: #1a6bc4; color: #4da3ff; }
+.primary-actions { display: flex; gap: 6px; margin-left: auto; align-items: center; }
+.top-bar-details { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px 12px 8px; border-top: 1px solid #1e2d3d; }
+.top-bar-details.hidden { display: none; }
+.detail-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+@media (max-width: 768px) {
+  .top-bar-primary { gap: 6px; padding: 6px 10px; }
+  .unit-select { font-size: 17px !important; width: 88px !important; }
+  .details-toggle { font-size: 13px; }
+  .top-bar-details { gap: 8px; }
+  .detail-actions { margin-left: 0; margin-top: 4px; flex-wrap: wrap; }
+}
 .home-btn { width: 32px; height: 32px; background: #1a6bc4; border-radius: 7px; display: flex; align-items: center; justify-content: center; text-decoration: none; color: white; font-size: 16px; flex-shrink: 0; }
 .home-btn:hover { background: #1558a0; }
 .ctrl-group { display: flex; align-items: center; gap: 5px; }
@@ -317,12 +334,9 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 /* Log page — light theme, readable outdoors */
 body{background:#f0f4f8 !important;color:#0f172a !important;}
 /* TOP BAR: white background, dark text — maximum outdoor readability */
-.top-bar{
-  background:#ffffff !important;
-  border-bottom:2px solid #cbd5e1 !important;
-  padding:10px 14px !important;
-  gap:10px !important;
-}
+.top-bar{background:#ffffff !important;border-bottom:2px solid #cbd5e1 !important;}
+.top-bar-primary{padding:8px 12px !important;gap:10px !important;}
+.top-bar-details{border-top:1px solid #e2e8f0 !important;}
 .ctrl-label{color:#475569 !important;font-size:10px !important;}
 select.ctrl,input.ctrl{
   background:#f8fafc !important;border-color:#cbd5e1 !important;
@@ -461,68 +475,82 @@ button.fill-all-btn{height:28px !important;font-size:11px !important;padding:3px
 </div>
 
 <div class="top-bar">
-  <a href="/" class="home-btn" title="Home">&#127968;</a>
-  <div class="ctrl-group">
-    <span class="ctrl-label">Unit</span>
-    <select class="ctrl" id="unit" style="width:76px" onchange="loadPrevious()">
-      <option value="">-</option>
-      <optgroup label="A Series">
-        <option>01A</option><option>02A</option><option>03A</option>
-        <option>04A</option><option>05A</option><option>06A</option>
-        <option>07A</option><option>08A</option><option>09A</option><option>10A</option>
-      </optgroup>
-      <optgroup label="B Series">
-        <option>01B</option><option>02B</option><option>03B</option>
-        <option>04B</option><option>05B</option><option>06B</option>
-        <option>07B</option><option>08B</option><option>09B</option>
-        <option>10B</option><option>11B</option><option>12B</option>
-        <option>13B</option><option>14B</option><option>15B</option>
-        <option>16B</option><option>17B</option><option>18B</option>
-        <option>19B</option><option>20B</option><option>21B</option>
-        <option>22B</option><option>23B</option><option>24B</option>
-        <option>25B</option><option>26B</option><option>27B</option>
-        <option>28B</option>
-      </optgroup>
-    </select>
-  </div>
-  <div class="ctrl-group">
-    <span class="ctrl-label">Date</span>
-    <input type="date" class="ctrl" id="date" value="{{ today }}" style="width:136px">
-  </div>
-  <div class="ctrl-group">
-    <span class="ctrl-label">Shift</span>
-    <div class="period-row">
-      <button class="period-btn active" data-val="AM" onclick="setPeriod(this)">AM</button>
-      <button class="period-btn"        data-val="PM" onclick="setPeriod(this)">PM</button>
+  <!-- PRIMARY ROW: always visible -->
+  <div class="top-bar-primary">
+    <a href="/" class="home-btn" title="Home">&#127968;</a>
+    <div class="ctrl-group unit-group">
+      <span class="ctrl-label">Unit</span>
+      <select class="ctrl unit-select" id="unit" onchange="loadPrevious()">
+        <option value="">-</option>
+        <optgroup label="A Series">
+          <option>01A</option><option>02A</option><option>03A</option>
+          <option>04A</option><option>05A</option><option>06A</option>
+          <option>07A</option><option>08A</option><option>09A</option><option>10A</option>
+        </optgroup>
+        <optgroup label="B Series">
+          <option>01B</option><option>02B</option><option>03B</option>
+          <option>04B</option><option>05B</option><option>06B</option>
+          <option>07B</option><option>08B</option><option>09B</option>
+          <option>10B</option><option>11B</option><option>12B</option>
+          <option>13B</option><option>14B</option><option>15B</option>
+          <option>16B</option><option>17B</option><option>18B</option>
+          <option>19B</option><option>20B</option><option>21B</option>
+          <option>22B</option><option>23B</option><option>24B</option>
+          <option>25B</option><option>26B</option><option>27B</option>
+          <option>28B</option>
+        </optgroup>
+      </select>
+    </div>
+    <button class="details-toggle" id="detailsToggle" onclick="toggleDetails()" title="Show/hide form fields">
+      <span id="detailsArrow">▼</span> <span id="detailsLabel">Details</span>
+    </button>
+    <div class="primary-actions">
+      <button class="submit-btn" id="submitBtn" onclick="submitAll()">Submit Update</button>
+      <button class="sent-btn" id="sentBtn" onclick="markUnitSent()" title="Archive this unit and download report">✓ Unit Sent</button>
     </div>
   </div>
-  <div class="divider"></div>
-  <div class="ctrl-group">
-    <span class="ctrl-label">TDG No</span>
-    <input type="text" class="ctrl" id="tdgNumber" placeholder="e.g. 14949-52-TX" style="width:130px">
+
+  <!-- DETAILS ROW: collapsible -->
+  <div class="top-bar-details" id="topBarDetails">
+    <div class="ctrl-group">
+      <span class="ctrl-label">Date</span>
+      <input type="date" class="ctrl" id="date" value="{{ today }}" style="width:136px">
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Shift</span>
+      <div class="period-row">
+        <button class="period-btn active" data-val="AM" onclick="setPeriod(this)">AM</button>
+        <button class="period-btn"        data-val="PM" onclick="setPeriod(this)">PM</button>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">TDG No</span>
+      <input type="text" class="ctrl" id="tdgNumber" placeholder="e.g. 14949-52-TX" style="width:130px">
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">MBR No</span>
+      <input type="number" class="ctrl" id="mbrNumber" placeholder="#" style="width:60px" min="1">
+    </div>
+    <div class="skid-group">
+      <input type="checkbox" id="mbrSkid" onchange="toggleSkid(this)">
+      <label for="mbrSkid">MBR Skid</label>
+      <span id="skidRefWrap"><input type="text" id="skidRef" placeholder="Skid #"></span>
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Fase</span>
+      <input type="text" class="ctrl" id="fase" placeholder="A" style="width:55px">
+    </div>
+    <div class="ctrl-group">
+      <span class="ctrl-label">Building No</span>
+      <input type="text" class="ctrl" id="buildingNo" placeholder="#" style="width:65px">
+    </div>
+    <div class="detail-actions">
+      <button class="issue-btn" id="issueBtn" onclick="openIssues()" title="Log an issue for this unit">&#9888; Create Issue</button>
+      <a href="/migrate" class="issue-btn" title="Migrate unit A→B" style="text-decoration:none;display:inline-flex;align-items:center">&#8644; Migrate</a>
+      <button class="submit-btn" id="repeatBtn" onclick="repeatLastReport()" style="background:#0f766e;" title="Copy previous % values into inputs">📋 Repeat Last</button>
+    </div>
   </div>
-  <div class="ctrl-group">
-    <span class="ctrl-label">MBR No</span>
-    <input type="number" class="ctrl" id="mbrNumber" placeholder="#" style="width:60px" min="1">
-  </div>
-  <div class="skid-group">
-    <input type="checkbox" id="mbrSkid" onchange="toggleSkid(this)">
-    <label for="mbrSkid">MBR Skid</label>
-    <span id="skidRefWrap"><input type="text" id="skidRef" placeholder="Skid #"></span>
-  </div>
-  <div class="ctrl-group">
-    <span class="ctrl-label">Fase</span>
-    <input type="text" class="ctrl" id="fase" placeholder="A" style="width:55px">
-  </div>
-  <div class="ctrl-group">
-    <span class="ctrl-label">Building No</span>
-    <input type="text" class="ctrl" id="buildingNo" placeholder="#" style="width:65px">
-  </div>
-  <button class="issue-btn" id="issueBtn" onclick="openIssues()" title="Log an issue for this unit">&#9888; Create Issue</button>
-  <a href="/migrate" class="issue-btn" title="Migrate unit A→B" style="text-decoration:none;display:inline-flex;align-items:center">&#8644; Migrate</a>
-  <button class="submit-btn" id="submitBtn" onclick="submitAll()">Submit Update</button>
-  <button class="submit-btn" id="repeatBtn" onclick="repeatLastReport()" style="background:#0f766e;margin-left:6px;" title="Copy previous % values into inputs">📋 Repeat Last</button>
-  <button class="sent-btn" id="sentBtn" onclick="markUnitSent()" title="Archive this unit and download report">✓ Unit Sent</button>
 </div>
 
 
@@ -1137,7 +1165,41 @@ function openIssues() {
   if (!unit) { alert('Select a unit first.'); return; }
   window.location.href = '/issues/' + encodeURIComponent(unit);
 }
+function toggleDetails() {
+  var panel = document.getElementById('topBarDetails');
+  var btn   = document.getElementById('detailsToggle');
+  var arrow = document.getElementById('detailsArrow');
+  var lbl   = document.getElementById('detailsLabel');
+  var isHidden = panel.classList.toggle('hidden');
+  btn.classList.toggle('open', !isHidden);
+  arrow.textContent = isHidden ? '\u25bc' : '\u25b2';
+  lbl.textContent   = isHidden ? 'Details' : 'Close';
+  localStorage.setItem('logDetailsOpen', isHidden ? '0' : '1');
+}
+
+function initDetailsPanel() {
+  var isMobile = window.innerWidth <= 768;
+  var saved = localStorage.getItem('logDetailsOpen');
+  var shouldOpen = saved !== null ? saved === '1' : !isMobile;
+  var panel = document.getElementById('topBarDetails');
+  var btn   = document.getElementById('detailsToggle');
+  var arrow = document.getElementById('detailsArrow');
+  var lbl   = document.getElementById('detailsLabel');
+  if (!shouldOpen) {
+    panel.classList.add('hidden');
+    btn.classList.remove('open');
+    arrow.textContent = '\u25bc';
+    lbl.textContent   = 'Details';
+  } else {
+    panel.classList.remove('hidden');
+    btn.classList.add('open');
+    arrow.textContent = '\u25b2';
+    lbl.textContent   = 'Close';
+  }
+}
+
 window.addEventListener('DOMContentLoaded', function() {
+  initDetailsPanel();
   // Auto AM/PM based on current hour (>= 12 = PM)
   var h = new Date().getHours();
   var autoPeriod = h >= 12 ? 'PM' : 'AM';
