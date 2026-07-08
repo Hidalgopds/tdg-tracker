@@ -1895,9 +1895,10 @@ def deliver_material_request(req_id):
         return jsonify({"ok": True})
     return jsonify({"error": r.text}), 400
 
+
 @app.route("/api/material-requests/export", methods=["GET"])
 def export_material_requests():
-    """Export material requests as JSON with filters. Frontend converts to Excel/PDF."""
+    """Export material requests with optional filters."""
     filters = []
     if request.args.get("status"):
         filters.append(f"status=eq.{requests.utils.quote(request.args['status'])}")
@@ -1948,14 +1949,12 @@ def set_pin():
     existing = requests.get(f"{url}?name=eq.{requests.utils.quote(name)}&select=role&limit=1", headers=sb_headers())
     existing_rows = existing.json() if existing.ok else []
     if existing_rows:
-        # User already exists — just PATCH the pin
         r = requests.patch(
             f"{url}?name=eq.{requests.utils.quote(name)}",
             headers={**sb_headers(), "Prefer": "return=representation"},
             json={"pin": pin}
         )
     else:
-        # New user — insert with default role
         r = requests.post(
             url,
             headers={**sb_headers(), "Prefer": "return=representation"},
@@ -2488,7 +2487,7 @@ def set_kiosk_pin(worker_id):
 
 @app.route("/api/contractor/profile", methods=["GET"])
 def get_contractor_profile():
-    """Get a user's company from app_users (works for all roles, not just workers table)."""
+    """Get a user's company from app_users (works for all roles)."""
     name = request.args.get("name","").strip()
     if not name:
         return jsonify({"ok": False, "error": "name required"}), 400
@@ -3295,4 +3294,36 @@ def _nightly_report_and_reset():
             <div style="font-family:Arial,sans-serif;max-width:520px;background:#0f1117;color:#e2e8f0;padding:28px;border-radius:12px;">
               <div style="background:#1a6bc4;width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;margin-bottom:16px;font-size:16px;">MBR</div>
               <h2 style="margin:0 0 6px;">Location Report — {report_date}</h2>
-              <p
+              <p style="color:#94a3b8;font-size:14px;margin:0 0 16px;">
+                {row_count} worker movements recorded today on the TDG Data Center project.
+                The full report is attached as a PDF.
+              </p>
+              <p style="color:#64748b;font-size:12px;">Worker location table has been cleared for tomorrow.</p>
+            </div>"""
+            msg.attach(MIMEText(body_html, "html"))
+
+            if pdf_bytes:
+                part = MIMEBase("application", "octet-stream")
+                part.set_payload(pdf_bytes)
+                encoders.encode_base64(part)
+                part.add_header(
+                    "Content-Disposition",
+                    f'attachment; filename="Location_Report_{report_date}.pdf"'
+                )
+                msg.attach(part)
+
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=15) as srv:
+                srv.login(SMTP_EMAIL, SMTP_PASSWORD)
+                srv.sendmail(SMTP_EMAIL, [ADMIN_EMAIL], msg.as_string())
+            print(f"[APScheduler] Report emailed to {ADMIN_EMAIL}")
+        except Exception as e:
+            print(f"[APScheduler] Email failed: {e}")
+    else:
+        print("[APScheduler] Email skipped — SMTP not configured")
+
+    # 3. Reset locations table
+    ok = _do_reset_locations()
+    print(f"[APScheduler] Location table reset: {'OK' if ok else 'FAILED'}")
+
+
+# Start APSche
