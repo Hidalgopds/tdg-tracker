@@ -123,9 +123,9 @@ def send_registration_email(to_email, name, username, role="worker"):
           <h2 style="margin:0 0 8px;">Welcome, {name}!</h2>
           <p style="color:#94a3b8;margin:0 0 24px;">Your MBR Texas account has been created.</p>
           <table style="background:#1a2234;border-radius:8px;padding:18px 20px;width:100%;border-collapse:collapse;">
-            <tr><td style="color:#64748b;font-size:12px;padding:4px 0;">USERNAME</td><td style="font-weight:600;padding:4px 0;">{username}</td></tr>
-            <tr><td style="color:#64748b;font-size:12px;padding:4px 0;">ROLE</td><td style="padding:4px 0;">{role.capitalize()}</td></tr>
-            <tr><td style="color:#64748b;font-size:12px;padding:4px 0;">EMAIL</td><td style="padding:4px 0;">{to_email}</td></tr>
+            <tr><td style="color:#64748b;font-size:12px;padding:6px 12px 6px 0;width:90px;">USERNAME</td><td style="color:#e2e8f0;font-weight:700;padding:6px 0;font-size:14px;">{username}</td></tr>
+            <tr><td style="color:#64748b;font-size:12px;padding:6px 12px 6px 0;">ROLE</td><td style="color:#e2e8f0;padding:6px 0;font-size:14px;">{role.capitalize()}</td></tr>
+            <tr><td style="color:#64748b;font-size:12px;padding:6px 12px 6px 0;">EMAIL</td><td style="color:#e2e8f0;padding:6px 0;font-size:14px;">{to_email}</td></tr>
           </table>
           <p style="margin:20px 0 8px;color:#94a3b8;font-size:13px;">Access the platform at:</p>
           <a href="https://tdg-tracker.onrender.com/login" style="display:inline-block;background:#1a6bc4;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;">Sign In →</a>
@@ -1518,7 +1518,7 @@ def all_progress():
 #  INVENTORY SYSTEM
 # ═══════════════════════════════════════════════════════════════════
 
-EDITOR_NAMES = ["Fabio", "Michael", "Jason", "Daniel H.", "John G.", "Mike G.", "Jason R."]
+EDITOR_NAMES = ["Fabio", "Michael", "Daniel H."]
 
 def is_editor(name):
     if not name:
@@ -3302,7 +3302,4 @@ def _nightly_report_and_reset():
 
     # 3. Reset locations table
     ok = _do_reset_locations()
-    print(f"[APScheduler] Location table reset: {'OK' if ok else 'FAILED'}")
-
-
-# Start APSche
+    print(f
