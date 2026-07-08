@@ -1896,6 +1896,22 @@ def deliver_material_request(req_id):
     return jsonify({"error": r.text}), 400
 
 
+@app.route("/api/material-requests/<req_id>", methods=["DELETE"])
+def delete_material_request(req_id):
+    """Admin-only: permanently delete a material request."""
+    role = request.headers.get("X-Role", "worker")
+    if role not in ("admin",):
+        return jsonify({"error": "Admin only"}), 403
+    url = f"{SUPABASE_URL}/rest/v1/material_requests?id=eq.{req_id}"
+    r = requests.delete(url, headers={
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Prefer": "return=minimal"
+    })
+    if r.status_code in (200, 204):
+        return jsonify({"ok": True})
+    return jsonify({"error": r.text}), 400
+
 @app.route("/api/material-requests/export", methods=["GET"])
 def export_material_requests():
     """Export material requests with optional filters."""

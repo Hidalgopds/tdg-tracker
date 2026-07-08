@@ -709,6 +709,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 var ITEMS=[],REQS=[],activeCat='All',srchQ='',edUser=null,curPinUser=null,pinBuf='',setNewPin=false,pin1st='';
 var CURRENT_INBOX_TAB='pending';
 var _sigReqId=null;
+var _sigCtx=null,_sigCanvas=null,_sigDrawing=false;
 var _ROLE=localStorage.getItem('mbrRole')||'worker';
 var _LVL={admin:5,boss:4,inventory:3,dispatcher:3,lead:2,worker:1,contractor:2}[_ROLE]||1;
 
@@ -1052,14 +1053,28 @@ var el=document.createElement('div');el.className='req-card';
     el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;"><div style="flex:1;min-width:0;"><div style="font-size:9px;color:var(--muted);margin-bottom:2px;">'+reqNum+'</div><div class="req-name">'+esc(req.item_name)+'</div><div class="req-meta">'+esc(req.requester_name)+' \xb7 Qty: '+req.qty_needed+(req.building?' \xb7 '+esc(req.building):'')+' \xb7 '+dt+(req.approved_by?' \xb7 Approved by '+esc(req.approved_by):'')+'</div>'+(req.job_name?'<div class="req-meta">Job: '+esc(req.job_name)+(req.contractor_company?' / '+esc(req.contractor_company):'')+'</div>':'')+(req.notes?'<div class="req-meta">'+esc(req.notes)+'</div>':'')+'</div><span class="sbadge '+cls+'" style="flex-shrink:0;margin-left:8px;">'+req.status+'</span></div>';
     var btnD=document.createElement('button');
     btnD.style.cssText='width:100%;height:38px;background:rgba(14,165,233,.15);border:1.5px solid rgba(14,165,233,.4);border-radius:8px;color:#38bdf8;font-size:12px;font-weight:800;cursor:pointer;margin-top:8px;';
-    btnD.textContent='\📦 Signature Required';
+    btnD.textContent='📦 Signature Required';
     btnD.onclick=function(){deliverReq(req.id,req.item_name,req.qty_needed,req.building||'',req.requester_name,req.contractor_company||'',req.job_name||'');};
     el.appendChild(btnD);
   }else{
     var delivNote=(req.status==='Delivered')?'<div style="font-size:11px;color:var(--muted);margin-top:8px;">✅ Delivered by '+(req.delivered_by?esc(req.delivered_by):'--')+(req.delivered_at?' \xb7 '+req.delivered_at.split('T')[0]:'')+' </div>':'';
     el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;"><div style="flex:1;min-width:0;"><div style="font-size:9px;color:var(--muted);margin-bottom:2px;">'+reqNum+'</div><div class="req-name">'+esc(req.item_name)+'</div><div class="req-meta">'+esc(req.requester_name)+' \xb7 Qty: '+req.qty_needed+(req.building?' \xb7 '+esc(req.building):'')+' \xb7 '+dt+'</div>'+(req.job_name?'<div class="req-meta">Job: '+esc(req.job_name)+(req.contractor_company?' / '+esc(req.contractor_company):'')+'</div>':'')+(req.notes?'<div class="req-meta">'+esc(req.notes)+'</div>':'')+'</div><span class="sbadge '+cls+'" style="flex-shrink:0;margin-left:8px;">'+req.status+'</span></div>'+delivNote;
   }
+  if(_LVL>=5){
+    var btnDel=document.createElement('button');
+    btnDel.style.cssText='width:100%;height:32px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);border-radius:8px;color:#f87171;font-size:11px;font-weight:700;cursor:pointer;margin-top:6px;';
+    btnDel.textContent='🗑 Delete Request';
+    btnDel.onclick=function(){deleteReq(req.id);};
+    el.appendChild(btnDel);
+  }
   return el;
+}
+function deleteReq(id){
+  if(!confirm('Delete this request? This cannot be undone.'))return;
+  fetch('/api/material-requests/'+id,{method:'DELETE',headers:{'X-Role':_ROLE}})
+    .then(function(r){return r.json();})
+    .then(function(d){if(d.ok){toast('Request deleted','success');loadAndRenderInbox();}else{toast(d.error||'Delete failed','error');}})
+    .catch(function(){toast('Delete failed','error');});
 }
 function deliverReq(id,itemName,qty,building,requester,company,jobName){
   try{
