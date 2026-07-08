@@ -530,20 +530,11 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
     <input class="fi" id="rqCompany" type="text" placeholder="Your company name..." readonly style="opacity:.8;cursor:default;background:#0a1525;"></div>
   <div class="fg"><label class="fl">Job Name <span style="color:#ef4444;font-size:10px;" id="rqJobRequired"></span></label>
     <input class="fi" id="rqJob" type="text" placeholder="e.g. TDG Data Center - Bldg 7"></div>
-  <div class="fg"><label class="fl">Material</label>
-    <div class="acwrap">
-      <input class="fi" id="rqMat" type="text" placeholder="Type to search inventory..." oninput="doAC(this.value)" autocomplete="off">
-      <div class="aclist" id="acList" style="display:none"></div>
-    </div>
-    <input type="hidden" id="rqItemId">
-    <div class="dup-warn" id="dupWarn"></div>
-  </div>
-  <div class="grid2">
-    <div class="fg"><label class="fl">Qty Needed</label>
-      <input class="fi" id="rqQty" type="number" min="1" placeholder="0"></div>
-    <div class="fg"><label class="fl">Building / Unit</label>
-      <input class="fi" id="rqBldg" type="text" placeholder="e.g. 07B"></div>
-  </div>
+  <div id="matLines"></div>
+  <button type="button" onclick="addMatLine()" style="width:100%;height:34px;background:rgba(14,165,233,.1);border:1.5px dashed rgba(14,165,233,.4);border-radius:8px;color:#38bdf8;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:6px;">+ Add Material</button>
+  <!-- legacy compat hidden fields -->
+  <input type="hidden" id="rqMat"><input type="hidden" id="rqQty"><input type="hidden" id="rqBldg">
+  <input type="hidden" id="rqItemId"><div id="acList" style="display:none"></div><div id="dupWarn"></div>
   <div class="fg"><label class="fl">Notes (optional)</label>
     <textarea class="fta" id="rqNotes" placeholder="Any details..."></textarea></div>
   <button class="btn-p" onclick="submitReq()">📤 Send Request</button>
@@ -660,7 +651,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
     <button class="btn-s" style="height:32px;font-size:12px;flex:0 0 80px;" onclick="clearSig()">🗑 Clear</button>
     <button class="btn-p" style="height:36px;font-size:13px;flex:1;" onclick="submitDelivery()">✅ Confirm Delivery</button>
   </div>
-  <button class="btn-s" onclick="closeModal('sigModal');openInbox(CURRENT_INBOX_TAB);">← Back</button>
+  <button class="btn-s" onclick="document.getElementById('sigModal').style.display='none';openInbox(CURRENT_INBOX_TAB);">← Back</button>
   <input type="hidden" id="sigReqId">
 </div></div>
 
@@ -788,7 +779,8 @@ function doFilter(){srchQ=document.getElementById('srch').value;renderGrid();}
 
 // ── Request modal ────────────────────────────────────────────────────────────
 function openReqModal(){
-  ['rqMat','rqQty','rqBldg','rqNotes','rqJob'].forEach(function(id){document.getElementById(id).value='';});
+  ['rqNotes','rqJob'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  resetMatLines();
   document.getElementById('rqItemId').value='';
   document.getElementById('dupWarn').style.display='none';
   document.getElementById('acList').style.display='none';
@@ -830,22 +822,89 @@ function checkDup(itemId,name){
   }).catch(function(){});
 }
 
+function addMatLine(){
+  var ml=document.getElementById('matLines');
+  var idx=ml.querySelectorAll('.mat-line').length;
+  var div=document.createElement('div');div.className='mat-line';div.dataset.idx=idx;
+  div.style.cssText='background:#0a1525;border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;position:relative;';
+  div.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'
+    +'<label class="fl" style="margin:0;font-size:11px;">Material '+(idx+1)+'</label>'
+    +'<button type="button" onclick="this.closest(\'.mat-line\').remove();reindexMatLines();" style="background:none;border:none;color:#ef4444;font-size:14px;cursor:pointer;padding:0 4px;">×</button>'
+    +'</div>'
+    +'<div class="fg" style="position:relative;margin-bottom:6px;">'
+    +'<input class="fi mat-search" data-idx="'+idx+'" type="text" placeholder="Type to search..." autocomplete="off" oninput="doMatAC(this,'+idx+')">'
+    +'<div class="ac-list" data-idx="'+idx+'" style="display:none;position:absolute;z-index:300;width:100%;background:#0d1a2d;border:1px solid var(--border);border-radius:8px;max-height:140px;overflow-y:auto;"></div>'
+    +'<input type="hidden" class="mat-id" data-idx="'+idx+'">'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
+    +'<div class="fg"><label class="fl" style="font-size:10px;">Qty</label><input class="fi mat-qty" data-idx="'+idx+'" type="number" min="1" placeholder="0"></div>'
+    +'<div class="fg"><label class="fl" style="font-size:10px;">Unit/Bldg</label><input class="fi mat-bldg" data-idx="'+idx+'" type="text" placeholder="07B"></div>'
+    +'</div>';
+  ml.appendChild(div);
+}
+function reindexMatLines(){
+  document.querySelectorAll('#matLines .mat-line').forEach(function(el,i){
+    el.querySelector('.fl').textContent='Material '+(i+1);
+  });
+}
+function doMatAC(inp,idx){
+  var q=inp.value.trim().toLowerCase();
+  var ac=document.querySelector('.ac-list[data-idx="'+idx+'"]');
+  if(!ac)return;
+  if(!q||q.length<1){ac.style.display='none';return;}
+  var hits=ITEMS.filter(function(it){return it.material.toLowerCase().includes(q);}).slice(0,8);
+  if(!hits.length){ac.style.display='none';return;}
+  ac.innerHTML='';
+  hits.forEach(function(it){
+    var d=document.createElement('div');
+    d.style.cssText='padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);';
+    d.textContent=it.material+' ('+it.qty+' '+it.unit_measure+')';
+    d.onmousedown=function(e){e.preventDefault();inp.value=it.material;
+      var hidEl=document.querySelector('.mat-id[data-idx="'+idx+'"]');if(hidEl)hidEl.value=it.id||'';
+      ac.style.display='none';};
+    ac.appendChild(d);
+  });
+  ac.style.display='block';
+}
+function resetMatLines(){
+  var ml=document.getElementById('matLines');if(!ml)return;
+  ml.innerHTML='';addMatLine();
+}
+function getMatLines(){
+  var lines=[];
+  document.querySelectorAll('#matLines .mat-line').forEach(function(el){
+    var mat=(el.querySelector('.mat-search')||{value:''}).value.trim();
+    var qty=parseInt((el.querySelector('.mat-qty')||{value:'0'}).value)||0;
+    var bldg=(el.querySelector('.mat-bldg')||{value:''}).value.trim();
+    var itemId=(el.querySelector('.mat-id')||{value:''}).value.trim();
+    if(mat)lines.push({item_name:mat,qty_needed:qty||1,building:bldg,item_id:itemId||null});
+  });
+  return lines;
+}
+
 function submitReq(){
-  var name=document.getElementById('rqName').value.trim();
-  var mat=document.getElementById('rqMat').value.trim();
-  var itemId=document.getElementById('rqItemId').value;
-  var qty=parseFloat(document.getElementById('rqQty').value);
-  var bldg=document.getElementById('rqBldg').value.trim();
-  var notes=document.getElementById('rqNotes').value.trim();
-  if(!name){toast('Enter your name','error');return;}
-  if(!mat){toast('Select a material','error');return;}
-  if(!qty||qty<1){toast('Enter quantity','error');return;}
-  fetch('/api/material-requests',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({requester_name:name,item_id:itemId||null,item_name:mat,qty_needed:qty,building:bldg,notes:notes})})
+  var name=localStorage.getItem('mbrAuth')||'';
+  var role=localStorage.getItem('mbrRole')||'';
+  var job=(document.getElementById('rqJob')||{value:''}).value.trim();
+  var company=(document.getElementById('rqCompany')||{value:''}).value.trim();
+  var notes=(document.getElementById('rqNotes')||{value:''}).value.trim();
+  var bldgAll=(document.getElementById('rqBldgAll')||{value:''}).value.trim();
+  if(!name){toast('Not logged in','error');return;}
+  if(role==='contractor'&&!job){toast('Job Name is required','error');return;}
+  var lines=getMatLines();
+  if(!lines.length||!lines[0].item_name){toast('Add at least one material','error');return;}
+  // apply bldgAll to lines with no building
+  lines.forEach(function(l){if(!l.building&&bldgAll)l.building=bldgAll;});
+  // Primary line for backward compat
+  var first=lines[0];
+  var payload={requester_name:name,item_name:first.item_name,qty_needed:first.qty_needed,
+    item_id:first.item_id||null,building:first.building||'',notes:notes,
+    job_name:job,contractor_company:company,
+    materials_json:lines.length>1?JSON.stringify(lines):null};
+  fetch('/api/material-requests',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
   .then(function(r){return r.json();}).then(function(d){
     if(d.error){toast(d.error,'error');return;}
-    toast('Request sent!');closeModal('reqModal');
-    if(edUser)loadPending();
+    toast('Request sent!');closeModal('reqModal');resetMatLines();loadInboxCount();
   }).catch(function(){toast('Error','error');});
 }
 
@@ -978,7 +1037,8 @@ function loadAndRenderInbox(){
 function renderReqCard(req){
   var dt=req.created_at?req.created_at.split('T')[0]:'';
   var cls={Pending:'sb-pend',Approved:'sb-appr',Rejected:'sb-rej',Delivered:'sb-deliv'}[req.status]||'sb-pend';
-  var el=document.createElement('div');el.className='req-card';
+  var reqNum='REQ-'+(req.id?String(req.id).replace(/-/g,'').substring(0,8).toUpperCase():'????');
+var el=document.createElement('div');el.className='req-card';
   var actHtml='';
   if(req.status==='Pending'&&edUser){
     var btnA=document.createElement('button');btnA.className='btn-appr';btnA.textContent='✓ Approve';
@@ -986,10 +1046,10 @@ function renderReqCard(req){
     var btnR=document.createElement('button');btnR.className='btn-rej';btnR.textContent='✕ Reject';
     btnR.onclick=function(){rejReq(req.id,btnR);};
     var acts=document.createElement('div');acts.className='req-acts';acts.appendChild(btnA);acts.appendChild(btnR);
-    el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;"><div style="flex:1;min-width:0;"><div class="req-name">'+esc(req.item_name)+'</div><div class="req-meta">'+esc(req.requester_name)+' \xb7 Qty: '+req.qty_needed+(req.building?' \xb7 '+esc(req.building):'')+' \xb7 '+dt+'</div>'+(req.job_name?'<div class="req-meta">Job: '+esc(req.job_name)+(req.contractor_company?' / '+esc(req.contractor_company):'')+'</div>':'')+(req.notes?'<div class="req-meta">'+esc(req.notes)+'</div>':'')+'</div><span class="sbadge '+cls+'" style="flex-shrink:0;margin-left:8px;">'+req.status+'</span></div>';
+    el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;"><div style="flex:1;min-width:0;"><div style="font-size:9px;color:var(--muted);margin-bottom:2px;">'+reqNum+'</div><div class="req-name">'+esc(req.item_name)+'</div><div class="req-meta">'+esc(req.requester_name)+' \xb7 Qty: '+req.qty_needed+(req.building?' \xb7 '+esc(req.building):'')+' \xb7 '+dt+'</div>'+(req.job_name?'<div class="req-meta">Job: '+esc(req.job_name)+(req.contractor_company?' / '+esc(req.contractor_company):'')+'</div>':'')+(req.notes?'<div class="req-meta">'+esc(req.notes)+'</div>':'')+'</div><span class="sbadge '+cls+'" style="flex-shrink:0;margin-left:8px;">'+req.status+'</span></div>';
     el.appendChild(acts);
   }else if(req.status==='Approved'){
-    el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;"><div style="flex:1;min-width:0;"><div class="req-name">'+esc(req.item_name)+'</div><div class="req-meta">'+esc(req.requester_name)+' \xb7 Qty: '+req.qty_needed+(req.building?' \xb7 '+esc(req.building):'')+' \xb7 '+dt+(req.approved_by?' \xb7 Approved by '+esc(req.approved_by):'')+'</div>'+(req.job_name?'<div class="req-meta">Job: '+esc(req.job_name)+(req.contractor_company?' / '+esc(req.contractor_company):'')+'</div>':'')+(req.notes?'<div class="req-meta">'+esc(req.notes)+'</div>':'')+'</div><span class="sbadge '+cls+'" style="flex-shrink:0;margin-left:8px;">'+req.status+'</span></div>';
+    el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;"><div style="flex:1;min-width:0;"><div style="font-size:9px;color:var(--muted);margin-bottom:2px;">'+reqNum+'</div><div class="req-name">'+esc(req.item_name)+'</div><div class="req-meta">'+esc(req.requester_name)+' \xb7 Qty: '+req.qty_needed+(req.building?' \xb7 '+esc(req.building):'')+' \xb7 '+dt+(req.approved_by?' \xb7 Approved by '+esc(req.approved_by):'')+'</div>'+(req.job_name?'<div class="req-meta">Job: '+esc(req.job_name)+(req.contractor_company?' / '+esc(req.contractor_company):'')+'</div>':'')+(req.notes?'<div class="req-meta">'+esc(req.notes)+'</div>':'')+'</div><span class="sbadge '+cls+'" style="flex-shrink:0;margin-left:8px;">'+req.status+'</span></div>';
     var btnD=document.createElement('button');
     btnD.style.cssText='width:100%;height:38px;background:rgba(14,165,233,.15);border:1.5px solid rgba(14,165,233,.4);border-radius:8px;color:#38bdf8;font-size:12px;font-weight:800;cursor:pointer;margin-top:8px;';
     btnD.textContent='\📦 Signature Required';
@@ -997,19 +1057,28 @@ function renderReqCard(req){
     el.appendChild(btnD);
   }else{
     var delivNote=(req.status==='Delivered')?'<div style="font-size:11px;color:var(--muted);margin-top:8px;">✅ Delivered by '+(req.delivered_by?esc(req.delivered_by):'--')+(req.delivered_at?' \xb7 '+req.delivered_at.split('T')[0]:'')+' </div>':'';
-    el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;"><div style="flex:1;min-width:0;"><div class="req-name">'+esc(req.item_name)+'</div><div class="req-meta">'+esc(req.requester_name)+' \xb7 Qty: '+req.qty_needed+(req.building?' \xb7 '+esc(req.building):'')+' \xb7 '+dt+'</div>'+(req.job_name?'<div class="req-meta">Job: '+esc(req.job_name)+(req.contractor_company?' / '+esc(req.contractor_company):'')+'</div>':'')+(req.notes?'<div class="req-meta">'+esc(req.notes)+'</div>':'')+'</div><span class="sbadge '+cls+'" style="flex-shrink:0;margin-left:8px;">'+req.status+'</span></div>'+delivNote;
+    el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;"><div style="flex:1;min-width:0;"><div style="font-size:9px;color:var(--muted);margin-bottom:2px;">'+reqNum+'</div><div class="req-name">'+esc(req.item_name)+'</div><div class="req-meta">'+esc(req.requester_name)+' \xb7 Qty: '+req.qty_needed+(req.building?' \xb7 '+esc(req.building):'')+' \xb7 '+dt+'</div>'+(req.job_name?'<div class="req-meta">Job: '+esc(req.job_name)+(req.contractor_company?' / '+esc(req.contractor_company):'')+'</div>':'')+(req.notes?'<div class="req-meta">'+esc(req.notes)+'</div>':'')+'</div><span class="sbadge '+cls+'" style="flex-shrink:0;margin-left:8px;">'+req.status+'</span></div>'+delivNote;
   }
   return el;
 }
 function deliverReq(id,itemName,qty,building,requester,company,jobName){
-  _sigReqId=id;document.getElementById('sigReqId').value=id;
-  var info='<div style="margin-bottom:4px;"><strong style="color:#e2e8f0;font-size:14px;">'+esc(itemName)+'</strong></div>';
-  info+='<div>✧ Qty: <strong>'+qty+'</strong>'+(building?' &nbsp;·&nbsp; Bldg: <strong>'+esc(building)+'</strong>':'')+'</div>';
-  if(jobName)info+='<div>🏗 Job: <strong>'+esc(jobName)+'</strong></div>';
-  info+='<div>👤 Requested by: <strong>'+esc(requester)+'</strong>'+(company?' &nbsp;·&nbsp; <span style="color:#38bdf8;">'+esc(company)+'</span>':'')+'</div>';
-  document.getElementById('sigReqInfo').innerHTML=info;
-  clearSig();var pf=document.getElementById('sigPickupBy');if(pf)pf.value='';closeModal('reqsModal');openModal('sigModal');setTimeout(initSigCanvas,120);
+  try{
+    _sigReqId=id;
+    var hidEl=document.getElementById('sigReqId');if(hidEl)hidEl.value=id;
+    var parts=[];
+    parts.push('<div style="font-size:14px;font-weight:700;color:#e2e8f0;margin-bottom:6px;">'+safeHtml(itemName)+'</div>');
+    parts.push('<div style="font-size:12px;">Qty: <strong>'+qty+'</strong>'+(building?' &middot; Unit: <strong>'+safeHtml(building)+'</strong>':'')+'</div>');
+    if(jobName)parts.push('<div style="font-size:12px;">🏗 Job: <strong>'+safeHtml(jobName)+'</strong></div>');
+    parts.push('<div style="font-size:12px;">👤 Requested by: <strong>'+safeHtml(requester)+'</strong>'+(company?' &middot; <span style="color:#38bdf8;">'+safeHtml(company)+'</span>':'')+'</div>');
+    var infoEl=document.getElementById('sigReqInfo');if(infoEl)infoEl.innerHTML=parts.join('');
+    var pf=document.getElementById('sigPickupBy');if(pf)pf.value='';
+    clearSig();
+    var sm=document.getElementById('sigModal');
+    if(sm){closeModal('reqsModal');sm.style.display='flex';setTimeout(initSigCanvas,150);}
+    else{toast('Delivery form not found','error');}
+  }catch(e){toast('Error: '+e.message,'error');console.error('deliverReq error',e);}
 }
+function safeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function initSigCanvas(){
   _sigCanvas=document.getElementById('sigCanvas');if(!_sigCanvas)return;
   _sigCtx=_sigCanvas.getContext('2d');var rect=_sigCanvas.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
@@ -1061,7 +1130,7 @@ function submitDelivery(){
   if(_sigCanvas){var px=_sigCtx.getImageData(0,0,_sigCanvas.width,_sigCanvas.height).data,signed=false;for(var i=3;i<px.length;i+=4){if(px[i]>0){signed=true;break;}}if(!signed){toast('Please sign before confirming','error');return;}}
   var by=localStorage.getItem('mbrAuth')||'',sig=_sigCanvas?_sigCanvas.toDataURL('image/png'):'';
   fetch('/api/material-requests/'+_sigReqId+'/deliver',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({delivered_by:by,signature_data:sig,pickup_by:pickupBy})})
-  .then(function(r){return r.json();}).then(function(d){if(d.ok){toast('Delivered!');closeModal('sigModal');loadInboxCount();openInbox('all');}else toast(d.error||'Error','error');}).catch(function(){toast('Error','error');});
+  .then(function(r){return r.json();}).then(function(d){if(d.ok){toast('Delivered!');document.getElementById('sigModal').style.display='none';loadInboxCount();openInbox('all');}else toast(d.error||'Error','error');}).catch(function(){toast('Error','error');});
 }
 
 function inlineReqs(){
