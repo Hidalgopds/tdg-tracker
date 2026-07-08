@@ -402,7 +402,7 @@ function timeAgo(iso){
   var role = localStorage.getItem('mbrRole') || 'worker';
   if (!auth) { location.replace('/login'); return; }
   // Role-based card visibility
-  var roleLevel = {admin:5, boss:4, inventory:3, lead:2, worker:1};
+  var roleLevel = {admin:5, boss:4, inventory:3, lead:2, worker:1, contractor:2};
   var level = roleLevel[role] || 1;
   
   // Session version check — force logout if admin invalidated sessions
@@ -441,6 +441,14 @@ function timeAgo(iso){
       // Inventory role: hide log, issues, dashboard — show tablet kiosk
       document.querySelectorAll('.card-log,.card-mgmt,.card-issues').forEach(function(el){el.style.display='none';});
       document.querySelectorAll('.card-tablet').forEach(function(el){el.style.display='flex';});
+    }
+    if (role === 'contractor') {
+      // Contractor: only Inventory visible
+      document.querySelectorAll('.card-log,.card-mgmt,.card-issues').forEach(function(el){el.style.display='none';});
+      var tsCard = document.querySelector('a.card[href="/timesheet"]');
+      if(tsCard) tsCard.style.display='none';
+      var settCard = document.querySelector('.card-settings');
+      if(settCard) settCard.style.display='none';
     }
     if (level >= 5) {
       // Admin: also show tablet kiosk card
@@ -604,4 +612,28 @@ function timeAgo(iso){
   if(!_a)return;
   function _upd(){
     fetch('/api/contractor/status?name='+encodeURIComponent(_a))
-      .then(function(r)
+      .then(function(r){return r.json();})
+      .then(function(d){
+        var bc=document.getElementById('mbr-checkin-chip');
+        var bd=document.getElementById('chip-dot');
+        var bl=document.getElementById('chip-label');
+        if(!bc||!bd||!bl)return;
+        if(d.checked_in){
+          bc.style.background='rgba(34,197,94,0.15)';bc.style.color='#16a34a';bc.style.border='1px solid rgba(34,197,94,0.3)';
+          bd.style.background='#22c55e';
+          bl.textContent=d.since?'Checked In · '+d.since:'Checked In';
+        }else{
+          bc.style.background='rgba(100,116,139,0.15)';bc.style.color='#94a3b8';bc.style.border='1px solid rgba(100,116,139,0.2)';
+          bd.style.background='#64748b';
+          bl.textContent='Not Checked In';
+        }
+      }).catch(function(){setTimeout(_upd,5000);});
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',_upd);
+  }else{_upd();}
+  setInterval(_upd,60000);
+})();
+</script>
+</body>
+</html>

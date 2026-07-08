@@ -799,6 +799,7 @@ function timeAgo(iso){
         <option value="inventory">Inventory — view/edit/approve materials only</option>
         <option value="lead" selected>Lead — Log, Timesheet, Dashboard, Issues</option>
         <option value="worker">Worker — QR check-in only</option>
+        <option value="contractor">Contractor — Inventory only</option>
       </select>
     </div>
     <div class="field"><label>PIN (4 digits — leave blank to keep existing)</label><input type="password" id="um-pin" placeholder="••••" maxlength="4" inputmode="numeric"></div>
@@ -1378,8 +1379,9 @@ function showToast(msg,err){var t=document.getElementById('toast');t.textContent
   var role = localStorage.getItem('mbrRole') || '';
   var name = localStorage.getItem('mbrAuth') || '';
   if(!name) { location.href = '/login'; return; }
+  if(role === 'contractor') { location.href = '/inventory'; return; }
 
-  var roleLevel = {admin:5,boss:4,inventory:3,lead:2,worker:1};
+  var roleLevel = {admin:5,boss:4,inventory:3,lead:2,worker:1,contractor:2};
   var level = roleLevel[role] || 1;
 
   curAdmin = name;
@@ -1894,4 +1896,31 @@ function forceLogoutAll() {
 </div>
 
 <!-- Change Password Modal (Contractor) -->
-<div id="changePwModal" style="display:none;position:fixed;inset:0;background:#00000088;z-index:1000;align-items:center;justify-content:ce
+<div id="changePwModal" style="display:none;position:fixed;inset:0;background:#00000088;z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:340px;max-width:90vw;">
+    <h3 style="margin-bottom:16px;font-size:16px;">🔑 Change Password</h3>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:5px;">Current Password</label>
+      <input id="cp-current" type="password" placeholder="Current password"
+        style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;">
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:5px;">New Password</label>
+      <input id="cp-new" type="password" placeholder="New password"
+        style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;">
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:5px;">Confirm New Password</label>
+      <input id="cp-confirm" type="password" placeholder="Confirm new password"
+        style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;">
+    </div>
+    <div id="cp-err" style="color:#ef4444;font-size:12px;margin-bottom:10px;display:none;"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost btn-sm" onclick="closeChangePw()" style="flex:1">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveChangePw()" style="flex:1">Save</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

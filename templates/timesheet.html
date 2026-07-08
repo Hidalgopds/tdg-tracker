@@ -929,7 +929,10 @@ function timeAgo(iso){
 // ── Auth ──────────────────────────────────────────────────────────────────────
 var curUser=null,pinBuf='',setNew=false,pin1st='';
 var sv=localStorage.getItem('mbrAuth');
-if(!sv){location.href='/login';}else{curUser=sv;}
+var sv_role=localStorage.getItem('mbrRole')||'';
+if(!sv){location.href='/login';}
+else if(sv_role==='contractor'){location.href='/inventory';}
+else{curUser=sv;}
 function selName(n){curUser=n;pinBuf='';setNew=false;pin1st='';document.getElementById('pinTitle').textContent='Hello, '+n+'!';document.getElementById('pinSub').textContent='Enter your 4-digit PIN';document.getElementById('pinErr').textContent='';updDots();fetch('/api/users/has-pin?name='+encodeURIComponent(n)).then(function(r){return r.json();}).then(function(d){if(!d.has_pin){setNew=true;document.getElementById('pinSub').textContent='Create a new 4-digit PIN';}}).catch(function(){});document.getElementById('gs1').style.display='none';document.getElementById('gs2').style.display='block';}
 function goS1(){document.getElementById('gs2').style.display='none';document.getElementById('gs1').style.display='block';pinBuf='';setNew=false;pin1st='';}
 function pk(k){if(k==='C'){if(pinBuf.length>0){pinBuf=pinBuf.slice(0,-1);updDots();}return;}if(pinBuf.length>=4)return;pinBuf+=k;updDots();if(pinBuf.length===4)setTimeout(procPIN,110);}
@@ -938,7 +941,7 @@ function procPIN(){if(setNew&&!pin1st){pin1st=pinBuf;pinBuf='';document.getEleme
 
 function applyTabVisibility(){
   var role = localStorage.getItem('mbrRole') || 'worker';
-  var lvl  = {admin:5,boss:4,inventory:3,lead:2,worker:1}[role] || 1;
+  var lvl  = {admin:5,boss:4,inventory:3,lead:2,worker:1,contractor:2}[role] || 1;
   // Safety Meeting: boss/admin only (lvl>=4)
   var safBtn  = document.getElementById('tab-btn-safety');
   if(safBtn)  safBtn.style.display  = lvl >= 4 ? 'inline-block' : 'none';
