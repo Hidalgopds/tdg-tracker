@@ -939,25 +939,12 @@ function procPIN(){if(setNew&&!pin1st){pin1st=pinBuf;pinBuf='';document.getEleme
 function applyTabVisibility(){
   var role = localStorage.getItem('mbrRole') || 'worker';
   var lvl  = {admin:5,boss:4,inventory:3,lead:2,worker:1}[role] || 1;
-  // Safety Meeting: lead+ can see (read-only for leads); boss/admin can edit
+  // Safety Meeting: boss/admin only (lvl>=4)
   var safBtn  = document.getElementById('tab-btn-safety');
-  if(safBtn)  safBtn.style.display  = lvl >= 2 ? 'inline-block' : 'none';
+  if(safBtn)  safBtn.style.display  = lvl >= 4 ? 'inline-block' : 'none';
   // Show/hide Safety edit controls (bulk check-in/out, add worker) — boss/admin only
   var editOnlyEls = document.querySelectorAll('.sm-boss-only');
   editOnlyEls.forEach(function(el){ el.style.display = lvl >= 4 ? (el.id==='smBulkRow'?'flex':'') : 'none'; });
-  // Worker cards: read-only for leads (can see but not tap to mark present)
-  var styleId = 'smReadOnlyStyle';
-  var existingRO = document.getElementById(styleId);
-  if(lvl >= 2 && lvl < 4){
-    if(!existingRO){
-      var s = document.createElement('style');
-      s.id = styleId;
-      s.textContent = '.worker-card{cursor:default!important;}.worker-card:active{transform:none!important;}';
-      document.head.appendChild(s);
-    }
-  } else {
-    if(existingRO) existingRO.remove();
-  }
   // QR Check-In/Out: hidden for everyone (temporarily disabled)
   var qrBtn = document.getElementById('tab-btn-qr');
   if(qrBtn) qrBtn.style.display = 'none';
@@ -1534,8 +1521,8 @@ async function qrLoadActiveList(){
   var sBtn=document.getElementById('tab-btn-safety');
   var qrBtnFb=document.getElementById('tab-btn-qr');
   if(qrBtnFb) qrBtnFb.style.display='none'; // QR hidden for all
-  if(lvl>=2){
-    if(sBtn) sBtn.style.display='inline-block'; // lead+ sees safety meeting
+  if(lvl>=4){
+    if(sBtn) sBtn.style.display='inline-block'; // boss/admin sees safety meeting
   } else {
     // Worker: default to Attendance tab
     document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
@@ -1645,22 +1632,35 @@ async function checkTodayAlerts(){
     var typeIcons = {late:'🕐',absent:'❌',vacation:'🏖'};
     var typeColors = {late:'#92400e',absent:'#991b1b',vacation:'#5b21b6'};
     var typeBg = {late:'#fef3c7',absent:'#fee2e2',vacation:'#ede9fe'};
-    var html = rows.map(function(row){
+    var html = rows.map(function(row, i){
       var icon = typeIcons[row.type]||'📋';
       var col  = typeColors[row.type]||'#334155';
       var bg   = typeBg[row.type]||'#f8fafc';
       var statusTxt = (row.status==='approved') ? '<span style="color:#166534;font-size:10px;font-weight:700;"> ✓ Approved</span>' : (row.type!=='late' ? '<span style="color:#854d0e;font-size:10px;font-weight:700;"> ⏳ Pending</span>' : '');
-      return '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:'+bg+';border-radius:10px;margin-bottom:8px;">'
+      return '<div id="att-alert-row-'+i+'" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:'+bg+';border-radius:10px;margin-bottom:8px;">'
         +'<span style="font-size:22px;line-height:1;">'+icon+'</span>'
         +'<div style="flex:1;min-width:0;">'
         +'<div style="font-weight:700;color:#1e293b;font-size:14px;">'+row.worker_name+statusTxt+'</div>'
         +'<div style="font-size:12px;color:'+col+';font-weight:600;text-transform:uppercase;margin:2px 0;">'+row.type+(row.type==='late'&&row.arrival_time?' · Arrives '+row.arrival_time:'')+'</div>'
         +'<div style="font-size:12px;color:#475569;">'+(row.reason||'—')+'</div>'
-        +'</div></div>';
+        +'</div>'
+        +'<button onclick="dismissAttAlert('+i+')" style="flex-shrink:0;align-self:center;padding:4px 12px;background:rgba(14,165,233,0.12);border:1px solid rgba(14,165,233,0.3);border-radius:6px;color:#0ea5e9;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">Read</button>'
+        +'</div>';
     }).join('');
     document.getElementById('attAlertBody').innerHTML = html;
     document.getElementById('attAlertModal').style.display = 'flex';
   }catch(e){}
+}
+
+function dismissAttAlert(i){
+  var row = document.getElementById('att-alert-row-'+i);
+  if(row) row.remove();
+  // If no rows left, close popup and mark all notifications read
+  var body = document.getElementById('attAlertBody');
+  if(body && !body.querySelector('[id^="att-alert-row-"]')){
+    document.getElementById('attAlertModal').style.display = 'none';
+    markAllRead();
+  }
 }
 
 async function loadAttendance(){
@@ -2056,7 +2056,7 @@ if(curUser){ showMain(); }
   <div style="background:#0f172a;border:1px solid #1e3a5f;border-radius:14px;padding:24px;max-width:440px;width:93%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.6);">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <span style="font-size:16px;font-weight:800;color:#e2e8f0;">📋 Today's Attendance Alerts</span>
-      <button onclick="document.getElementById('attAlertModal').style.display='none'" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;">✕</button>
+      <button onclick="document.getElementById('attAlertModal').style.display='none';markAllRead();" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;">✕</button>
     </div>
     <div id="attAlertBody"></div>
     <button onclick="document.getElementById('attAlertModal').style.display='none';switchTab('daysoff',document.getElementById('tab-btn-daysoff'));loadAttendance();" style="width:100%;margin-top:16px;padding:10px;background:#1e3a5f;border:1px solid #2563eb;border-radius:8px;color:#93c5fd;font-weight:700;cursor:pointer;font-size:13px;">View Full Attendance Log →</button>
