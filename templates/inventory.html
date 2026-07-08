@@ -682,6 +682,7 @@ var _LVL={admin:5,boss:4,inventory:3,dispatcher:3,lead:2,worker:1,contractor:2}[
 document.addEventListener('DOMContentLoaded',function(){
   loadInv();
   buildNameList();
+  initInboxBell();
   var sv=sessionStorage.getItem('edUser');
   if(sv){edUser=sv;activateEd();}
 });
@@ -938,14 +939,24 @@ function renderReqCard(req){
   var el=document.createElement('div');el.className='req-card';
   var actHtml='';
   if(req.status==='Pending'&&edUser){
-    actHtml='<div class="req-acts"><button class="btn-appr" onclick="appReq(''+req.id+'',this)">&#x2713; Approve</button><button class="btn-rej" onclick="rejReq(''+req.id+'',this)">&#x2715; Reject</button></div>';
+    var btnA=document.createElement('button');btnA.className='btn-appr';btnA.textContent='✓ Approve';
+    btnA.onclick=function(){appReq(req.id,btnA);};
+    var btnR=document.createElement('button');btnR.className='btn-rej';btnR.textContent='✕ Reject';
+    btnR.onclick=function(){rejReq(req.id,btnR);};
+    var acts=document.createElement('div');acts.className='req-acts';acts.appendChild(btnA);acts.appendChild(btnR);
+    el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;"><div style="flex:1;min-width:0;"><div class="req-name">'+esc(req.item_name)+'</div><div class="req-meta">'+esc(req.requester_name)+' \xb7 Qty: '+req.qty_needed+(req.building?' \xb7 '+esc(req.building):'')+' \xb7 '+dt+'</div>'+(req.job_name?'<div class="req-meta">Job: '+esc(req.job_name)+(req.contractor_company?' / '+esc(req.contractor_company):'')+'</div>':'')+(req.notes?'<div class="req-meta">'+esc(req.notes)+'</div>':'')+'</div><span class="sbadge '+cls+'" style="flex-shrink:0;margin-left:8px;">'+req.status+'</span></div>';
+    el.appendChild(acts);
   }else if(req.status==='Approved'){
-    var en=req.item_name.replace(/'/g,"\'"),er=req.requester_name.replace(/'/g,"\'"),eb=(req.building||'').replace(/'/g,"\'");
-    actHtml='<div class="req-acts"><button onclick="deliverReq(''+req.id+'',''+en+'','+req.qty_needed+',''+eb+'',''+er+'')" style="width:100%;height:38px;background:rgba(14,165,233,.15);border:1.5px solid rgba(14,165,233,.4);border-radius:8px;color:#38bdf8;font-size:12px;font-weight:800;cursor:pointer;">&#x1F4E6; Signature Required</button></div>';
-  }else if(req.status==='Delivered'){
-    actHtml='<div style="font-size:11px;color:var(--muted);margin-top:8px;">&#x2705; Delivered by '+(req.delivered_by?esc(req.delivered_by):'--')+(req.delivered_at?' · '+req.delivered_at.split('T')[0]:'')+'</div>';
+    el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;"><div style="flex:1;min-width:0;"><div class="req-name">'+esc(req.item_name)+'</div><div class="req-meta">'+esc(req.requester_name)+' \xb7 Qty: '+req.qty_needed+(req.building?' \xb7 '+esc(req.building):'')+' \xb7 '+dt+(req.approved_by?' \xb7 Approved by '+esc(req.approved_by):'')+'</div>'+(req.job_name?'<div class="req-meta">Job: '+esc(req.job_name)+(req.contractor_company?' / '+esc(req.contractor_company):'')+'</div>':'')+(req.notes?'<div class="req-meta">'+esc(req.notes)+'</div>':'')+'</div><span class="sbadge '+cls+'" style="flex-shrink:0;margin-left:8px;">'+req.status+'</span></div>';
+    var btnD=document.createElement('button');
+    btnD.style.cssText='width:100%;height:38px;background:rgba(14,165,233,.15);border:1.5px solid rgba(14,165,233,.4);border-radius:8px;color:#38bdf8;font-size:12px;font-weight:800;cursor:pointer;margin-top:8px;';
+    btnD.textContent='\U0001f4e6 Signature Required';
+    btnD.onclick=function(){deliverReq(req.id,req.item_name,req.qty_needed,req.building||'',req.requester_name);};
+    el.appendChild(btnD);
+  }else{
+    var delivNote=(req.status==='Delivered')?'<div style="font-size:11px;color:var(--muted);margin-top:8px;">✅ Delivered by '+(req.delivered_by?esc(req.delivered_by):'--')+(req.delivered_at?' \xb7 '+req.delivered_at.split('T')[0]:'')+' </div>':'';
+    el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;"><div style="flex:1;min-width:0;"><div class="req-name">'+esc(req.item_name)+'</div><div class="req-meta">'+esc(req.requester_name)+' \xb7 Qty: '+req.qty_needed+(req.building?' \xb7 '+esc(req.building):'')+' \xb7 '+dt+'</div>'+(req.job_name?'<div class="req-meta">Job: '+esc(req.job_name)+(req.contractor_company?' / '+esc(req.contractor_company):'')+'</div>':'')+(req.notes?'<div class="req-meta">'+esc(req.notes)+'</div>':'')+'</div><span class="sbadge '+cls+'" style="flex-shrink:0;margin-left:8px;">'+req.status+'</span></div>'+delivNote;
   }
-  el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;"><div style="flex:1;min-width:0;"><div class="req-name">'+esc(req.item_name)+'</div><div class="req-meta">'+esc(req.requester_name)+' · Qty: '+req.qty_needed+(req.building?' · '+esc(req.building):'')+' · '+dt+(req.approved_by?' · Approved by '+esc(req.approved_by):'')+'</div>'+(req.job_name?'<div class="req-meta">Job: '+esc(req.job_name)+(req.contractor_company?' / '+esc(req.contractor_company):'')+'</div>':'')+(req.notes?'<div class="req-meta">'+esc(req.notes)+'</div>':'')+'</div><span class="sbadge '+cls+'" style="flex-shrink:0;margin-left:8px;">'+req.status+'</span></div>'+actHtml;
   return el;
 }
 function deliverReq(id,itemName,qty,building,requester){
