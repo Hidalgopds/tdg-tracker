@@ -872,37 +872,18 @@ function inlineReqs(){
   }).catch(function(){el.innerHTML='<div style="color:var(--muted);font-size:12px">Could not load requests</div>';});
 }
 
-function openRequests(){
-  closeModal('authModal');
-  var list=document.getElementById('reqList');list.innerHTML='';
-  fetch('/api/material-requests?status=Pending').then(function(r){return r.json();}).then(function(d){
-    REQS=d||[];
-    if(!REQS.length){list.innerHTML='<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px">No pending requests</p>';openModal('reqsModal');return;}
-    REQS.forEach(function(req){
-      var dt=req.created_at?req.created_at.split('T')[0]:'';
-      var c=document.createElement('div');c.className='req-card';
-      c.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
-        '<div><div class="req-name">'+esc(req.item_name)+'</div>'+
-        '<div class="req-meta">'+esc(req.requester_name)+' · '+req.qty_needed+(req.building?' · Bldg '+esc(req.building):'')+(req.notes?' · '+esc(req.notes):'')+' · '+dt+'</div></div>'+
-        '<span class="sbadge sb-pend">Pending</span></div>'+
-        '<div class="req-acts"><button class="btn-appr" onclick="appReq(\''+req.id+'\',this)">✓ Approve</button>'+
-        '<button class="btn-rej" onclick="rejReq(\''+req.id+'\',this)">✕ Reject</button></div>';
-      list.appendChild(c);
-    });
-    openModal('reqsModal');
-  });
-}
+function openRequests(){closeModal('authModal');openInbox('pending');}
 
 function appReq(id,btn){
   fetch('/api/material-requests/'+id+'/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({approved_by:edUser,status:'Approved'})})
   .then(function(r){return r.json();}).then(function(d){
-    if(d.ok){btn.closest('.req-acts').innerHTML='<span style="color:var(--green);font-size:12px">✓ Approved by '+esc(edUser)+'</span>';loadPending();}
+    if(d.ok){toast('Request approved');btn.closest('.req-card').remove();loadInboxCount();}
   });
 }
 function rejReq(id,btn){
   fetch('/api/material-requests/'+id+'/approve',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({approved_by:edUser,status:'Rejected'})})
   .then(function(r){return r.json();}).then(function(d){
-    if(d.ok){btn.closest('.req-acts').innerHTML='<span style="color:var(--red);font-size:12px">✕ Rejected</span>';loadPending();}
+    if(d.ok){toast('Request rejected');btn.closest('.req-card').remove();loadInboxCount();}
   });
 }
 
@@ -1308,4 +1289,4 @@ async function deleteMaterial(id){
 (function(){var r=localStorage.getItem('mbrRole')||'worker';var lv={admin:5,boss:4,inventory:3,lead:2,worker:1}[r]||1;var rules={'/log':2,'/dashboard':4,'/inventory':2,'/issues-log':2,'/settings':4};document.querySelectorAll('.gnav-link').forEach(function(a){var h=a.getAttribute('href');if(rules[h]&&lv<rules[h]){a.href='/home';a.style.opacity='0.45';}});})();
 </script>
 </body>
-</html>
+</html>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     

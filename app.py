@@ -1840,6 +1840,25 @@ def approve_material_request(req_id):
         return jsonify({"ok": True})
     return jsonify({"error": r.text}), 400
 
+@app.route("/api/material-requests/<req_id>/deliver", methods=["POST"])
+def deliver_material_request(req_id):
+    data = request.json or {}
+    delivered_by = data.get("delivered_by", "")
+    signature_data = data.get("signature_data", "")
+    if not delivered_by:
+        return jsonify({"error": "delivered_by required"}), 400
+    payload = {
+        "status": "Delivered",
+        "delivered_by": delivered_by,
+        "delivered_at": "now()",
+        "signature_data": signature_data
+    }
+    url = f"{SUPABASE_URL}/rest/v1/material_requests?id=eq.{req_id}"
+    r = requests.patch(url, headers={**sb_headers(), "Prefer": "return=representation"}, json=payload)
+    if r.ok:
+        return jsonify({"ok": True})
+    return jsonify({"error": r.text}), 400
+
 # ── App users / PIN ──────────────────────────────────────────────
 @app.route("/api/users/has-pin", methods=["GET"])
 def has_pin():
@@ -2237,29 +2256,10 @@ def auto_checkout():
 
     Handles late execution: if the job runs after midnight UTC, it also
     sweeps the previous calendar day so no open checkins are left unclosed.
-
-    Optional: POST /api/auto-checkout?date=YYYY-MM-DD
-      → closes only that specific date, skips absent-marking.
-        Use this to manually close a past day without affecting today.
     """
     import datetime as dt
     today = dt.date.today().isoformat()
     yesterday = (dt.date.today() - dt.timedelta(days=1)).isoformat()
-
-    # Optional single-date override (close one day only, no absent-marking)
-    target_only = request.args.get("date", "").strip()
-    if target_only:
-        checkout_time = target_only + "T23:00:00"
-        co = requests.patch(
-            f"{SUPABASE_URL}/rest/v1/{CHECKINS_TABLE}"
-            f"?date=eq.{target_only}&checked_out_at=is.null",
-            json={"checked_out_at": checkout_time, "auto_checkout": True},
-            headers={**sb_headers(), "Prefer": "return=representation"}
-        )
-        closed = len(co.json()) if co.ok and co.json() else 0
-        return jsonify({"ok": True, "date": target_only,
-                        "auto_checked_out": closed, "auto_marked_absent": 0,
-                        "absent_workers": []})
 
     # ── 1. Auto-checkout open check-ins (today AND yesterday) ────────────────
     checked_out = 0
@@ -3243,20 +3243,4 @@ def _nightly_report_and_reset():
     print(f"[APScheduler] Location table reset: {'OK' if ok else 'FAILED'}")
 
 
-# Start APScheduler (gunicorn --workers=1 ensures this fires exactly once)
-try:
-    from apscheduler.schedulers.background import BackgroundScheduler
-    from apscheduler.triggers.cron import CronTrigger
-    import pytz
-    _scheduler = BackgroundScheduler(timezone=pytz.timezone("America/Chicago"))
-    _scheduler.add_job(
-        _nightly_report_and_reset,
-        CronTrigger(hour=22, minute=0, timezone=pytz.timezone("America/Chicago")),
-        id="nightly_report_reset",
-        replace_existing=True,
-        misfire_grace_time=3600  # fire up to 1 hr late if server was sleeping
-    )
-    _scheduler.start()
-    print("[APScheduler] Nightly job scheduled at 22:00 America/Chicago")
-except Exception as _e:
-    print(f"[APScheduler] Failed to start scheduler: {_e}")
+# Start APSche
