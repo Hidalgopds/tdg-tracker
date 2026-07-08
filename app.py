@@ -3302,4 +3302,7 @@ def _nightly_report_and_reset():
 
     # 3. Reset locations table
     ok = _do_reset_locations()
-    print(f
+    print(f"[APScheduler] Location table reset: {'OK' if ok else 'FAILED'}")
+
+
+# Start APSche
