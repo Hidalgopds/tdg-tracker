@@ -55,6 +55,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .tool-btn.active{background:#2d1a4e;border-color:var(--accent);color:var(--accent);}
 .workers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:18px;}
 .worker-card{background:#0d1520;border:2px solid var(--border);border-radius:12px;padding:14px 10px 10px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;user-select:none;-webkit-tap-highlight-color:transparent;}
+.worker-card.absent-card{opacity:.65;border-color:#7f1d1d;background:#1a0a0a;}
 .worker-card:active{transform:scale(.97);}
 .worker-card.present{background:#061410;border-color:var(--green);}
 .wc-status{font-size:22px;margin-bottom:6px;}
@@ -123,11 +124,6 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 /* ── Attendance Tab ── */
 .att-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
 @media(max-width:640px){.att-grid{grid-template-columns:1fr;}}
-@media(max-width:520px){
-  .user-pill{display:none!important;}
-  #mbr-status-bar{padding:0 10px;gap:5px;}
-  #mbr-checkin-chip .chip-label-text,#chip-label{font-size:10px;}
-}
 .att-card{background:#ffffff;border:1px solid #e2e8f0;border-radius:14px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
 .att-card-title{font-size:15px;font-weight:800;margin-bottom:4px;display:flex;align-items:center;gap:8px;}
 .att-card-title.late{color:#b45309;}
@@ -373,6 +369,11 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 
 <style>
 #mbr-status-bar{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 14px;background:#1e3a5f;border-bottom:1px solid rgba(255,255,255,0.1);height:48px;}
+@media(max-width:520px){
+  .user-pill{display:none!important;}
+  #mbr-status-bar{padding:0 10px;gap:5px;}
+  #chip-label{font-size:10px;}
+}
 #mbr-checkin-chip{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px;cursor:default;transition:.3s;}
 .chip-in{background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);}
 .chip-out{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.45);border:1px solid rgba(255,255,255,0.1);}
@@ -553,11 +554,12 @@ function timeAgo(iso){
 
 
 <!-- MAIN -->
-<div class="content" id="mainContent">
+<div class="content" id="mainContent" style="display:none;">
   <div style="max-width:1100px;margin:0 auto;">
     <div class="tabs">
       <button class="tab-btn active" id="tab-btn-safety" onclick="switchTab('safety',this)">🛡 Safety Meeting</button>
       <button class="tab-btn" id="tab-btn-daysoff" onclick="switchTab('daysoff',this);loadAttendance()">📋 Attendance</button>
+      <button class="tab-btn" id="tab-btn-myteam" style="display:none;" onclick="switchTab('myteam',this);loadMyTeam()">👥 My Team</button>
       <button class="tab-btn" id="tab-btn-qr" onclick="switchTab('qr',this)">📱 QR Check-In/Out</button>
       <button class="tab-btn" id="tab-btn-yardmap" onclick="switchTab('yardmap',this);loadYardMap()" style="display:none;">📍 Yard Map</button>
     </div>
@@ -583,6 +585,16 @@ function timeAgo(iso){
 
       <div class="workers-grid" id="workersGrid">
         <div class="no-data" style="grid-column:1/-1">Loading crew…</div>
+      </div>
+
+      <!-- Bulk Check-In / Check-Out (Boss/Admin only) -->
+      <div id="smBulkRow" class="sm-boss-only" style="display:none;margin-bottom:10px;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0;">
+        <label style="font-size:12px;color:#94a3b8;font-weight:600;">Check-in time:</label>
+        <input type="time" id="smBulkTime" style="padding:5px 8px;border:1px solid #334155;border-radius:8px;background:#0f172a;color:#e2e8f0;font-size:13px;">
+        <button onclick="allCheckIn()" style="padding:6px 14px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✓ All Check In</button>
+        <button onclick="allCheckOut()" style="padding:6px 14px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✗ All Check Out</button>
+        <button onclick="openManualCheckin()" style="padding:6px 14px;background:#d97706;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">⏱ Manual Check-In</button>
+        <span id="smBulkStatus" style="font-size:12px;color:#60a5fa;"></span>
       </div>
 
       <div class="add-row sm-boss-only" style="display:none;">
@@ -664,6 +676,53 @@ function timeAgo(iso){
         <div id="ym-summary" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;"></div>
         <div id="ym-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;max-width:700px;"></div>
         <div id="ym-updated" style="font-size:11px;color:#94a3b8;margin-top:12px;text-align:center;"></div>
+      </div>
+    </div>
+
+        <!-- ── My Team Tab ──────────────────────────────────────────────── -->
+    <div class="tab-panel" id="tab-myteam">
+      <!-- Header: lead name or admin filter -->
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+        <div>
+          <div style="font-size:16px;font-weight:800;color:#e2e8f0;">👥 My Team</div>
+          <div id="myteam-subtitle" style="font-size:12px;color:#64748b;margin-top:2px;">Tap a card to check them into the safety meeting</div>
+        </div>
+        <span style="flex:1;"></span>
+        <div id="myteam-lead-filter" style="display:none;">
+          <select id="myteam-lead-sel" onchange="loadMyTeam()" style="padding:5px 10px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:12px;">
+            <option value="">All Teams</option>
+          </select>
+        </div>
+        <button onclick="loadMyTeam()" style="padding:5px 12px;border:1px solid #334155;background:#1e293b;color:#94a3b8;border-radius:8px;font-size:12px;cursor:pointer;">↺ Refresh</button>
+      </div>
+      <!-- Team count -->
+      <div id="myteam-count" style="font-size:13px;color:#64748b;margin-bottom:12px;"></div>
+      <!-- Chiclet grid (same style as Safety Meeting) -->
+      <div id="myteam-grid" class="workers-grid" style="margin-bottom:20px;"></div>
+      <!-- Absent/Late report form -->
+      <div id="myteam-attform" style="display:none;background:#1a1d27;border:1px solid #2a2d3e;border-radius:12px;padding:18px;margin-top:8px;">
+        <div style="font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:12px;">📋 Report for: <span id="myteam-att-worker" style="color:#4f8ef7;"></span></div>
+        <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+          <button onclick="setTeamAttType('late')" id="myteam-btn-late" style="flex:1;padding:9px;border-radius:8px;border:2px solid #f59e0b;background:#fffbeb;color:#92400e;font-weight:700;font-size:13px;cursor:pointer;">🕐 Late</button>
+          <button onclick="setTeamAttType('absent')" id="myteam-btn-absent" style="flex:1;padding:9px;border-radius:8px;border:2px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:700;font-size:13px;cursor:pointer;">❌ Absent</button>
+          <button onclick="setTeamAttType('vacation')" id="myteam-btn-vac" style="flex:1;padding:9px;border-radius:8px;border:2px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:700;font-size:13px;cursor:pointer;">🏖 Vacation</button>
+        </div>
+        <div id="myteam-late-time-wrap" style="display:none;margin-bottom:10px;">
+          <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Expected Arrival Time</label>
+          <input type="time" id="myteam-late-time" style="padding:8px 10px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:13px;width:100%;">
+        </div>
+        <div id="myteam-return-wrap" style="display:none;margin-bottom:10px;">
+          <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Return Date</label>
+          <input type="date" id="myteam-return-date" style="padding:8px 10px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:13px;width:100%;">
+        </div>
+        <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Reason <span style="color:#ef4444;">*</span></label>
+        <textarea id="myteam-att-reason" rows="2" style="width:100%;padding:8px 10px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:13px;resize:vertical;margin-bottom:12px;" placeholder="Reason…"></textarea>
+        <input type="hidden" id="myteam-att-type" value="late">
+        <div style="display:flex;gap:8px;">
+          <button onclick="submitTeamAtt()" style="flex:1;padding:10px;background:#1d4ed8;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer;font-size:14px;">📤 Submit</button>
+          <button onclick="closeTeamAttForm()" style="padding:10px 14px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;cursor:pointer;">Cancel</button>
+        </div>
+        <div id="myteam-att-status" style="margin-top:8px;font-size:12px;text-align:center;"></div>
       </div>
     </div>
 
@@ -875,47 +934,72 @@ function selName(n){curUser=n;pinBuf='';setNew=false;pin1st='';document.getEleme
 function goS1(){document.getElementById('gs2').style.display='none';document.getElementById('gs1').style.display='block';pinBuf='';setNew=false;pin1st='';}
 function pk(k){if(k==='C'){if(pinBuf.length>0){pinBuf=pinBuf.slice(0,-1);updDots();}return;}if(pinBuf.length>=4)return;pinBuf+=k;updDots();if(pinBuf.length===4)setTimeout(procPIN,110);}
 function updDots(){for(var i=0;i<4;i++){var d=document.getElementById('pd'+i);if(d)d.className='pin-dot'+(i<pinBuf.length?' on':'');}}
-function procPIN(){if(setNew&&!pin1st){pin1st=pinBuf;pinBuf='';document.getElementById('pinSub').textContent='Confirm your PIN';updDots();return;}if(setNew&&pin1st){if(pinBuf!==pin1st){document.getElementById('pinErr').textContent='PINs do not match.';pinBuf='';pin1st='';updDots();return;}fetch('/api/users/set-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:curUser,pin:pinBuf})}).then(function(r){return r.json();}).then(function(d){if(d.ok){var body='MBR Texas Timesheet%0A%0APIN Set For: '+encodeURIComponent(curUser)+'%0APIN: '+pinBuf+'%0ADate: '+new Date().toLocaleDateString();window.open('mailto:dshidalgop@gmail.com?subject='+encodeURIComponent('Timesheet PIN – '+curUser)+'&body='+body,'_blank');localStorage.setItem('mbrAuth',curUser);showMain();}else{document.getElementById('pinErr').textContent='Error saving PIN';}}).catch(function(){document.getElementById('pinErr').textContent='Error.';});return;}fetch('/api/users/verify-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:curUser,pin:pinBuf})}).then(function(r){return r.json();}).then(function(d){if(d.ok){localStorage.setItem('mbrAuth',curUser);localStorage.setItem('mbrRole',d.role||'lead');showMain();}else{document.getElementById('pinErr').textContent='Incorrect PIN.';pinBuf='';updDots();}}).catch(function(){document.getElementById('pinErr').textContent='Error.';});}
+function procPIN(){if(setNew&&!pin1st){pin1st=pinBuf;pinBuf='';document.getElementById('pinSub').textContent='Confirm your PIN';updDots();return;}if(setNew&&pin1st){if(pinBuf!==pin1st){document.getElementById('pinErr').textContent='PINs do not match.';pinBuf='';pin1st='';updDots();return;}fetch('/api/users/set-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:curUser,pin:pinBuf})}).then(function(r){return r.json();}).then(function(d){if(d.ok){var body='MBR Texas Timesheet%0A%0APIN Set For: '+encodeURIComponent(curUser)+'%0APIN: '+pinBuf+'%0ADate: '+new Date().toLocaleDateString();window.open('mailto:dshidalgop@gmail.com?subject='+encodeURIComponent('Timesheet PIN – '+curUser)+'&body='+body,'_blank');localStorage.setItem('mbrAuth',curUser);showMain();}else{document.getElementById('pinErr').textContent='Error saving PIN';}}).catch(function(){document.getElementById('pinErr').textContent='Error.';});return;}fetch('/api/users/verify-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:curUser,pin:pinBuf})}).then(function(r){return r.json();}).then(function(d){if(d.ok){localStorage.setItem('mbrAuth',curUser);localStorage.setItem('mbrRole',d.role||'worker');showMain();}else{document.getElementById('pinErr').textContent='Incorrect PIN.';pinBuf='';updDots();}}).catch(function(){document.getElementById('pinErr').textContent='Error.';});}
 
 function applyTabVisibility(){
   var role = localStorage.getItem('mbrRole') || 'worker';
   var lvl  = {admin:5,boss:4,inventory:3,lead:2,worker:1}[role] || 1;
-  // Safety Meeting: lead+ sees it (read-only); worker hides it
+  // Safety Meeting: lead+ can see (read-only for leads); boss/admin can edit
   var safBtn  = document.getElementById('tab-btn-safety');
   if(safBtn)  safBtn.style.display  = lvl >= 2 ? 'inline-block' : 'none';
-  // Show/hide Safety edit controls based on role (boss/admin only)
+  // Show/hide Safety edit controls (bulk check-in/out, add worker) — boss/admin only
   var editOnlyEls = document.querySelectorAll('.sm-boss-only');
-  editOnlyEls.forEach(function(el){ el.style.display = lvl >= 4 ? '' : 'none'; });
-  // Worker cards: pointer only for boss/admin — leads see read-only
+  editOnlyEls.forEach(function(el){ el.style.display = lvl >= 4 ? (el.id==='smBulkRow'?'flex':'') : 'none'; });
+  // Worker cards: read-only for leads (can see but not tap to mark present)
   var styleId = 'smReadOnlyStyle';
-  var existing = document.getElementById(styleId);
-  if(lvl < 4){
-    if(!existing){
+  var existingRO = document.getElementById(styleId);
+  if(lvl >= 2 && lvl < 4){
+    if(!existingRO){
       var s = document.createElement('style');
       s.id = styleId;
       s.textContent = '.worker-card{cursor:default!important;}.worker-card:active{transform:none!important;}';
       document.head.appendChild(s);
     }
   } else {
-    if(existing) existing.remove();
+    if(existingRO) existingRO.remove();
   }
-  // Yard Map: lead+ only
+  // QR Check-In/Out: hidden for everyone (temporarily disabled)
+  var qrBtn = document.getElementById('tab-btn-qr');
+  if(qrBtn) qrBtn.style.display = 'none';
+  // Yard Map: boss/admin only
   var ymBtn = document.getElementById('tab-btn-yardmap');
-  if(ymBtn) ymBtn.style.display = lvl >= 2 ? 'inline-block' : 'none';
+  if(ymBtn) ymBtn.style.display = lvl >= 4 ? 'inline-block' : 'none';
+  // My Team: lead+ (lvl>=2)
+  var myTeamBtn = document.getElementById('tab-btn-myteam');
+  if(myTeamBtn) myTeamBtn.style.display = lvl >= 2 ? 'inline-block' : 'none';
+  // Leads (lvl==2 or 3): default to My Team tab, not Safety Meeting
+  if(lvl >= 2 && lvl < 4){
+    // Remove smReadOnlyStyle if it exists (leads can interact with My Team chiclets)
+    var existing2 = document.getElementById('smReadOnlyStyle');
+    if(existing2) existing2.remove();
+    // Switch active tab to My Team
+    var mt = document.getElementById('tab-btn-myteam');
+    var mp = document.getElementById('tab-myteam');
+    var safetyPanel = document.getElementById('tab-safety');
+    // Only switch if Safety Meeting is currently the active tab (default on load)
+    if(safetyPanel && safetyPanel.classList.contains('active')){
+      document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+      document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');p.style.display='none';});
+      if(mt) mt.classList.add('active');
+      if(mp){ mp.classList.add('active'); mp.style.display='block'; }
+      if(typeof loadMyTeam==='function') loadMyTeam();
+    }
+  }
   // If worker, switch default active tab to Attendance
   if(lvl < 2){
     var attBtn = document.getElementById('tab-btn-daysoff');
     document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
-    document.querySelectorAll('.tab-panel').forEach(function(p){p.style.display='none';});
+    document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');p.style.display='none';});
     if(attBtn){ attBtn.classList.add('active'); }
     var attPanel = document.getElementById('tab-daysoff');
     if(attPanel){ attPanel.classList.add('active'); attPanel.style.display='block'; }
+    if(typeof loadAttendance==='function') loadAttendance();
   }
 }
 
 function showMain(){
   showAdminManualBtn();
-  applyTabVisibility();populateAttWorkers();document.getElementById('mainContent').style.display='block';(function(){var el=document.getElementById('userPill');var r=localStorage.getItem('mbrRole')||'';var cap=r?r.charAt(0).toUpperCase()+r.slice(1):'';el.innerHTML='<span style="font-weight:700;">'+curUser+(cap?' &middot; '+cap:'')+'</span>';el.style.display='inline-flex';el.style.gap='10px';el.style.alignItems='center';el.innerHTML+='<button onclick="localStorage.removeItem(\'mbrAuth\');localStorage.removeItem(\'mbrRole\');location.href=\'/login\';" style="padding:4px 10px;background:#1e2d45;border:1px solid #2d3f57;border-radius:8px;color:#94a3b8;font-size:11px;cursor:pointer;">Sign Out</button>';})();loadSafetyMeeting();}
+  applyTabVisibility();populateAttWorkers();document.getElementById('mainContent').style.display='block';(function(){var el=document.getElementById('userPill');var r=localStorage.getItem('mbrRole')||'';var cap=r?r.charAt(0).toUpperCase()+r.slice(1):'';el.innerHTML='<span style="font-weight:700;">'+curUser+(cap?' &middot; '+cap:'')+'</span>';el.style.display='inline-flex';el.style.gap='10px';el.style.alignItems='center';el.innerHTML+='<button onclick="localStorage.removeItem(\'mbrAuth\');localStorage.removeItem(\'mbrRole\');location.href=\'/login\';" style="padding:4px 10px;background:#1e2d45;border:1px solid #2d3f57;border-radius:8px;color:#94a3b8;font-size:11px;cursor:pointer;">Sign Out</button>';})();loadSafetyMeeting();if(isSupervisor()) setTimeout(checkTodayAlerts,1200);}
 function doLogout(){localStorage.removeItem('mbrAuth');localStorage.removeItem('mbrRole');curUser=null;location.href='/login';}
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
@@ -924,7 +1008,7 @@ var _ymInterval = null;
 function exportLocationPDF(){
   var picker = document.getElementById('ym-date-picker');
   var d = picker && picker.value ? picker.value : new Date().toISOString().slice(0,10);
-  window.open('/api/reports/location-history?date='+d, '_blank');
+  var _adminName = encodeURIComponent(localStorage.getItem('mbrAuth')||''); window.open('/api/reports/location-history?date='+d+'&admin='+_adminName, '_blank');
 }
 function loadYardMap(){
   var picker = document.getElementById('ym-date-picker');
@@ -976,15 +1060,21 @@ function switchTab(name,btn){document.querySelectorAll('.tab-btn').forEach(funct
 var DEFAULT_CREW=['Michael Garza','John Garza','Jason Remington','Ryan Elsby','Daniel Bowdell','Daniel Bobadilla','Robert Hernandez','Kevin','Joseph Lizotte','Tigris Dunn','Luis Lopez','Victor Ivanez','Ricardo Andrade','Steven Lucero','Fabio Hernandez','Julian Nieva','Axell Pequeno','Christian Morales','Miguel Castillo','Jesse Centeno','Jake Salazar','Ulises Nava','Junior Gonzalez','Kevin Hernandez','Ryan Jones','Jesse Adams','Alex Flores','Jonas Sonner','Christopher Jones','Luis Lopez II','Jon Paul Bronin','Frank Rojas','Joe Garza','Kevin B.','Henry','Aracelys','Markis','Wilton Brown','Sebastian','Jailen','Junior G (w)','Kenry','Fernando','Gerardo','Melbin','Ivan','Gary Jones','Anthony Jordan','Ernesto','Daniel H.'];
 
 // ── State ─────────────────────────────────────────────────────────────────────
-var smWorkers=[],smPresent={},smFiltered=[],smPhase='meeting',editMode=false,renameTarget=null;
+var smWorkers=[],smPresent={},smFiltered=[],smAttendance={},smPhase='meeting',editMode=false,renameTarget=null;
 
 // ── Load ──────────────────────────────────────────────────────────────────────
 async function loadSafetyMeeting(){
   document.getElementById('smDateLabel').textContent=todayLabel();
-  checkSavedToday();
+  // Default bulk time to current local time
+  (function(){var t=new Date();var inp=document.getElementById('smBulkTime');if(inp)inp.value=String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');})();
+  try{checkSavedToday();}catch(_e){}
   try{
-    var[wRes,attRes]=await Promise.all([fetch('/api/workers'),fetch('/api/safety-meeting')]);
+    var today=todayISO();
+    var[wRes,attRes,absRes]=await Promise.all([fetch('/api/workers'),fetch('/api/safety-meeting'),fetch('/api/attendance/active')]);
     var dbW=wRes.ok?await wRes.json():[];var att=attRes.ok?await attRes.json():[];
+    var absRows=absRes.ok?await absRes.json():[];
+    smAttendance={};
+    if(Array.isArray(absRows)){absRows.forEach(function(r){smAttendance[r.worker_name]={type:r.type||'absent'};});}
     smWorkers=(Array.isArray(dbW)&&dbW.length>0)?dbW:DEFAULT_CREW.map(function(n){return{id:'',name:n,role:''};});
     if(Array.isArray(att)){att.forEach(function(r){if(!smWorkers.find(function(w){return w.name===r.worker_name;}))smWorkers.push({id:'',name:r.worker_name,role:''});});smPresent={};att.forEach(function(r){smPresent[r.worker_name]=r;});}
   }catch(e){smWorkers=DEFAULT_CREW.map(function(n){return{id:'',name:n,role:''};});smPresent={};}
@@ -1011,8 +1101,12 @@ function renderWorkerCards(){
     var p=smPresent[w.name],isP=!!p;
     if(editMode){return '<div class="worker-card edit-card"><div class="wc-name" style="font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:8px;text-align:center;">'+escH(w.name)+'</div><div class="edit-btns"><button class="eb eb-edit" onclick="openRename(\''+escJ(w.id)+'\',\''+escJ(w.name)+'\')">✏️ Rename</button><button class="eb eb-del" onclick="deleteWorker(\''+escJ(w.id)+'\',\''+escJ(w.name)+'\')">🗑️ Remove</button></div></div>';}
     var sigCls=smPhase==='signin'?' signin-mode':'';
-    var lbl=isP?'✓ '+fmtCheckin(p.checked_in_at)+' · '+elapsed(p.checked_in_at):(smPhase==='signin'?'tap to sign in':'tap to check in');
-    return '<div class="worker-card'+(isP?' present':'')+sigCls+'" onclick="toggleWorker(\''+escJ(w.name)+'\')" ><div class="wc-status">'+(isP?'✅':'👤')+'</div><div class="wc-name">'+escH(w.name)+'</div><div class="wc-time">'+lbl+'</div></div>';
+    var att=smAttendance[w.name];
+    var attBadge='';
+    if(att){var attColors={late:'background:#92400e;color:#fef3c7',absent:'background:#991b1b;color:#fee2e2',vacation:'background:#5b21b6;color:#ede9fe'};var ac=attColors[att.type]||attColors.absent;attBadge='<span style="font-size:9px;font-weight:800;padding:1px 6px;border-radius:999px;'+ac+';text-transform:uppercase;margin-left:4px;">'+att.type+'</span>';}
+    var lbl=isP?'✓ '+fmtCheckin(p.checked_in_at)+' · '+elapsed(p.checked_in_at):(att?(smAttendance[w.name].type==='late'?'running late':'not expected'):(smPhase==='signin'?'tap to sign in':'tap to check in'));
+    var cardStyle=att&&!isP?' style="opacity:0.6;"':'';
+    return '<div class="worker-card'+(isP?' present':'')+sigCls+'"'+cardStyle+' onclick="toggleWorker(\''+escJ(w.name)+'\')" ><div class="wc-status">'+(isP?'✅':(att?'⚠️':'👤'))+'</div><div class="wc-name">'+escH(w.name)+attBadge+'</div><div class="wc-time">'+lbl+'</div></div>';
   }).join('');
 }
 
@@ -1040,6 +1134,39 @@ if(smPresent[name]){var rec=smPresent[name];if(rec.id){try{await fetch('/api/saf
 // ── Add worker ────────────────────────────────────────────────────────────────
 async function addWorker(){var inp=document.getElementById('newWorkerName');var name=inp.value.trim();if(!name)return;if(!smWorkers.find(function(w){return w.name===name;})){smWorkers.push({id:'',name:name,role:''});smFiltered=smWorkers.slice();}inp.value='';try{var r=await fetch('/api/workers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name})});var d=await r.json();if(d.ok&&d.worker&&d.worker.id){var w=smWorkers.find(function(x){return x.name===name;});if(w)w.id=d.worker.id;}}catch(e){}renderWorkerCards();}
 document.getElementById('newWorkerName').addEventListener('keydown',function(e){if(e.key==='Enter')addWorker();});
+
+// ── All Check In / All Check Out ──────────────────────────────────────────────
+async function allCheckIn(){
+  var inp=document.getElementById('smBulkTime');
+  var timeVal=inp?inp.value:'';
+  var st=document.getElementById('smBulkStatus');
+  if(st)st.textContent='Checking in all…';
+  var toCheckin=smFiltered.filter(function(w){return !smPresent[w.name]&&!smAttendance[w.name];}).map(function(w){return w.name;});
+  if(!toCheckin.length){if(st)st.textContent='All eligible workers already checked in.';return;}
+  try{
+    var r=await fetch('/api/safety-meeting/bulk-checkin',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({workers:toCheckin,time:timeVal,supervisor:curUser||''})});
+    var d=await r.json();
+    if(d.ok){
+      if(st)st.textContent='✓ '+d.checked_in+' checked in'+(d.skipped?' ('+d.skipped+' skipped)':'');
+      await loadSafetyMeeting();
+    }else{if(st)st.textContent='Error: '+(d.error||'Unknown');}
+  }catch(e){if(st)st.textContent='Network error.';}
+}
+
+async function allCheckOut(){
+  if(!confirm('Remove ALL safety meeting check-ins for today? This cannot be undone.'))return;
+  var st=document.getElementById('smBulkStatus');
+  if(st)st.textContent='Removing…';
+  var names=Object.keys(smPresent);
+  var ok=0;
+  for(var i=0;i<names.length;i++){
+    var rec=smPresent[names[i]];
+    if(rec&&rec.id){try{await fetch('/api/safety-meeting/'+rec.id,{method:'DELETE'});ok++;}catch(e){}}
+  }
+  if(st)st.textContent='✓ '+ok+' check-ins removed.';
+  await loadSafetyMeeting();
+}
 
 // ── Complete meeting ──────────────────────────────────────────────────────────
 function completeMeeting(){
@@ -1367,6 +1494,7 @@ async function qrLoadActiveList(){
   try{
     var r = await fetch('/api/active-checkins');
     var rows = await r.json();
+    if(!Array.isArray(rows)) rows=[];
     if(!rows.length){
       body.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px;">No one currently checked in.</div>';
       return;
@@ -1404,10 +1532,10 @@ async function qrLoadActiveList(){
   var role=localStorage.getItem('mbrRole')||'worker';
   var lvl={admin:5,boss:4,inventory:3,lead:2,worker:1}[role]||1;
   var sBtn=document.getElementById('tab-btn-safety');
-  var hBtn=document.getElementById('tab-btn-history');
+  var qrBtnFb=document.getElementById('tab-btn-qr');
+  if(qrBtnFb) qrBtnFb.style.display='none'; // QR hidden for all
   if(lvl>=2){
-    if(sBtn) sBtn.style.display='inline-block';
-    if(hBtn) hBtn.style.display='inline-block';
+    if(sBtn) sBtn.style.display='inline-block'; // lead+ sees safety meeting
   } else {
     // Worker: default to Attendance tab
     document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
@@ -1442,7 +1570,7 @@ function showAttForm(type){
     lateBtn.style.borderColor='#f59e0b'; lateBtn.style.background='#fffbeb'; lateBtn.style.color='#92400e';
     absBtn.style.borderColor='#e2e8f0';  absBtn.style.background='#f8fafc';  absBtn.style.color='#64748b';
   } else {
-    absForm.style.display = '';  lateForm.style.display = 'none';
+    absForm.style.display = 'block';  lateForm.style.display = 'none';
     absBtn.style.borderColor='#ef4444';  absBtn.style.background='#fef2f2';  absBtn.style.color='#991b1b';
     lateBtn.style.borderColor='#e2e8f0'; lateBtn.style.background='#f8fafc'; lateBtn.style.color='#64748b';
   }
@@ -1502,7 +1630,37 @@ async function submitAbsent(){
 
 function isAdmin(){
   var r = localStorage.getItem('mbrRole') || 'lead';
-  return r === 'admin' || r === 'supervisor';
+  return r === 'admin' || r === 'supervisor' || r === 'boss';
+}
+function isSupervisor(){
+  var r = localStorage.getItem('mbrRole') || 'lead';
+  return ['admin','supervisor','boss','lead'].includes(r);
+}
+
+async function checkTodayAlerts(){
+  try{
+    var r = await fetch('/api/attendance/today');
+    var rows = await r.json();
+    if(!rows || !rows.length) return;
+    var typeIcons = {late:'🕐',absent:'❌',vacation:'🏖'};
+    var typeColors = {late:'#92400e',absent:'#991b1b',vacation:'#5b21b6'};
+    var typeBg = {late:'#fef3c7',absent:'#fee2e2',vacation:'#ede9fe'};
+    var html = rows.map(function(row){
+      var icon = typeIcons[row.type]||'📋';
+      var col  = typeColors[row.type]||'#334155';
+      var bg   = typeBg[row.type]||'#f8fafc';
+      var statusTxt = (row.status==='approved') ? '<span style="color:#166534;font-size:10px;font-weight:700;"> ✓ Approved</span>' : (row.type!=='late' ? '<span style="color:#854d0e;font-size:10px;font-weight:700;"> ⏳ Pending</span>' : '');
+      return '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:'+bg+';border-radius:10px;margin-bottom:8px;">'
+        +'<span style="font-size:22px;line-height:1;">'+icon+'</span>'
+        +'<div style="flex:1;min-width:0;">'
+        +'<div style="font-weight:700;color:#1e293b;font-size:14px;">'+row.worker_name+statusTxt+'</div>'
+        +'<div style="font-size:12px;color:'+col+';font-weight:600;text-transform:uppercase;margin:2px 0;">'+row.type+(row.type==='late'&&row.arrival_time?' · Arrives '+row.arrival_time:'')+'</div>'
+        +'<div style="font-size:12px;color:#475569;">'+(row.reason||'—')+'</div>'
+        +'</div></div>';
+    }).join('');
+    document.getElementById('attAlertBody').innerHTML = html;
+    document.getElementById('attAlertModal').style.display = 'flex';
+  }catch(e){}
 }
 
 async function loadAttendance(){
@@ -1510,8 +1668,8 @@ async function loadAttendance(){
   loadCalendar();
   // Show admin panel only for admins
   var panel = document.getElementById('attAdminPanel');
-  if(panel) panel.style.display = isAdmin() ? '' : 'none';
-  if(!isAdmin()) return;
+  if(panel) panel.style.display = isSupervisor() ? '' : 'none';
+  if(!isSupervisor()) return;
 
   var body = document.getElementById('attRecentBody');
   body.innerHTML = '<div class="att-empty">Loading…</div>';
@@ -1534,12 +1692,79 @@ async function loadAttendance(){
     body.innerHTML = rows.map(function(row){
       var badge = '<span class="att-badge '+row.type+'">'+row.type.toUpperCase()+'</span>';
       var extra = row.type==='late' ? ' · Arr: '+(row.arrival_time||'?') : (row.return_date ? ' → Return: '+row.return_date : '');
-      return '<div class="att-row">'+badge+
+      var statusBadge = '';
+      if(row.status==='approved') statusBadge='<span style="font-size:10px;font-weight:700;background:#dcfce7;color:#166534;border-radius:8px;padding:1px 7px;margin-left:4px;">✓ Noted</span>';
+      else if(row.type!=='late') statusBadge='<span style="font-size:10px;font-weight:700;background:#fef9c3;color:#854d0e;border-radius:8px;padding:1px 7px;margin-left:4px;">⏳ Pending</span>';
+      var approveBtn = (row.type!=='late' && row.status!=='approved') ?
+        '<button onclick="approveAtt('+row.id+')" style="margin-left:4px;padding:2px 8px;font-size:10px;font-weight:700;border:1px solid #16a34a;background:#f0fdf4;color:#166534;border-radius:6px;cursor:pointer;">✓ Note it</button>' : '';
+      var editBtn = '<button onclick="editAttById('+row.id+')" style="margin-left:4px;padding:2px 8px;font-size:10px;border:1px solid #3b82f6;background:#eff6ff;color:#1d4ed8;border-radius:6px;cursor:pointer;">✎ Edit</button>';
+      var delBtn  = '<button onclick="deleteAtt('+row.id+')" style="margin-left:4px;padding:2px 8px;font-size:10px;border:1px solid #ef4444;background:#fef2f2;color:#991b1b;border-radius:6px;cursor:pointer;">✕</button>';
+      return '<div class="att-row" style="flex-wrap:wrap;gap:4px;" data-att-id="'+row.id+'">'+badge+statusBadge+
         '<span class="att-name">'+row.worker_name+'</span>'+
         '<span class="att-reason">'+(row.reason||'—')+'</span>'+
-        '<span class="att-date">'+(row.report_date||'')+extra+'</span></div>';
+        '<span class="att-date">'+(row.report_date||'')+extra+'</span>'+
+        '<span style="margin-left:auto;display:flex;align-items:center;gap:0;">'+approveBtn+editBtn+delBtn+'</span></div>';
     }).join('');
   }catch(e){ body.innerHTML='<div class="att-empty">Error loading reports.</div>'; }
+}
+
+// ── Attendance edit/approve/delete ───────────────────────────────────────────
+async function approveAtt(id){
+  if(!confirm('Mark this as Noted? This acknowledges the report.')) return;
+  try{
+    var r = await fetch('/api/attendance/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'approved'})});
+    var d = await r.json();
+    if(d.ok){ loadAttendance(); }
+    else{ alert('Error approving: '+JSON.stringify(d)); }
+  }catch(e){ alert('Network error: '+e.message); }
+}
+
+async function deleteAtt(id){
+  if(!confirm('Delete this attendance record? This cannot be undone.')) return;
+  try{
+    var r = await fetch('/api/attendance/'+id,{method:'DELETE'});
+    var d = await r.json();
+    if(d.ok){ loadAttendance(); }
+    else{ alert('Error deleting.'); }
+  }catch(e){ alert('Network error: '+e.message); }
+}
+
+var _editAttId = null;
+function editAttById(id){
+  var row = document.querySelector('.att-row[data-att-id="'+id+'"]');
+  var type = row ? row.dataset.attType : '';
+  var workerName = row ? decodeURIComponent(row.dataset.attName||'') : '';
+  editAtt(id, type, workerName);
+}
+function editAtt(id, type, workerName){
+  _editAttId = id;
+  document.getElementById('editAttWorker').textContent = workerName;
+  document.getElementById('editAttType').value = type;
+  document.getElementById('editAttReason').value = '';
+  document.getElementById('editAttDate').value = '';
+  document.getElementById('editAttReturn').value = '';
+  document.getElementById('editAttStatus').textContent = '';
+  document.getElementById('editAttModal').style.display = 'flex';
+}
+function closeEditAtt(){ document.getElementById('editAttModal').style.display='none'; _editAttId=null; }
+async function saveEditAtt(){
+  if(!_editAttId) return;
+  var payload = {
+    type: document.getElementById('editAttType').value,
+    reason: document.getElementById('editAttReason').value.trim(),
+  };
+  var d2 = document.getElementById('editAttDate').value;
+  var ret = document.getElementById('editAttReturn').value;
+  if(d2) payload.report_date = d2;
+  if(ret) payload.return_date = ret;
+  if(!payload.reason){ document.getElementById('editAttStatus').textContent='Reason is required.'; return; }
+  document.getElementById('editAttStatus').textContent='Saving…';
+  try{
+    var r = await fetch('/api/attendance/'+_editAttId,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    var d = await r.json();
+    if(d.ok){ closeEditAtt(); loadAttendance(); }
+    else{ document.getElementById('editAttStatus').textContent='Error: '+JSON.stringify(d); }
+  }catch(e){ document.getElementById('editAttStatus').textContent='Network error: '+e.message; }
 }
 
 function exportAttPDF(){
@@ -1561,7 +1786,7 @@ function exportAttPDF(){
     +'.late{background:#fef3c7;color:#92400e;}'
     +'.absent{background:#fee2e2;color:#991b1b;}'
     +'.vacation{background:#ede9fe;color:#5b21b6;}'
-    +'</style></head><body>'
+    +'@media(max-width:640px){.mbr-top-bar{padding:0 10px!important;gap:6px!important;height:auto!important;min-height:44px!important;flex-wrap:wrap!important;}#mbr-checkin-chip{font-size:10px!important;padding:2px 7px!important;}#headerUser{font-size:11px!important;}.tab-btn{padding:0 12px!important;font-size:12px!important;}.workers-grid{grid-template-columns:repeat(3,1fr)!important;gap:7px!important;}.worker-card{padding:10px 6px 8px!important;}.wc-name{font-size:11px!important;}.wc-time{font-size:9px!important;}.wc-status{font-size:18px!important;}#smBulkRow{flex-direction:column!important;align-items:flex-start!important;gap:6px!important;}.gate-card{width:100%!important;padding:20px 16px!important;}.pin-grid{max-width:240px!important;}.att-form{padding:14px!important;}#mainContent,.tab-panel{padding-bottom:70px!important;}.gnav{height:52px!important;}.gnav a{font-size:9px!important;min-width:36px!important;}.gnav a .gi{font-size:17px!important;}}</style></head><body>'
     +'<h1>'+title+'</h1><p>'+sub+' &nbsp;|&nbsp; Generated: '+new Date().toLocaleDateString()+'</p>'
     +'<table><thead><tr><th>Type</th><th>Name</th><th>Date</th><th>Details</th><th>Reason</th></tr></thead><tbody>';
   rows.forEach(function(row){
@@ -1750,4 +1975,456 @@ if(curUser){ showMain(); }
       .then(function(d){
         var bc=document.getElementById('mbr-checkin-chip');
         var bd=document.getElementById('chip-dot');
-        var bl=document.getElementById('ch
+        var bl=document.getElementById('chip-label');
+        if(!bc||!bd||!bl)return;
+        if(d.checked_in){
+          bc.style.background='rgba(34,197,94,0.15)';bc.style.color='#16a34a';bc.style.border='1px solid rgba(34,197,94,0.3)';
+          bd.style.background='#22c55e';
+          bl.textContent=d.since?'Checked In · '+d.since:'Checked In';
+        }else{
+          bc.style.background='rgba(100,116,139,0.15)';bc.style.color='#94a3b8';bc.style.border='1px solid rgba(100,116,139,0.2)';
+          bd.style.background='#64748b';
+          bl.textContent='Not Checked In';
+        }
+      }).catch(function(){setTimeout(_upd,5000);});
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',_upd);
+  }else{_upd();}
+  setInterval(_upd,60000);
+})();
+</script>
+<!-- ── Manual Check-In Modal (Boss/Admin) ────────────────────────────── -->
+<div id="manualCheckinModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#0f172a;border:1px solid #d97706;border-radius:14px;padding:24px;max-width:400px;width:93%;box-shadow:0 8px 32px rgba(0,0,0,.6);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div style="font-size:15px;font-weight:700;color:#f59e0b;">⏱ Manual Check-In</div>
+      <button onclick="closeManualCheckin()" style="background:none;border:none;color:#64748b;font-size:20px;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <p style="font-size:12px;color:#94a3b8;margin:0 0 16px;">Use when a worker arrived late and wasn't checked in through the kiosk.</p>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Worker</label>
+      <select id="mcWorker" style="width:100%;padding:9px 12px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:14px;">
+        <option value="">— Select worker —</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:12px;">
+      <div style="flex:1;">
+        <label style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Date</label>
+        <input type="date" id="mcDate" style="width:100%;padding:9px 12px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:14px;">
+      </div>
+      <div style="flex:1;">
+        <label style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Arrived at</label>
+        <input type="time" id="mcTime" style="width:100%;padding:9px 12px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:14px;">
+      </div>
+    </div>
+    <div id="mcStatus" style="font-size:12px;color:#ef4444;margin-bottom:10px;display:none;"></div>
+    <button onclick="submitManualCheckin()" style="width:100%;padding:12px;background:#d97706;color:#000;border:none;border-radius:9px;font-size:14px;font-weight:800;cursor:pointer;">Check In Worker</button>
+  </div>
+</div>
+
+<!-- ── Edit Attendance Modal ─────────────────────────────────────────── -->
+<div id="editAttModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#0f172a;border:1px solid #1e3a5f;border-radius:14px;padding:24px;max-width:420px;width:93%;box-shadow:0 8px 32px rgba(0,0,0,.6);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <span style="font-size:16px;font-weight:800;color:#e2e8f0;">✎ Edit Attendance</span>
+      <button onclick="closeEditAtt()" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <div style="font-size:13px;color:#94a3b8;margin-bottom:12px;">Worker: <strong id="editAttWorker" style="color:#e2e8f0;"></strong></div>
+    <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Type</label>
+    <select id="editAttType" style="width:100%;padding:8px 10px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:13px;margin-bottom:12px;">
+      <option value="late">🕐 Late</option>
+      <option value="absent">❌ Absent</option>
+      <option value="vacation">🏖 Vacation</option>
+    </select>
+    <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Reason <span style="color:#ef4444;">*</span></label>
+    <textarea id="editAttReason" rows="3" style="width:100%;padding:8px 10px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:13px;resize:vertical;margin-bottom:12px;" placeholder="Updated reason…"></textarea>
+    <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Date (leave blank to keep original)</label>
+    <input id="editAttDate" type="date" style="width:100%;padding:8px 10px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:13px;margin-bottom:12px;">
+    <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Return Date</label>
+    <input id="editAttReturn" type="date" style="width:100%;padding:8px 10px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:13px;margin-bottom:16px;">
+    <div style="display:flex;gap:10px;">
+      <button onclick="saveEditAtt()" style="flex:1;padding:10px;background:#1d4ed8;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer;font-size:14px;">💾 Save</button>
+      <button onclick="closeEditAtt()" style="padding:10px 18px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;cursor:pointer;font-size:14px;">Cancel</button>
+    </div>
+    <div id="editAttStatus" style="margin-top:8px;font-size:12px;color:#ef4444;text-align:center;"></div>
+  </div>
+</div>
+
+<!-- ── Daily Alert Popup (leads/boss/admin) ───────────────────────────────── -->
+<div id="attAlertModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9998;align-items:center;justify-content:center;">
+  <div style="background:#0f172a;border:1px solid #1e3a5f;border-radius:14px;padding:24px;max-width:440px;width:93%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.6);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <span style="font-size:16px;font-weight:800;color:#e2e8f0;">📋 Today's Attendance Alerts</span>
+      <button onclick="document.getElementById('attAlertModal').style.display='none'" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <div id="attAlertBody"></div>
+    <button onclick="document.getElementById('attAlertModal').style.display='none';switchTab('daysoff',document.getElementById('tab-btn-daysoff'));loadAttendance();" style="width:100%;margin-top:16px;padding:10px;background:#1e3a5f;border:1px solid #2563eb;border-radius:8px;color:#93c5fd;font-weight:700;cursor:pointer;font-size:13px;">View Full Attendance Log →</button>
+  </div>
+</div>
+
+
+<!-- ── My Team Tab JS ─────────────────────────────────────────────── -->
+<script>
+// Team member name registry (index→{name,ciId}) to avoid onclick quoting issues
+var _teamMemberMap = {};
+var _myTeamAttWorker = null;
+
+// ── Terminology helpers ──────────────────────────────────────────────────────
+function setTeamAttType(type){
+  _myTeamAttType = type;
+  document.getElementById('myteam-att-type').value = type;
+  var styles = {
+    late:    ['#f59e0b','#fffbeb','#92400e'],
+    absent:  ['#ef4444','#fef2f2','#991b1b'],
+    vacation:['#818cf8','#eef2ff','#3730a3']
+  };
+  ['late','absent','vacation'].forEach(function(t){
+    var id = t==='vacation'?'myteam-btn-vac':'myteam-btn-'+t;
+    var btn = document.getElementById(id); if(!btn) return;
+    var s = styles[t], active = t===type;
+    btn.style.borderColor = active?s[0]:'#e2e8f0';
+    btn.style.background  = active?s[1]:'#f8fafc';
+    btn.style.color       = active?s[2]:'#64748b';
+  });
+  document.getElementById('myteam-late-time-wrap').style.display = type==='late' ? '' : 'none';
+  document.getElementById('myteam-return-wrap').style.display    = type!=='late' ? '' : 'none';
+}
+var _myTeamAttType = 'late';
+
+function openTeamAttFormIdx(idx){
+  var rec = _teamMemberMap[idx]; if(!rec) return;
+  openTeamAttForm(rec.name);
+}
+function openTeamAttForm(workerName){
+  _myTeamAttWorker = workerName;
+  document.getElementById('myteam-att-worker').textContent = workerName;
+  document.getElementById('myteam-att-reason').value = '';
+  document.getElementById('myteam-att-status').textContent = '';
+  document.getElementById('myteam-late-time').value = '';
+  document.getElementById('myteam-return-date').value = '';
+  setTeamAttType('late');
+  var form = document.getElementById('myteam-attform');
+  form.style.display = '';
+  form.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function closeTeamAttForm(){
+  document.getElementById('myteam-attform').style.display = 'none';
+  _myTeamAttWorker = null;
+}
+
+async function submitTeamAtt(){
+  if(!_myTeamAttWorker) return;
+  var type   = document.getElementById('myteam-att-type').value;
+  var reason = document.getElementById('myteam-att-reason').value.trim();
+  var time   = document.getElementById('myteam-late-time').value;
+  var ret    = document.getElementById('myteam-return-date').value;
+  var st     = document.getElementById('myteam-att-status');
+  if(!reason){ st.style.color='#ef4444'; st.textContent='Reason is required.'; return; }
+  if(type==='late' && !time){ st.style.color='#ef4444'; st.textContent='Expected arrival time is required.'; return; }
+  st.style.color='#94a3b8'; st.textContent='Submitting…';
+  var by = localStorage.getItem('mbrAuth') || '';
+  var payload = {
+    worker_name: _myTeamAttWorker, type: type,
+    reason: reason + (by ? '  [Reported by ' + by + ']' : ''),
+    report_date: new Date().toISOString().slice(0,10),
+    arrival_time: time || null, return_date: ret || null
+  };
+  try{
+    var r = await fetch('/api/attendance',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    var d = await r.json();
+    if(d.ok){ st.style.color='#22c55e'; st.textContent='✓ Submitted!';
+      setTimeout(function(){ closeTeamAttForm(); loadMyTeam(); }, 900); }
+    else { st.style.color='#ef4444'; st.textContent='Error: '+(d.error||'Unknown'); }
+  }catch(e){ st.style.color='#ef4444'; st.textContent='Network error: '+e.message; }
+}
+
+// ── Safety-meeting check-in for leads (no lvl gate) ─────────────────────────
+// smPresent is shared with Safety Meeting tab — same data, same endpoint.
+async function toggleTeamWorker(name){
+  if(smPresent[name]){
+    var rec = smPresent[name];
+    if(rec.id){ try{ await fetch('/api/safety-meeting/'+rec.id,{method:'DELETE'}); }catch(e){} }
+    delete smPresent[name];
+  } else {
+    var now = new Date().toISOString();
+    smPresent[name] = {id:'', worker_name:name, checked_in_at:now};
+    try{
+      var r = await fetch('/api/safety-meeting',{method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({worker_name:name, supervisor: curUser||''})});
+      var d = await r.json();
+      if(d.ok){
+        // Sync smPresent from server so IDs are correct
+        var ar = await fetch('/api/safety-meeting');
+        var att = await ar.json();
+        smPresent = {};
+        if(Array.isArray(att)) att.forEach(function(rec){ smPresent[rec.worker_name]=rec; });
+        if(window.refreshCheckInStatus) window.refreshCheckInStatus();
+      } else { delete smPresent[name]; }
+    }catch(e){ delete smPresent[name]; }
+  }
+  renderMyTeamGrid(); // re-render My Team cards with updated smPresent
+}
+
+// ── Render My Team chiclet grid ──────────────────────────────────────────────
+function renderMyTeamGrid(){
+  var grid = document.getElementById('myteam-grid');
+  if(!grid) return;
+  var members = Object.values(_teamMemberMap);
+  if(!members.length){ grid.innerHTML=''; return; }
+
+  // Load today's attendance map
+  var today = new Date().toISOString().slice(0,10);
+
+  var html = '';
+  var checkedIn = 0;
+  members.forEach(function(rec, idx){
+    var name = rec.name;
+    var isP  = !!smPresent[name];
+    var att  = smAttendance && smAttendance[name];
+    if(isP) checkedIn++;
+
+    var leadLabel = rec.led_by ? '<div style="font-size:9px;color:#64748b;margin-top:1px;">'+escH(rec.led_by)+'</div>' : '';
+    var statusIcon = isP ? '✅' : (att ? '⚠️' : '👤');
+    var timeLabel  = isP
+      ? ('✓ '+fmtCheckin(smPresent[name].checked_in_at)+' · '+elapsed(smPresent[name].checked_in_at))
+      : (att ? (att.type==='late'?'running late':'not expected') : 'tap to check in');
+    var attBadge = '';
+    if(att){
+      var attColors={late:'background:#92400e;color:#fef3c7',absent:'background:#991b1b;color:#fee2e2',vacation:'background:#5b21b6;color:#ede9fe'};
+      attBadge='<span style="font-size:9px;font-weight:800;padding:1px 6px;border-radius:999px;'+attColors[att.type]+';text-transform:uppercase;margin-left:4px;">'+att.type+'</span>';
+    }
+
+    // Long-press / secondary action for report — use a small icon button in the card corner
+    html += '<div class="worker-card'+(isP?' present':'')+(att&&att.type!=='late'?' absent-card':'')+'" style="position:relative;"'
+      +' onclick="toggleTeamWorker_idx('+idx+')">'
+      +'<div class="wc-status">'+statusIcon+'</div>'
+      +'<div class="wc-name">'+escH(name)+attBadge+leadLabel+'</div>'
+      +'<div class="wc-time">'+timeLabel+'</div>'
+      +'<button onclick="event.stopPropagation();openTeamAttFormIdx('+idx+')" title="Report absent/late" '
+      +'style="position:absolute;top:4px;right:4px;background:none;border:none;font-size:12px;cursor:pointer;color:#64748b;padding:2px;line-height:1;">📋</button>'
+      +'</div>';
+  });
+
+  grid.innerHTML = html;
+
+  // Update count
+  var countEl = document.getElementById('myteam-count');
+  if(countEl) countEl.textContent = checkedIn + ' / ' + members.length + ' checked in';
+}
+
+function toggleTeamWorker_idx(idx){
+  var rec = _teamMemberMap[idx]; if(!rec) return;
+  // If worker has absent/vacation att — don't allow check-in
+  var att = smAttendance && smAttendance[rec.name];
+  if(att && att.type !== 'late'){ openTeamAttForm(rec.name); return; }
+  toggleTeamWorker(rec.name);
+}
+
+// ── Load My Team ─────────────────────────────────────────────────────────────
+async function loadMyTeam(){
+  var myName = localStorage.getItem('mbrAuth') || '';
+  var role   = localStorage.getItem('mbrRole') || 'lead';
+  var isAdmin = ['admin','boss','supervisor'].includes(role);
+  var grid   = document.getElementById('myteam-grid');
+  var countEl= document.getElementById('myteam-count');
+  if(grid)   grid.innerHTML = '<div style="color:#64748b;text-align:center;padding:32px;grid-column:1/-1;">Loading…</div>';
+  if(countEl)countEl.textContent = '';
+
+  // Show/hide lead filter for admin
+  var filterWrap = document.getElementById('myteam-lead-filter');
+  var filterSel  = document.getElementById('myteam-lead-sel');
+  if(isAdmin){
+    filterWrap.style.display = '';
+    if(filterSel.options.length <= 1){
+      try{
+        var lu = await fetch('/api/users');
+        var users = await lu.json();
+        users.filter(function(u){return u.role==='lead';}).forEach(function(l){
+          var o = document.createElement('option');
+          o.value=l.name; o.textContent=l.name; filterSel.appendChild(o);
+        });
+      }catch(e){}
+    }
+  } else { filterWrap.style.display='none'; }
+
+  var leadName = isAdmin ? (filterSel.value || '') : myName;
+  var subtitle = document.getElementById('myteam-subtitle');
+  if(subtitle) subtitle.textContent = isAdmin && !leadName
+    ? 'All teams — tap a card to check into safety meeting'
+    : ('Team of '+leadName+' — tap to check into safety meeting');
+
+  try{
+    var url = '/api/team-members' + (leadName ? '?lead='+encodeURIComponent(leadName) : '');
+    var [tmRes, smRes] = await Promise.all([
+      fetch(url),
+      fetch('/api/safety-meeting')
+    ]);
+    var members = await tmRes.json();
+    var smRecs  = await smRes.json();
+
+    // Sync smPresent so card states match Safety Meeting tab
+    smPresent = {};
+    if(Array.isArray(smRecs)) smRecs.forEach(function(r){ smPresent[r.worker_name]=r; });
+
+    // Also load today's attendance for badges
+    var today = new Date().toISOString().slice(0,10);
+    try{
+      var ar = await fetch('/api/attendance/active');
+      var attRows = await ar.json();
+      smAttendance = {};
+      if(Array.isArray(attRows)) attRows.forEach(function(a){ smAttendance[a.worker_name]={type:a.type||'absent'}; });
+    }catch(e){}
+
+    if(!members.length){
+      if(grid) grid.innerHTML='<div style="color:#64748b;text-align:center;padding:32px;grid-column:1/-1;">'
+        +(leadName?'No team members assigned to '+escH(leadName)+'.':'No team members assigned yet.')
+        +'<br><span style="font-size:12px;">Go to Settings → Users &amp; Roles → Edit a worker → Led By</span></div>';
+      return;
+    }
+
+    // If admin showing all: sort by led_by then name; else just names
+    if(isAdmin && !leadName){
+      members.sort(function(a,b){ return (a.led_by||'').localeCompare(b.led_by||'') || a.name.localeCompare(b.name); });
+    }
+
+    // Build _teamMemberMap (index → {name, led_by})
+    _teamMemberMap = {};
+    members.forEach(function(m, i){ _teamMemberMap[i] = {name:m.name, led_by:m.led_by||''}; });
+
+    renderMyTeamGrid();
+
+  }catch(e){
+    if(grid) grid.innerHTML='<div style="color:#ef4444;text-align:center;padding:32px;grid-column:1/-1;">Error loading team: '+e.message+'</div>';
+  }
+}
+</script>
+
+<!-- ── Crash-protection safety net (independent script, always runs) ───── -->
+<script>
+(function(){
+  // Catch any uncaught JS errors and attempt recovery
+  var _crashCount = 0;
+  window.addEventListener('error', function(e){
+    _crashCount++;
+    console.warn('[MBR safety] JS error caught:', e.message, 'at', e.filename, e.lineno);
+    // Don't attempt recovery on first error — might be a non-fatal library issue
+    if(_crashCount >= 1) _tryRecover();
+  });
+
+  function _tryRecover(){
+    var mc = document.getElementById('mainContent');
+    var auth = localStorage.getItem('mbrAuth');
+    if(!mc || !auth) return;
+    if(mc.style.display === 'none' || mc.style.display === ''){
+      console.warn('[MBR safety] mainContent hidden after error — forcing visible');
+      mc.style.display = 'block';
+      // Try to run applyTabVisibility if it made it
+      try{ if(typeof applyTabVisibility==='function') applyTabVisibility(); }catch(ex){}
+    }
+  }
+
+  // Fallback timer: if still blank after 4s and user is logged in → show it
+  setTimeout(function(){
+    var mc   = document.getElementById('mainContent');
+    var auth = localStorage.getItem('mbrAuth');
+    var role = localStorage.getItem('mbrRole') || 'worker';
+    if(mc && auth && (mc.style.display==='none' || mc.style.display==='')){
+      console.warn('[MBR safety] Timer fallback — forcing mainContent visible');
+      mc.style.display = 'block';
+      // Show a warning toast so user knows something was off
+      try{
+        if(typeof showToast==='function'){
+          showToast('⚠ Page recovered — some features may need a refresh', true);
+        }
+      }catch(ex){}
+      // Try tab visibility
+      try{
+        if(typeof applyTabVisibility==='function') applyTabVisibility();
+      }catch(ex){
+        // Fallback: just show attendance tab for workers, safety meeting for higher roles
+        var lvlMap = {admin:5,boss:4,inventory:3,lead:2,worker:1};
+        var lvl = lvlMap[role] || 1;
+        var tabId = lvl >= 2 ? 'tab-safety' : 'tab-daysoff';
+        document.querySelectorAll('.tab-panel').forEach(function(p){
+          p.classList.remove('active'); p.style.display='none';
+        });
+        var panel = document.getElementById(tabId);
+        if(panel){ panel.classList.add('active'); panel.style.display='block'; }
+      }
+    }
+  }, 4000);
+
+  // Also wrap showMain with extra safety when it's defined
+  window.addEventListener('load', function(){
+    var _origShowMain = window.showMain;
+    if(typeof _origShowMain === 'function'){
+      window.showMain = function(){
+        try{ _origShowMain(); }
+        catch(e){
+          console.error('[MBR safety] showMain threw:', e);
+          var mc = document.getElementById('mainContent');
+          if(mc) mc.style.display='block';
+        }
+      };
+    }
+  });
+})();
+
+// ── Manual Check-In (Boss/Admin) ─────────────────────────────────────────────
+function openManualCheckin(){
+  var modal = document.getElementById('manualCheckinModal');
+  // Populate worker dropdown from smWorkers
+  var sel = document.getElementById('mcWorker');
+  sel.innerHTML = '<option value="">— Select worker —</option>';
+  var names = smWorkers.map(function(w){ return w.name; }).sort();
+  names.forEach(function(n){
+    var o = document.createElement('option');
+    o.value = n; o.textContent = n;
+    sel.appendChild(o);
+  });
+  // Default date = today, time = now
+  var now = new Date();
+  document.getElementById('mcDate').value = now.toISOString().slice(0,10);
+  document.getElementById('mcTime').value =
+    String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('mcStatus').style.display = 'none';
+  modal.style.display = 'flex';
+}
+function closeManualCheckin(){
+  document.getElementById('manualCheckinModal').style.display = 'none';
+}
+async function submitManualCheckin(){
+  var worker = document.getElementById('mcWorker').value;
+  var date   = document.getElementById('mcDate').value;
+  var time   = document.getElementById('mcTime').value;
+  var status = document.getElementById('mcStatus');
+  status.style.display = 'none';
+  if(!worker){ status.textContent='Please select a worker.'; status.style.display='block'; return; }
+  if(!time)  { status.textContent='Please enter the arrival time.'; status.style.display='block'; return; }
+  var caller = localStorage.getItem('mbrAuth') || '';
+  try {
+    var r = await fetch('/api/checkin/manual', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({caller_name:caller, worker_name:worker, checked_in_at:time, date:date})
+    });
+    var d = await r.json();
+    if(d.ok){
+      closeManualCheckin();
+      showToast('✓ ' + worker + ' checked in at ' + time);
+      // Refresh safety meeting view
+      if(typeof loadSafetyMeeting === 'function') loadSafetyMeeting();
+    } else {
+      status.textContent = d.error || 'Check-in failed.';
+      status.style.display = 'block';
+    }
+  } catch(e) {
+    status.textContent = 'Network error.';
+    status.style.display = 'block';
+  }
+}
+</script>
+</body>
+</html>
