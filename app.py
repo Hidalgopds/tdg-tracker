@@ -1518,7 +1518,7 @@ def all_progress():
 #  INVENTORY SYSTEM
 # ═══════════════════════════════════════════════════════════════════
 
-EDITOR_NAMES = ["Daniel H."]
+EDITOR_NAMES = ["Daniel H.", "Fabio", "Dispatcher"]
 
 def is_editor(name):
     if not name:
@@ -1542,19 +1542,8 @@ def is_editor(name):
 
 @app.route("/api/users/editors", methods=["GET"])
 def get_editors():
-    """Return names of all users with editor-level role (admin/boss/inventory/dispatcher)."""
-    r = requests.get(
-        f"{SUPABASE_URL}/rest/v1/app_users"
-        f"?role=in.(admin,boss,inventory,dispatcher)&approved=eq.true&select=name&order=name.asc&limit=100",
-        headers=sb_headers()
-    )
-    users = r.json() if r.ok else []
-    names = [u["name"] for u in users if u.get("name")]
-    # Include legacy hardcoded names that may not be in app_users
-    for n in EDITOR_NAMES:
-        if n not in names:
-            names.append(n)
-    return jsonify({"editors": sorted(names)})
+    """Return the fixed list of editor names for the picker modal."""
+    return jsonify({"editors": sorted(EDITOR_NAMES)})
 
 def notify_leads_attendance(worker_name, att_type, report_date, return_date, reason):
     """Email all leads/admins when someone submits an attendance report."""
