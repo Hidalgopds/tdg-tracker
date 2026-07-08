@@ -629,7 +629,10 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <div class="mhandle"></div>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
     <div class="mtitle" style="margin:0">📬 Material Requests</div>
+    <div style="display:flex;gap:6px;">
     <button onclick="buildShareText()" style="height:30px;padding:0 10px;background:#111d2b;border:1px solid var(--border);border-radius:7px;color:var(--muted);font-size:11px;cursor:pointer;">📋 Share</button>
+    <button onclick="closeModal('reqsModal');openModal('exportModal')" style="height:30px;padding:0 10px;background:#111d2b;border:1px solid var(--border);border-radius:7px;color:var(--muted);font-size:11px;cursor:pointer;">📤 Export</button>
+    </div>
   </div>
   <div class="rq-tab-bar">
     <button class="rq-tab active" id="rqtab-pending" onclick="onInboxTab('pending')">Pending</button>
@@ -646,6 +649,8 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <div class="mhandle"></div>
   <div class="mtitle">✍️ Confirm Delivery</div>
   <div id="sigReqInfo" style="background:#111d2b;border-radius:8px;padding:10px;margin-bottom:14px;font-size:13px;color:#94a3b8;line-height:1.5;"></div>
+  <div class="fg" style="margin-bottom:10px;"><label class="fl">Picked Up By <span style="color:#ef4444;font-size:10px;">*</span></label>
+    <input class="fi" id="sigPickupBy" type="text" placeholder="Name of person picking up..."></div>
   <label class="fl">Recipient Signature</label>
   <div class="sig-wrap">
     <canvas class="sig-canvas" id="sigCanvas"></canvas>
@@ -657,6 +662,43 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   </div>
   <button class="btn-s" onclick="closeModal('sigModal');openInbox(CURRENT_INBOX_TAB);">← Back</button>
   <input type="hidden" id="sigReqId">
+</div></div>
+
+<!-- EXPORT MODAL -->
+<div class="modal-bg" id="exportModal">
+<div class="modal">
+  <div class="mhandle"></div>
+  <div class="mtitle">📤 Export Requests</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+    <div class="fg"><label class="fl">Status</label>
+      <select class="fi" id="exStatus">
+        <option value="">All</option>
+        <option value="Pending">Pending</option>
+        <option value="Approved">Approved</option>
+        <option value="Delivered">Delivered</option>
+        <option value="Rejected">Rejected</option>
+      </select></div>
+    <div class="fg"><label class="fl">Contractor Company</label>
+      <select class="fi" id="exCompany">
+        <option value="">All</option>
+        <option>MBR Texas</option>
+        <option>J&amp;F Sandblasting</option>
+        <option>RV Solutions</option>
+        <option>C.U.R</option>
+      </select></div>
+    <div class="fg"><label class="fl">Job Name</label>
+      <input class="fi" id="exJob" type="text" placeholder="e.g. TDG Bldg 7"></div>
+    <div class="fg"><label class="fl">Material</label>
+      <input class="fi" id="exMat" type="text" placeholder="contains..."></div>
+    <div class="fg"><label class="fl">Date From</label>
+      <input class="fi" id="exDateFrom" type="date"></div>
+    <div class="fg"><label class="fl">Date To</label>
+      <input class="fi" id="exDateTo" type="date"></div>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:10px;">
+    <button class="btn-p" style="flex:1;height:40px;" onclick="runExport('csv')">📊 Export CSV</button>
+  </div>
+  <button class="btn-s" onclick="closeModal('exportModal')">Close</button>
 </div></div>
 
 <!-- SHARE MODAL -->
@@ -962,7 +1004,7 @@ function renderReqCard(req){
 function deliverReq(id,itemName,qty,building,requester){
   _sigReqId=id;document.getElementById('sigReqId').value=id;
   document.getElementById('sigReqInfo').innerHTML='<strong>'+esc(itemName)+'</strong> · Qty: <strong>'+qty+'</strong>'+(building?' · Bldg <strong>'+esc(building)+'</strong>':'')+'<br>Requested by: '+esc(requester);
-  clearSig();closeModal('reqsModal');openModal('sigModal');setTimeout(initSigCanvas,120);
+  clearSig();var pf=document.getElementById('sigPickupBy');if(pf)pf.value='';closeModal('reqsModal');openModal('sigModal');setTimeout(initSigCanvas,120);
 }
 function initSigCanvas(){
   _sigCanvas=document.getElementById('sigCanvas');if(!_sigCanvas)return;
@@ -974,12 +1016,47 @@ function initSigCanvas(){
   _sigCanvas.onmousemove=_sigCanvas.ontouchmove=function(e){e.preventDefault();if(!_sigDrawing)return;var p=pos(e);_sigCtx.lineTo(p.x,p.y);_sigCtx.stroke();};
   _sigCanvas.onmouseup=_sigCanvas.ontouchend=function(){_sigDrawing=false;};
 }
+function runExport(fmt){
+  var p=new URLSearchParams();
+  var st=document.getElementById('exStatus').value;
+  var co=document.getElementById('exCompany').value;
+  var job=document.getElementById('exJob').value.trim();
+  var mat=document.getElementById('exMat').value.trim();
+  var df=document.getElementById('exDateFrom').value;
+  var dt=document.getElementById('exDateTo').value;
+  if(st)p.append('status',st);
+  if(co)p.append('contractor_company',co);
+  if(job)p.append('job_name',job);
+  if(mat)p.append('item_name',mat);
+  if(df)p.append('date_from',df);
+  if(dt)p.append('date_to',dt);
+  fetch('/api/material-requests/export?'+p.toString()).then(function(r){return r.json();}).then(function(rows){
+    if(!rows.length){toast('No records found','error');return;}
+    var cols=['created_at','requester_name','contractor_company','job_name','item_name','qty_needed','building','status','approved_by','delivered_by','pickup_by','delivered_at','notes'];
+    var nl='\r\n';
+    var hdr=cols.join(',');
+    var csv=hdr+nl+rows.map(function(row){
+      return cols.map(function(k){
+        var v=(row[k]==null?'':String(row[k])).replace(/"/g,'""');
+        return '"'+v+'"';
+      }).join(',');
+    }).join(nl);
+    var blob=new Blob([csv],{type:'text/csv'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='material_requests_'+(new Date().toISOString().split('T')[0])+'.csv';
+    a.click();
+    toast('Downloaded '+rows.length+' records');
+  }).catch(function(){toast('Export failed','error');});
+}
 function clearSig(){if(_sigCtx&&_sigCanvas)_sigCtx.clearRect(0,0,_sigCanvas.width,_sigCanvas.height);var h=document.getElementById('sigHint');if(h)h.style.display='block';}
 function submitDelivery(){
   if(!_sigReqId){toast('Error','error');return;}
+  var pickupBy=(document.getElementById('sigPickupBy')||{value:''}).value.trim();
+  if(!pickupBy){toast('Enter who is picking up','error');return;}
   if(_sigCanvas){var px=_sigCtx.getImageData(0,0,_sigCanvas.width,_sigCanvas.height).data,signed=false;for(var i=3;i<px.length;i+=4){if(px[i]>0){signed=true;break;}}if(!signed){toast('Please sign before confirming','error');return;}}
   var by=localStorage.getItem('mbrAuth')||'',sig=_sigCanvas?_sigCanvas.toDataURL('image/png'):'';
-  fetch('/api/material-requests/'+_sigReqId+'/deliver',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({delivered_by:by,signature_data:sig})})
+  fetch('/api/material-requests/'+_sigReqId+'/deliver',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({delivered_by:by,signature_data:sig,pickup_by:pickupBy})})
   .then(function(r){return r.json();}).then(function(d){if(d.ok){toast('Delivered!');closeModal('sigModal');loadInboxCount();openInbox('all');}else toast(d.error||'Error','error');}).catch(function(){toast('Error','error');});
 }
 

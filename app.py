@@ -1879,19 +1879,45 @@ def deliver_material_request(req_id):
     data = request.json or {}
     delivered_by = data.get("delivered_by", "")
     signature_data = data.get("signature_data", "")
+    pickup_by = data.get("pickup_by", "")
     if not delivered_by:
         return jsonify({"error": "delivered_by required"}), 400
     payload = {
         "status": "Delivered",
         "delivered_by": delivered_by,
         "delivered_at": "now()",
-        "signature_data": signature_data
+        "signature_data": signature_data,
+        "pickup_by": pickup_by
     }
     url = f"{SUPABASE_URL}/rest/v1/material_requests?id=eq.{req_id}"
     r = requests.patch(url, headers={**sb_headers(), "Prefer": "return=representation"}, json=payload)
     if r.ok:
         return jsonify({"ok": True})
     return jsonify({"error": r.text}), 400
+
+@app.route("/api/material-requests/export", methods=["GET"])
+def export_material_requests():
+    """Export material requests as JSON with filters. Frontend converts to Excel/PDF."""
+    filters = []
+    if request.args.get("status"):
+        filters.append(f"status=eq.{requests.utils.quote(request.args['status'])}")
+    if request.args.get("job_name"):
+        filters.append(f"job_name=eq.{requests.utils.quote(request.args['job_name'])}")
+    if request.args.get("contractor_company"):
+        filters.append(f"contractor_company=eq.{requests.utils.quote(request.args['contractor_company'])}")
+    if request.args.get("item_name"):
+        filters.append(f"item_name=ilike.*{requests.utils.quote(request.args['item_name'])}*")
+    if request.args.get("date_from"):
+        filters.append(f"created_at=gte.{requests.utils.quote(request.args['date_from'])}")
+    if request.args.get("date_to"):
+        filters.append(f"created_at=lte.{requests.utils.quote(request.args['date_to'])}T23:59:59")
+    qs = "&".join(filters) + ("&" if filters else "")
+    url = (f"{SUPABASE_URL}/rest/v1/material_requests"
+           f"?{qs}select=id,created_at,requester_name,contractor_company,job_name,"
+           f"item_name,qty_needed,building,notes,status,approved_by,approved_at,"
+           f"delivered_by,delivered_at,pickup_by&order=created_at.desc&limit=1000")
+    r = requests.get(url, headers=sb_headers())
+    return jsonify(r.json() if r.ok else [])
 
 # ── App users / PIN ──────────────────────────────────────────────
 @app.route("/api/users/has-pin", methods=["GET"])
@@ -1918,17 +1944,23 @@ def set_pin():
     taken = [r for r in (chk.json() if chk.ok else []) if r.get("name") != name]
     if taken:
         return jsonify({"error": "PIN already taken — choose another"}), 409
-    # Preserve existing role — only set "lead" if no role yet
     url = f"{SUPABASE_URL}/rest/v1/app_users"
-    existing = requests.get(f"{url}?name=eq.{requests.utils.quote(name)}&select=role", headers=sb_headers())
+    existing = requests.get(f"{url}?name=eq.{requests.utils.quote(name)}&select=role&limit=1", headers=sb_headers())
     existing_rows = existing.json() if existing.ok else []
-    existing_role = existing_rows[0].get("role") if existing_rows else None
-    role_to_set = existing_role if existing_role else "lead"
-    r = requests.post(
-        url,
-        headers={**sb_headers(), "Prefer": "resolution=merge-duplicates,return=representation"},
-        json={"name": name, "pin": pin, "role": role_to_set}
-    )
+    if existing_rows:
+        # User already exists — just PATCH the pin
+        r = requests.patch(
+            f"{url}?name=eq.{requests.utils.quote(name)}",
+            headers={**sb_headers(), "Prefer": "return=representation"},
+            json={"pin": pin}
+        )
+    else:
+        # New user — insert with default role
+        r = requests.post(
+            url,
+            headers={**sb_headers(), "Prefer": "return=representation"},
+            json={"name": name, "pin": pin, "role": "lead"}
+        )
     if r.ok:
         return jsonify({"ok": True})
     return jsonify({"error": r.text}), 400
@@ -2456,34 +2488,22 @@ def set_kiosk_pin(worker_id):
 
 @app.route("/api/contractor/profile", methods=["GET"])
 def get_contractor_profile():
-    """Get the current worker's profile by name — returns pin_set (bool), never the actual PIN."""
+    """Get a user's company from app_users (works for all roles, not just workers table)."""
     name = request.args.get("name","").strip()
     if not name:
         return jsonify({"ok": False, "error": "name required"}), 400
     r = requests.get(
-        f"{SUPABASE_URL}/rest/v1/{WORKERS_TABLE}"
-        f"?name=eq.{requests.utils.quote(name)}&select=id,name,pin&limit=1",
+        f"{SUPABASE_URL}/rest/v1/app_users"
+        f"?name=eq.{requests.utils.quote(name)}&select=name,pin,company&limit=1",
         headers=sb_headers()
     )
     rows = r.json() if r.ok else []
     if not rows:
-        return jsonify({"ok": False, "error": "worker not found"}), 404
-    w = rows[0]
-    # Also fetch contractor_company from app_users
-    company = ""
-    try:
-        ru = requests.get(
-            f"{SUPABASE_URL}/rest/v1/app_users"
-            f"?name=eq.{requests.utils.quote(name)}&select=contractor_company&limit=1",
-            headers=sb_headers()
-        )
-        au = ru.json() if ru.ok else []
-        if au:
-            company = au[0].get("contractor_company") or ""
-    except Exception:
-        pass
-    return jsonify({"ok": True, "id": w["id"], "name": w["name"],
-                    "pin_set": bool(w.get("pin")), "contractor_company": company})
+        return jsonify({"ok": False, "error": "user not found"}), 404
+    u = rows[0]
+    return jsonify({"ok": True, "name": u["name"],
+                    "pin_set": bool(u.get("pin")),
+                    "contractor_company": u.get("company") or "MBR Texas"})
 
 @app.route("/api/contractor/profile", methods=["PATCH"])
 def update_contractor_profile():
@@ -3275,31 +3295,4 @@ def _nightly_report_and_reset():
             <div style="font-family:Arial,sans-serif;max-width:520px;background:#0f1117;color:#e2e8f0;padding:28px;border-radius:12px;">
               <div style="background:#1a6bc4;width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;margin-bottom:16px;font-size:16px;">MBR</div>
               <h2 style="margin:0 0 6px;">Location Report — {report_date}</h2>
-              <p style="color:#94a3b8;font-size:14px;margin:0 0 16px;">
-                {row_count} worker movements recorded today on the TDG Data Center project.
-                The full report is attached as a PDF.
-              </p>
-              <p style="color:#64748b;font-size:12px;">Worker location table has been cleared for tomorrow.</p>
-            </div>"""
-            msg.attach(MIMEText(body_html, "html"))
-
-            if pdf_bytes:
-                part = MIMEBase("application", "octet-stream")
-                part.set_payload(pdf_bytes)
-                encoders.encode_base64(part)
-                part.add_header(
-                    "Content-Disposition",
-                    f'attachment; filename="Location_Report_{report_date}.pdf"'
-                )
-                msg.attach(part)
-
-            with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=15) as srv:
-                srv.login(SMTP_EMAIL, SMTP_PASSWORD)
-                srv.sendmail(SMTP_EMAIL, [ADMIN_EMAIL], msg.as_string())
-            print(f"[APScheduler] Report emailed to {ADMIN_EMAIL}")
-        except Exception as e:
-            print(f"[APScheduler] Email failed: {e}")
-    else:
-        print("[APScheduler] Email skipped — SMTP not configured")
-
-    #
+              <p
