@@ -38,7 +38,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .ic-stat{font-size:10px;font-weight:700;padding:2px 6px;border-radius:20px;}
 .s-ok{background:rgba(34,197,94,.1);color:var(--green);}
 .s-low{background:rgba(245,158,11,.1);color:var(--amber);}
-.s-out{background:rgba(239,68,68,.1);color:var(--red);}
+.s-out{background:rgba(239,68,68,.1);color:var(--red);}.s-alert{background:rgba(251,146,60,.12);color:#fb923c;}
 .ic-edit{display:none;gap:6px;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;}
 .editor-active .ic-edit{display:flex;}
 .qty-inp{width:55px;height:30px;background:#0a0f1a;border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;text-align:center;}
@@ -372,6 +372,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
     <button class="back-btn" onclick="window.location='/'">◀</button>
     <span class="hlogo">📦 Inventory</span>
     <div style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+      <button id="lowStockBtn" onclick="openLowStockModal()" style="display:none;height:32px;padding:0 10px;background:rgba(251,146,60,.15);border:1px solid rgba(251,146,60,.4);border-radius:8px;color:#fb923c;font-size:11px;font-weight:700;cursor:pointer;" title="Low stock alert">⚠️ <span id="lowStockCount">0</span></button>
       <button class="req-bell-btn" id="reqBell" onclick="openInbox('pending')">📬<span class="req-bell-badge" id="reqBellBadge"></span></button>
       <button class="editor-btn" id="edBtn" onclick="openAuth()">🔒 Editor</button>
     </div>
@@ -662,6 +663,20 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   </div>
 </div>
 
+<!-- LOW STOCK MODAL -->
+<div class="modal-bg" id="lowStockModal">
+<div class="modal" style="max-width:560px;">
+  <div class="mhandle"></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+    <div class="mtitle" style="margin:0;">⚠️ Low Stock Items</div>
+    <button onclick="sendLowStockEmail()" id="lsEmailBtn"
+      style="height:32px;padding:0 12px;background:rgba(251,146,60,.15);border:1px solid rgba(251,146,60,.4);
+      border-radius:8px;color:#fb923c;font-size:12px;font-weight:700;cursor:pointer;">📧 Send Alert Email</button>
+  </div>
+  <div id="lowStockList" style="max-height:360px;overflow-y:auto;"></div>
+  <button class="btn-s" style="margin-top:12px;" onclick="closeModal('lowStockModal')">Close</button>
+</div></div>
+
 <!-- REQUESTS REVIEW MODAL -->
 <div class="modal-bg" id="reqsModal">
 <div class="modal">
@@ -765,6 +780,7 @@ document.addEventListener('DOMContentLoaded',function(){
   loadInv();
   buildNameList();
   initInboxBell();
+  loadLowStock();
   var sv=sessionStorage.getItem('edUser');
   if(sv){edUser=sv;activateEd();}
 });
@@ -802,8 +818,10 @@ function renderGrid(){
 
 function mkCard(it){
   var qty=it.qty_on_hand||0;
-  var sc=qty<=0?'s-out':(qty<10?'s-low':'s-ok');
-  var stxt=qty<=0?'Out':(qty<10?'Low':'');
+  var safeQ=it.safe_qty||0;
+  var sc=qty<=0?'s-out':(safeQ>0&&qty<=safeQ?'s-alert':(qty<10?'s-low':'s-ok'));
+  var stxt=qty<=0?'Out':(safeQ>0&&qty<=safeQ?'⚠ Alert':(qty<10?'Low':''));
+  var lastR=it.last_restocked_at?it.last_restocked_at.substring(0,10):'';
   var d=document.createElement('div');d.className='inv-card';
   var ALL_CATS=['Cable Tray','Coatings','Conduit','Drainage','Electrical','Fasteners','Hardware','Insulation','Roofing','Sealant','Trim','Wall Panels','General'];
   var catOpts=ALL_CATS.map(function(c){return'<option value="'+c+'"'+(c===it.category?' selected':'')+'>'+c+'</option>';}).join('');
@@ -811,9 +829,11 @@ function mkCard(it){
     '<div class="ic-name">'+esc(it.name)+'</div>'+
     '<div class="ic-bottom"><div><span class="ic-qty">'+qty+'</span> <span class="ic-unit">'+esc(it.unit||'EA')+'</span></div>'+
     (stxt?'<span class="ic-stat '+sc+'">'+stxt+'</span>':'')+
+    (lastR?'<div style="font-size:9px;color:var(--muted);margin-top:3px;">Restocked: '+lastR+'</div>':'')+
     '</div>'+
     '<div class="ic-edit">'+
-      '<input class="qty-inp" id="q-'+it.id+'" type="number" min="0" value="'+qty+'">'+
+      '<input class="qty-inp" id="q-'+it.id+'" type="number" min="0" value="'+qty+'" title="On Hand">'+
+      '<input class="qty-inp" id="sq-'+it.id+'" type="number" min="0" placeholder="Safe" title="Safe qty" value="'+(safeQ||'')+"'>"+
       '<button class="ic-save" onclick="saveQty(\''+it.id+'\')">Save</button>'+
       '<button class="ic-del" onclick="delItem(\''+it.id+'\',\''+esc(it.name).replace(/'/g,"\\'")+ '\')" title="Delete">🗑️</button>'+
     '</div>'+
@@ -906,7 +926,7 @@ function doMatAC(inp,idx){
   ac.innerHTML='';
   hits.forEach(function(it){
     var d=document.createElement('div');
-    d.style.cssText='padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);';
+    d.style.cssText='padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);color:#e2e8f0;background:#0d1a2d;';
     d.textContent=(it.name||'')+(it.qty_on_hand!=null?' ('+it.qty_on_hand+' '+(it.unit||'EA')+')':'');
     d.onmouseover=function(){this.style.background='#1a3050';};
     d.onmouseout=function(){this.style.background='';};
@@ -1143,6 +1163,52 @@ function deliverReq(id,itemName,qty,building,requester,company,jobName){
     else{toast('Delivery form not found','error');}
   }catch(e){toast('Error: '+e.message,'error');console.error('deliverReq error',e);}
 }
+function loadLowStock(){
+  fetch('/api/inventory/low-stock').then(function(r){return r.json();}).then(function(items){
+    var btn=document.getElementById('lowStockBtn');
+    var cnt=document.getElementById('lowStockCount');
+    if(btn&&cnt){
+      cnt.textContent=items.length;
+      btn.style.display=(_LVL>=3&&items.length>0)?'':'none';
+    }
+  }).catch(function(){});
+}
+function openLowStockModal(){
+  fetch('/api/inventory/low-stock').then(function(r){return r.json();}).then(function(items){
+    var el=document.getElementById('lowStockList');
+    if(!el)return;
+    if(!items.length){el.innerHTML='<div style="color:var(--muted);text-align:center;padding:24px;">All items are above their safe quantity. ✅</div>';openModal('lowStockModal');return;}
+    var html='<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+      +'<thead><tr>'
+      +'<th style="text-align:left;padding:6px 8px;color:var(--muted);font-size:10px;border-bottom:1px solid var(--border);">ITEM</th>'
+      +'<th style="text-align:center;padding:6px 8px;color:var(--muted);font-size:10px;border-bottom:1px solid var(--border);">ON HAND</th>'
+      +'<th style="text-align:center;padding:6px 8px;color:var(--muted);font-size:10px;border-bottom:1px solid var(--border);">SAFE QTY</th>'
+      +'<th style="text-align:center;padding:6px 8px;color:var(--muted);font-size:10px;border-bottom:1px solid var(--border);">LAST RESTOCKED</th>'
+      +'</tr></thead><tbody>';
+    items.forEach(function(it){
+      html+='<tr>'
+        +'<td style="padding:8px;border-bottom:1px solid var(--border);"><div style="font-weight:700;color:#e2e8f0;">'+safeHtml(it.name||'')+'</div>'
+        +'<div style="color:var(--muted);font-size:10px;">'+safeHtml(it.category||'')+'</div></td>'
+        +'<td style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:#f87171;font-weight:800;">'+it.qty_on_hand+'</td>'
+        +'<td style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:#fb923c;">'+it.safe_qty+'</td>'
+        +'<td style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--muted);">'+(it.last_restocked_at?it.last_restocked_at.substring(0,10):'Never')+'</td>'
+        +'</tr>';
+    });
+    html+='</tbody></table>';
+    el.innerHTML=html;
+    openModal('lowStockModal');
+  }).catch(function(){toast('Failed to load low stock','error');});
+}
+function sendLowStockEmail(){
+  var btn=document.getElementById('lsEmailBtn');if(btn)btn.textContent='Sending...';
+  fetch('/api/inventory/low-stock/email',{method:'POST'})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){toast('Alert email sent ('+d.count+' items)','success');}
+      else{toast(d.error||'Send failed','error');}
+      if(btn)btn.textContent='📧 Send Alert Email';
+    }).catch(function(){toast('Send failed','error');if(btn)btn.textContent='📧 Send Alert Email';});
+}
 function safeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function initSigCanvas(){
   _sigCanvas=document.getElementById('sigCanvas');if(!_sigCanvas)return;
@@ -1258,7 +1324,11 @@ function doWhatsApp(){window.open('https://wa.me/?text='+encodeURIComponent(docu
 function saveQty(id){
   if(!edUser){toast('Editor access required','error');return;}
   var v=parseFloat(document.getElementById('q-'+id).value)||0;
-  fetch('/api/inventory/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({qty_on_hand:v,editor:edUser,updated_by:localStorage.getItem('mbrAuth')||edUser})})
+  var sqEl=document.getElementById('sq-'+id);
+  var sqv=sqEl?parseInt(sqEl.value)||0:undefined;
+  var payload={qty_on_hand:v,editor:edUser,updated_by:localStorage.getItem('mbrAuth')||edUser};
+  if(sqEl)payload.safe_qty=sqv;
+  fetch('/api/inventory/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
   .then(function(r){return r.json();}).then(function(d){if(d.ok){toast('Saved!');loadInv();}else toast(d.error||'Error','error');});
 }
 function saveCat(id){

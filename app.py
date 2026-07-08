@@ -1786,7 +1786,7 @@ def add_inventory_item():
     data = request.json or {}
     if not is_editor(data.get("editor", "")):
         return jsonify({"error": "Editor access required"}), 403
-    payload = {k: data[k] for k in ["name","category","unit","qty_on_hand","notes"] if k in data}
+    payload = {k: data[k] for k in ["name","category","unit","qty_on_hand","notes","safe_qty"] if k in data}
     if data.get("created_by"): payload["created_by"] = data["created_by"]
     url = f"{SUPABASE_URL}/rest/v1/inventory_items"
     r = requests.post(url, headers={**sb_headers(), "Prefer": "return=representation"}, json=payload)
@@ -1800,11 +1800,23 @@ def update_inventory_item(item_id):
     if not is_editor(data.get("editor", "")):
         return jsonify({"error": "Editor access required"}), 403
     payload = {}
-    if "qty_on_hand" in data: payload["qty_on_hand"] = data["qty_on_hand"]
+    if "qty_on_hand" in data:
+        new_qty = data["qty_on_hand"]
+        payload["qty_on_hand"] = new_qty
+        # Auto-set last_restocked_at if qty increased
+        cur_r = requests.get(
+            f"{SUPABASE_URL}/rest/v1/inventory_items?id=eq.{item_id}&select=qty_on_hand&limit=1",
+            headers=sb_headers()
+        )
+        if cur_r.ok:
+            cur = cur_r.json()
+            if cur and isinstance(new_qty, (int, float)) and new_qty > (cur[0].get("qty_on_hand") or 0):
+                payload["last_restocked_at"] = "now()"
     if "name" in data: payload["name"] = data["name"]
     if "category" in data: payload["category"] = data["category"]
     if "unit" in data: payload["unit"] = data["unit"]
     if "notes" in data: payload["notes"] = data["notes"]
+    if "safe_qty" in data: payload["safe_qty"] = data["safe_qty"]
     if data.get("updated_by"): payload["updated_by"] = data["updated_by"]
     payload["updated_at"] = "now()"
     url = f"{SUPABASE_URL}/rest/v1/inventory_items?id=eq.{item_id}"
@@ -1812,6 +1824,70 @@ def update_inventory_item(item_id):
     if r.ok:
         return jsonify({"ok": True})
     return jsonify({"error": r.text}), 400
+
+@app.route("/api/inventory/low-stock", methods=["GET"])
+def get_low_stock():
+    """Return items where qty_on_hand <= safe_qty (and safe_qty > 0)."""
+    url = f"{SUPABASE_URL}/rest/v1/inventory_items?safe_qty=gt.0&order=category.asc,name.asc&select=*&limit=500"
+    r = requests.get(url, headers=sb_headers())
+    if not r.ok:
+        return jsonify([])
+    items = [it for it in r.json() if (it.get("qty_on_hand") or 0) <= (it.get("safe_qty") or 0)]
+    return jsonify(items)
+
+@app.route("/api/inventory/low-stock/email", methods=["POST"])
+def email_low_stock():
+    """Send low-stock alert email to admin."""
+    if not SMTP_EMAIL or not SMTP_PASSWORD or not ADMIN_EMAIL:
+        return jsonify({"error": "Email not configured"}), 500
+    # Fetch low-stock items
+    url = f"{SUPABASE_URL}/rest/v1/inventory_items?safe_qty=gt.0&order=category.asc,name.asc&select=*&limit=500"
+    r = requests.get(url, headers=sb_headers())
+    if not r.ok:
+        return jsonify({"error": "Failed to fetch inventory"}), 500
+    items = [it for it in r.json() if (it.get("qty_on_hand") or 0) <= (it.get("safe_qty") or 0)]
+    if not items:
+        return jsonify({"ok": True, "count": 0, "message": "No low-stock items"})
+    rows = "".join(
+        f"<tr><td style='padding:8px 12px;border-bottom:1px solid #1a2535;color:#e2e8f0;'>{it.get('category','')}</td>"
+        f"<td style='padding:8px 12px;border-bottom:1px solid #1a2535;color:#e2e8f0;font-weight:700;'>{it.get('name','')}</td>"
+        f"<td style='padding:8px 12px;border-bottom:1px solid #1a2535;color:#f87171;font-weight:700;text-align:center;'>{it.get('qty_on_hand',0)}</td>"
+        f"<td style='padding:8px 12px;border-bottom:1px solid #1a2535;color:#fbbf24;text-align:center;'>{it.get('safe_qty',0)}</td>"
+        f"<td style='padding:8px 12px;border-bottom:1px solid #1a2535;color:#94a3b8;text-align:center;'>{(it.get('last_restocked_at') or 'Never')[:10]}</td>"
+        f"</tr>"
+        for it in items
+    )
+    from datetime import datetime
+    now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    html = f"""<div style="background:#060c18;padding:24px;font-family:Arial,sans-serif;">
+<h2 style="color:#f87171;margin:0 0 8px;">⚠️ Low Stock Alert — MBR Texas</h2>
+<p style="color:#94a3b8;margin:0 0 20px;font-size:13px;">Generated {now_str} &middot; {len(items)} item(s) at or below safe quantity</p>
+<table style="width:100%;border-collapse:collapse;background:#0d1a2d;border-radius:8px;overflow:hidden;">
+<thead><tr>
+  <th style="padding:10px 12px;text-align:left;color:#94a3b8;font-size:11px;border-bottom:1px solid #1a2535;">CATEGORY</th>
+  <th style="padding:10px 12px;text-align:left;color:#94a3b8;font-size:11px;border-bottom:1px solid #1a2535;">ITEM</th>
+  <th style="padding:10px 12px;text-align:center;color:#94a3b8;font-size:11px;border-bottom:1px solid #1a2535;">ON HAND</th>
+  <th style="padding:10px 12px;text-align:center;color:#94a3b8;font-size:11px;border-bottom:1px solid #1a2535;">SAFE QTY</th>
+  <th style="padding:10px 12px;text-align:center;color:#94a3b8;font-size:11px;border-bottom:1px solid #1a2535;">LAST RESTOCKED</th>
+</tr></thead>
+<tbody>{rows}</tbody>
+</table></div>"""
+    import smtplib
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"⚠️ Low Stock Alert — {len(items)} item(s) need restocking"
+    msg["From"] = SMTP_EMAIL
+    msg["To"] = ADMIN_EMAIL
+    msg.attach(MIMEText(html, "html"))
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as srv:
+            srv.login(SMTP_EMAIL, SMTP_PASSWORD)
+            srv.sendmail(SMTP_EMAIL, [ADMIN_EMAIL], msg.as_string())
+        return jsonify({"ok": True, "count": len(items)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route("/api/inventory/<item_id>", methods=["DELETE"])
 def delete_inventory_item(item_id):
