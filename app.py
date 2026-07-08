@@ -2069,7 +2069,7 @@ def settings_page():
 # ── App Users CRUD ───────────────────────────────────────────────
 @app.route("/api/users", methods=["GET"])
 def list_users():
-    url = f"{SUPABASE_URL}/rest/v1/app_users?order=name.asc&select=name,role,pin,email,phone,led_by&limit=200"
+    url = f"{SUPABASE_URL}/rest/v1/app_users?order=name.asc&select=name,role,pin,email,phone,led_by,company&limit=200"
     r = requests.get(url, headers=sb_headers(), timeout=8)
     rows = r.json() if r.ok else []
     # Mask pin
@@ -2100,7 +2100,8 @@ def create_user():
         return jsonify({"ok": False, "error": "name required"}), 400
     payload = {"name": name, "role": role,
                "email": data.get("email") or None,
-               "phone": data.get("phone") or None}
+               "phone": data.get("phone") or None,
+               "company": data.get("company") or "MBR Texas"}
     if data.get("pin"):
         payload["pin"] = str(data["pin"])
     r = requests.post(
@@ -2120,7 +2121,8 @@ def update_user_by_name(name):
     if data.get("pin"):  payload["pin"]   = str(data["pin"])
     if "email" in data:  payload["email"] = data["email"] or None
     if "phone" in data:  payload["phone"] = data["phone"] or None
-    if "led_by" in data: payload["led_by"] = data["led_by"] or None
+    if "led_by"  in data: payload["led_by"]  = data["led_by"] or None
+    if "company" in data: payload["company"] = data["company"] or "MBR Texas"
     new_name = data.get("new_name", "").strip()
     if new_name:         payload["name"]  = new_name
     if not payload:
@@ -3300,9 +3302,4 @@ def _nightly_report_and_reset():
     else:
         print("[APScheduler] Email skipped — SMTP not configured")
 
-    # 3. Reset locations table
-    ok = _do_reset_locations()
-    print(f"[APScheduler] Location table reset: {'OK' if ok else 'FAILED'}")
-
-
-# Start APSche
+    #
