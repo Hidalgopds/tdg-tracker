@@ -1518,7 +1518,7 @@ def all_progress():
 #  INVENTORY SYSTEM
 # ═══════════════════════════════════════════════════════════════════
 
-EDITOR_NAMES = ["Fabio", "Michael", "Daniel H."]
+EDITOR_NAMES = ["Daniel H."]
 
 def is_editor(name):
     if not name:
