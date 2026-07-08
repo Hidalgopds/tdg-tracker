@@ -2009,10 +2009,51 @@ def deliver_material_request(req_id):
 
 @app.route("/api/material-requests/<req_id>", methods=["DELETE"])
 def delete_material_request(req_id):
-    """Admin-only: permanently delete a material request."""
+    """Admin-only: permanently delete a material request.
+    If the request was Delivered, restores inventory quantities."""
+    import json as _json
     role = request.headers.get("X-Role", "worker")
     if role not in ("admin",):
         return jsonify({"error": "Admin only"}), 403
+
+    # Fetch the request first to check status and get material lines
+    req_r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/material_requests?id=eq.{req_id}&select=*&limit=1",
+        headers=sb_headers()
+    )
+    restored = 0
+    if req_r.ok and req_r.json():
+        rd = req_r.json()[0]
+        if rd.get("status") == "Delivered":
+            # Build materials list
+            materials = []
+            if rd.get("materials_json"):
+                try: materials = _json.loads(rd["materials_json"])
+                except Exception: pass
+            if not materials:
+                materials = [{"item_id": rd.get("item_id"),
+                              "item_name": rd.get("item_name", ""),
+                              "qty_needed": rd.get("qty_needed", 0)}]
+            # Restore inventory for each line
+            for mat in materials:
+                iid = mat.get("item_id")
+                qty = int(mat.get("qty_needed") or 0)
+                if not iid or qty <= 0:
+                    continue
+                inv_r = requests.get(
+                    f"{SUPABASE_URL}/rest/v1/inventory_items?id=eq.{iid}&select=qty_on_hand&limit=1",
+                    headers=sb_headers()
+                )
+                if inv_r.ok and inv_r.json():
+                    cur_qty = inv_r.json()[0].get("qty_on_hand") or 0
+                    requests.patch(
+                        f"{SUPABASE_URL}/rest/v1/inventory_items?id=eq.{iid}",
+                        headers={**sb_headers(), "Prefer": "return=minimal"},
+                        json={"qty_on_hand": cur_qty + qty, "updated_at": "now()"}
+                    )
+                    restored += qty
+
+    # Delete the request
     url = f"{SUPABASE_URL}/rest/v1/material_requests?id=eq.{req_id}"
     r = requests.delete(url, headers={
         "apikey": SUPABASE_KEY,
@@ -2020,7 +2061,7 @@ def delete_material_request(req_id):
         "Prefer": "return=minimal"
     })
     if r.status_code in (200, 204):
-        return jsonify({"ok": True})
+        return jsonify({"ok": True, "inventory_restored": restored > 0, "qty_restored": restored})
     return jsonify({"error": r.text}), 400
 
 @app.route("/api/material-requests/export", methods=["GET"])

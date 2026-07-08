@@ -1221,17 +1221,26 @@ function renderReqCard(req){
     var btnDel=document.createElement('button');
     btnDel.style.cssText='width:100%;height:32px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);border-radius:8px;color:#f87171;font-size:11px;font-weight:700;cursor:pointer;margin-top:6px;';
     btnDel.textContent='🗑 Delete Request';
-    btnDel.onclick=function(){deleteReq(req.id);};
+    btnDel.onclick=function(){deleteReq(req.id,req.status);};
     el.appendChild(btnDel);
   }
   return el;
 }
 
-function deleteReq(id){
-  if(!confirm('Delete this request? This cannot be undone.'))return;
+function deleteReq(id,status){
+  var msg='Delete this request? This cannot be undone.';
+  if(status==='Delivered')msg='Delete this DELIVERED request? Inventory quantities will be restored.';
+  if(!confirm(msg))return;
   fetch('/api/material-requests/'+id,{method:'DELETE',headers:{'X-Role':_ROLE}})
     .then(function(r){return r.json();})
-    .then(function(d){if(d.ok){toast('Request deleted','success');loadAndRenderInbox();}else{toast(d.error||'Delete failed','error');}})
+    .then(function(d){
+      if(d.ok){
+        var msg=d.inventory_restored?'Request deleted · '+d.qty_restored+' units restored to inventory':'Request deleted';
+        toast(msg,'success');
+        loadAndRenderInbox();
+        if(d.inventory_restored){loadInv();setTimeout(loadLowStock,1200);}
+      }else{toast(d.error||'Delete failed','error');}
+    })
     .catch(function(){toast('Delete failed','error');});
 }
 function deliverReq(req){
