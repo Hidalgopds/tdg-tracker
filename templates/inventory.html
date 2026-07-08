@@ -901,14 +901,16 @@ function doMatAC(inp,idx){
   var ac=document.querySelector('.ac-list[data-idx="'+idx+'"]');
   if(!ac)return;
   if(!q||q.length<1){ac.style.display='none';return;}
-  var hits=ITEMS.filter(function(it){return it.material.toLowerCase().includes(q);}).slice(0,8);
+  var hits=ITEMS.filter(function(it){return (it.name||'').toLowerCase().includes(q);}).slice(0,8);
   if(!hits.length){ac.style.display='none';return;}
   ac.innerHTML='';
   hits.forEach(function(it){
     var d=document.createElement('div');
     d.style.cssText='padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);';
-    d.textContent=it.material+' ('+it.qty+' '+it.unit_measure+')';
-    d.onmousedown=function(e){e.preventDefault();inp.value=it.material;
+    d.textContent=(it.name||'')+(it.qty_on_hand!=null?' ('+it.qty_on_hand+' '+(it.unit||'EA')+')':'');
+    d.onmouseover=function(){this.style.background='#1a3050';};
+    d.onmouseout=function(){this.style.background='';};
+    d.onmousedown=function(e){e.preventDefault();inp.value=it.name||'';
       var hidEl=document.querySelector('.mat-id[data-idx="'+idx+'"]');if(hidEl)hidEl.value=it.id||'';
       ac.style.display='none';};
     ac.appendChild(d);
