@@ -1521,8 +1521,40 @@ def all_progress():
 EDITOR_NAMES = ["Fabio", "Michael", "Jason", "Daniel H.", "John G.", "Mike G.", "Jason R."]
 
 def is_editor(name):
-    return name in EDITOR_NAMES
+    if not name:
+        return False
+    if name in EDITOR_NAMES:
+        return True
+    # Also accept any approved user with editor-level role
+    try:
+        r = requests.get(
+            f"{SUPABASE_URL}/rest/v1/app_users"
+            f"?name=eq.{requests.utils.quote(name)}&approved=eq.true&select=role&limit=1",
+            headers=sb_headers()
+        )
+        rows = r.json() if r.ok else []
+        if rows and rows[0].get("role") in ("admin", "boss", "inventory", "dispatcher"):
+            return True
+    except Exception:
+        pass
+    return False
 
+
+@app.route("/api/users/editors", methods=["GET"])
+def get_editors():
+    """Return names of all users with editor-level role (admin/boss/inventory/dispatcher)."""
+    r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/app_users"
+        f"?role=in.(admin,boss,inventory,dispatcher)&approved=eq.true&select=name&order=name.asc&limit=100",
+        headers=sb_headers()
+    )
+    users = r.json() if r.ok else []
+    names = [u["name"] for u in users if u.get("name")]
+    # Include legacy hardcoded names that may not be in app_users
+    for n in EDITOR_NAMES:
+        if n not in names:
+            names.append(n)
+    return jsonify({"editors": sorted(names)})
 
 def notify_leads_attendance(worker_name, att_type, report_date, return_date, reason):
     """Email all leads/admins when someone submits an attendance report."""
@@ -1819,6 +1851,8 @@ def create_material_request():
         "item_id": data.get("item_id"),
         "building": data.get("building", ""),
         "notes": data.get("notes", ""),
+        "job_name": data.get("job_name", ""),
+        "contractor_company": data.get("contractor_company", ""),
         "status": "Pending"
     }
     url = f"{SUPABASE_URL}/rest/v1/material_requests"
@@ -2433,8 +2467,36 @@ def get_contractor_profile():
     if not rows:
         return jsonify({"ok": False, "error": "worker not found"}), 404
     w = rows[0]
+    # Also fetch contractor_company from app_users
+    company = ""
+    try:
+        ru = requests.get(
+            f"{SUPABASE_URL}/rest/v1/app_users"
+            f"?name=eq.{requests.utils.quote(name)}&select=contractor_company&limit=1",
+            headers=sb_headers()
+        )
+        au = ru.json() if ru.ok else []
+        if au:
+            company = au[0].get("contractor_company") or ""
+    except Exception:
+        pass
     return jsonify({"ok": True, "id": w["id"], "name": w["name"],
-                    "pin_set": bool(w.get("pin"))})
+                    "pin_set": bool(w.get("pin")), "contractor_company": company})
+
+@app.route("/api/contractor/profile", methods=["PATCH"])
+def update_contractor_profile():
+    """Update contractor's company name in app_users."""
+    data = request.json or {}
+    name = data.get("name", "").strip()
+    company = data.get("contractor_company", "").strip()
+    if not name:
+        return jsonify({"ok": False, "error": "name required"}), 400
+    r = requests.patch(
+        f"{SUPABASE_URL}/rest/v1/app_users?name=eq.{requests.utils.quote(name)}",
+        headers={**sb_headers(), "Prefer": "return=minimal"},
+        json={"contractor_company": company}
+    )
+    return jsonify({"ok": r.ok})
 
 @app.route("/api/contractor/pin", methods=["PATCH"])
 def update_contractor_pin():
