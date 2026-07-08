@@ -442,6 +442,8 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 <div class="inv-tabs">
   <button class="inv-tab active" id="itab-inv" onclick="switchInvTab('inv')">&#x1F4E6; Inventory</button>
   <button class="inv-tab" id="itab-units" onclick="switchInvTab('units')">&#x1F3D7; Unit Materials</button>
+  <button class="inv-tab" id="itab-locations" onclick="switchInvTab('locations')">&#x1F4CD; Locations</button>
+  <button class="inv-tab" id="itab-dispatch" onclick="switchInvTab('dispatch')">&#x1F4CB; Dispatch</button>
 </div>
 <div id="inv-tab-content">
 <!-- CATEGORY CHIPS -->
@@ -613,6 +615,52 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <button class="btn-p" onclick="doAddItem()">✅ Add Item</button>
   <button class="btn-s" onclick="closeModal('addModal')">Cancel</button>
 </div></div>
+
+<!-- LOCATIONS TAB -->
+<div id="loc-tab-content" style="display:none;">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:340px;gap:18px;text-align:center;padding:32px 16px;">
+    <div style="font-size:56px;">🚧</div>
+    <div style="font-size:20px;font-weight:800;color:var(--text);">Locations — Under Construction</div>
+    <div style="font-size:13px;color:var(--muted);max-width:360px;">Each inventory item will have a shelf/bin location you can assign and update via QR code scan. Coming soon.</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:8px;">
+      <div style="background:#111d2b;border:1px solid var(--border);border-radius:12px;padding:16px 20px;min-width:130px;">
+        <div style="font-size:28px;margin-bottom:6px;">📍</div>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);">Bin / Shelf</div>
+      </div>
+      <div style="background:#111d2b;border:1px solid var(--border);border-radius:12px;padding:16px 20px;min-width:130px;">
+        <div style="font-size:28px;margin-bottom:6px;">📷</div>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);">QR Scanner</div>
+      </div>
+      <div style="background:#111d2b;border:1px solid var(--border);border-radius:12px;padding:16px 20px;min-width:130px;">
+        <div style="font-size:28px;margin-bottom:6px;">🔄</div>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);">Real-Time Sync</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DISPATCH TAB -->
+<div id="dispatch-tab-content" style="display:none;">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:340px;gap:18px;text-align:center;padding:32px 16px;">
+    <div style="font-size:56px;">🚧</div>
+    <div style="font-size:20px;font-weight:800;color:var(--text);">Packing Slip / Dispatch — Under Construction</div>
+    <div style="font-size:13px;color:var(--muted);max-width:400px;">Scan or photograph a packing slip or dispatch note to automatically log received materials, match to open requests, and update inventory counts.</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:8px;">
+      <div style="background:#111d2b;border:1px solid var(--border);border-radius:12px;padding:16px 20px;min-width:130px;">
+        <div style="font-size:28px;margin-bottom:6px;">📄</div>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);">Slip Scan</div>
+      </div>
+      <div style="background:#111d2b;border:1px solid var(--border);border-radius:12px;padding:16px 20px;min-width:130px;">
+        <div style="font-size:28px;margin-bottom:6px;">🤖</div>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);">AI OCR</div>
+      </div>
+      <div style="background:#111d2b;border:1px solid var(--border);border-radius:12px;padding:16px 20px;min-width:130px;">
+        <div style="font-size:28px;margin-bottom:6px;">📦</div>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);">Auto Match</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- REQUESTS REVIEW MODAL -->
 <div class="modal-bg" id="reqsModal">
@@ -1245,10 +1293,14 @@ document.addEventListener('click',function(e){if(!e.target.closest('.acwrap'))do
 
 // ── Tab switching ──────────────────────────────────────────────────────────
 function switchInvTab(t){
-  document.getElementById('itab-inv').classList.toggle('active',t==='inv');
-  document.getElementById('itab-units').classList.toggle('active',t==='units');
+  ['inv','units','locations','dispatch'].forEach(function(id){
+    var btn=document.getElementById('itab-'+id);
+    if(btn)btn.classList.toggle('active',t===id);
+  });
   document.getElementById('inv-tab-content').style.display=t==='inv'?'':'none';
   document.getElementById('um-tab-content').style.display=t==='units'?'block':'none';
+  var locEl=document.getElementById('loc-tab-content');if(locEl)locEl.style.display=t==='locations'?'block':'none';
+  var disEl=document.getElementById('dispatch-tab-content');if(disEl)disEl.style.display=t==='dispatch'?'block':'none';
   if(t==='units'&&!umLoaded)loadProjectUnits();
 }
 
