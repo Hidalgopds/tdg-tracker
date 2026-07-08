@@ -64,9 +64,10 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .fta{resize:vertical;min-height:65px;}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .acwrap{position:relative;}
-.aclist{position:absolute;width:100%;background:#111d2b;border:1px solid var(--accent);border-top:none;border-radius:0 0 8px 8px;max-height:190px;overflow-y:auto;z-index:10;}
-.aclist div{padding:9px 11px;font-size:13px;cursor:pointer;}
-.aclist div:hover{background:#1a2535;}
+.aclist{position:absolute;width:100%;background:#fff;border:1.5px solid #3b82f6;border-top:none;border-radius:0 0 10px 10px;max-height:190px;overflow-y:auto;z-index:10;box-shadow:0 6px 16px rgba(0,0,0,.18);}
+.aclist div{padding:10px 13px;font-size:13px;cursor:pointer;color:#1e293b;border-bottom:1px solid #f1f5f9;line-height:1.4;}
+.aclist div:last-child{border-bottom:none;}
+.aclist div:hover{background:#eff6ff;color:#1a6bc4;font-weight:600;}
 .dup-warn{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:9px 11px;font-size:12px;color:var(--amber);margin-top:7px;display:none;}
 .btn-p{width:100%;height:46px;background:var(--accent);border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:800;cursor:pointer;margin-top:5px;}
 .btn-s{width:100%;height:40px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:13px;cursor:pointer;margin-top:8px;}
@@ -510,8 +511,8 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 <div class="modal">
   <div class="mhandle"></div>
   <div class="mtitle">📋 Request Materials</div>
-  <div class="fg"><label class="fl">Your Name</label>
-    <input class="fi" id="rqName" type="text" placeholder="Type your name..."></div>
+  <div class="fg"><label class="fl">Requested By</label>
+    <input class="fi" id="rqName" type="text" placeholder="Name..." readonly style="opacity:.8;cursor:default;background:#0a1525;"></div>
   <div class="fg"><label class="fl">Material</label>
     <div class="acwrap">
       <input class="fi" id="rqMat" type="text" placeholder="Type to search inventory..." oninput="doAC(this.value)" autocomplete="off">
@@ -699,10 +700,13 @@ function doFilter(){srchQ=document.getElementById('srch').value;renderGrid();}
 
 // ── Request modal ────────────────────────────────────────────────────────────
 function openReqModal(){
-  ['rqName','rqMat','rqQty','rqBldg','rqNotes'].forEach(function(id){document.getElementById(id).value='';});
+  ['rqMat','rqQty','rqBldg','rqNotes'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('rqItemId').value='';
   document.getElementById('dupWarn').style.display='none';
   document.getElementById('acList').style.display='none';
+  // Auto-fill from logged-in user
+  var loggedName = localStorage.getItem('mbrAuth') || '';
+  document.getElementById('rqName').value = loggedName;
   openModal('reqModal');
 }
 
@@ -1301,4 +1305,7 @@ async function deleteMaterial(id){
 </nav>
 <script>
 (function(){var p=location.pathname;document.querySelectorAll('.gnav-link').forEach(function(a){var h=a.getAttribute('href');if(h==='/'?p===h:p===h||p.startsWith(h))a.classList.add('gna');});})();
-(function(){var r=localStorage.getItem('mbrRole')||'worker'
+(function(){var r=localStorage.getItem('mbrRole')||'worker';var lv={admin:5,boss:4,inventory:3,lead:2,worker:1}[r]||1;var rules={'/log':2,'/dashboard':4,'/inventory':2,'/issues-log':2,'/settings':4};document.querySelectorAll('.gnav-link').forEach(function(a){var h=a.getAttribute('href');if(rules[h]&&lv<rules[h]){a.href='/home';a.style.opacity='0.45';}});})();
+</script>
+</body>
+</html>
