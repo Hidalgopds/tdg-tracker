@@ -26,10 +26,10 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .pending-banner.hidden{display:none!important;}
 .pend-btn{background:none;border:none;color:var(--amber);font-size:13px;font-weight:700;cursor:pointer;}
 .share-btn{background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;}
-.inv-grid{padding:12px 14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;}
+.inv-grid{padding:14px 16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;}
 @media(max-width:400px){.inv-grid{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:520px){.hdr-name{display:none;}}
-.inv-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:5px;touch-action:manipulation;}
+.inv-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:7px;touch-action:manipulation;}
 .ic-cat{font-size:9px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);}
 .ic-name{font-size:12px;font-weight:600;color:var(--text);line-height:1.35;flex:1;}
 .ic-bottom{display:flex;justify-content:space-between;align-items:flex-end;margin-top:4px;}
@@ -992,8 +992,8 @@ function renderReqCard(req){
     el.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start;"><div style="flex:1;min-width:0;"><div class="req-name">'+esc(req.item_name)+'</div><div class="req-meta">'+esc(req.requester_name)+' \xb7 Qty: '+req.qty_needed+(req.building?' \xb7 '+esc(req.building):'')+' \xb7 '+dt+(req.approved_by?' \xb7 Approved by '+esc(req.approved_by):'')+'</div>'+(req.job_name?'<div class="req-meta">Job: '+esc(req.job_name)+(req.contractor_company?' / '+esc(req.contractor_company):'')+'</div>':'')+(req.notes?'<div class="req-meta">'+esc(req.notes)+'</div>':'')+'</div><span class="sbadge '+cls+'" style="flex-shrink:0;margin-left:8px;">'+req.status+'</span></div>';
     var btnD=document.createElement('button');
     btnD.style.cssText='width:100%;height:38px;background:rgba(14,165,233,.15);border:1.5px solid rgba(14,165,233,.4);border-radius:8px;color:#38bdf8;font-size:12px;font-weight:800;cursor:pointer;margin-top:8px;';
-    btnD.textContent='\U0001f4e6 Signature Required';
-    btnD.onclick=function(){deliverReq(req.id,req.item_name,req.qty_needed,req.building||'',req.requester_name);};
+    btnD.textContent='\📦 Signature Required';
+    btnD.onclick=function(){deliverReq(req.id,req.item_name,req.qty_needed,req.building||'',req.requester_name,req.contractor_company||'',req.job_name||'');};
     el.appendChild(btnD);
   }else{
     var delivNote=(req.status==='Delivered')?'<div style="font-size:11px;color:var(--muted);margin-top:8px;">✅ Delivered by '+(req.delivered_by?esc(req.delivered_by):'--')+(req.delivered_at?' \xb7 '+req.delivered_at.split('T')[0]:'')+' </div>':'';
@@ -1001,9 +1001,13 @@ function renderReqCard(req){
   }
   return el;
 }
-function deliverReq(id,itemName,qty,building,requester){
+function deliverReq(id,itemName,qty,building,requester,company,jobName){
   _sigReqId=id;document.getElementById('sigReqId').value=id;
-  document.getElementById('sigReqInfo').innerHTML='<strong>'+esc(itemName)+'</strong> · Qty: <strong>'+qty+'</strong>'+(building?' · Bldg <strong>'+esc(building)+'</strong>':'')+'<br>Requested by: '+esc(requester);
+  var info='<div style="margin-bottom:4px;"><strong style="color:#e2e8f0;font-size:14px;">'+esc(itemName)+'</strong></div>';
+  info+='<div>✧ Qty: <strong>'+qty+'</strong>'+(building?' &nbsp;·&nbsp; Bldg: <strong>'+esc(building)+'</strong>':'')+'</div>';
+  if(jobName)info+='<div>🏗 Job: <strong>'+esc(jobName)+'</strong></div>';
+  info+='<div>👤 Requested by: <strong>'+esc(requester)+'</strong>'+(company?' &nbsp;·&nbsp; <span style="color:#38bdf8;">'+esc(company)+'</span>':'')+'</div>';
+  document.getElementById('sigReqInfo').innerHTML=info;
   clearSig();var pf=document.getElementById('sigPickupBy');if(pf)pf.value='';closeModal('reqsModal');openModal('sigModal');setTimeout(initSigCanvas,120);
 }
 function initSigCanvas(){
