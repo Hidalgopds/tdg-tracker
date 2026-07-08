@@ -1931,6 +1931,8 @@ def create_material_request():
         "contractor_company": data.get("contractor_company", ""),
         "status": "Pending"
     }
+    if data.get("materials_json"):
+        payload["materials_json"] = data["materials_json"]
     url = f"{SUPABASE_URL}/rest/v1/material_requests"
     r = requests.post(url, headers={**sb_headers(), "Prefer": "return=representation"}, json=payload)
     if r.ok:
@@ -1952,12 +1954,45 @@ def approve_material_request(req_id):
 
 @app.route("/api/material-requests/<req_id>/deliver", methods=["POST"])
 def deliver_material_request(req_id):
+    import json as _json
     data = request.json or {}
     delivered_by = data.get("delivered_by", "")
     signature_data = data.get("signature_data", "")
     pickup_by = data.get("pickup_by", "")
     if not delivered_by:
         return jsonify({"error": "delivered_by required"}), 400
+    # Fetch the request to get all material lines
+    req_r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/material_requests?id=eq.{req_id}&select=*&limit=1",
+        headers=sb_headers()
+    )
+    materials = []
+    if req_r.ok and req_r.json():
+        rd = req_r.json()[0]
+        if rd.get("materials_json"):
+            try: materials = _json.loads(rd["materials_json"])
+            except Exception: pass
+        if not materials:
+            materials = [{"item_id": rd.get("item_id"), "item_name": rd.get("item_name",""), "qty_needed": rd.get("qty_needed", 0)}]
+    # Decrement inventory for each material line
+    for mat in materials:
+        iid = mat.get("item_id")
+        qty = int(mat.get("qty_needed") or 0)
+        if not iid or qty <= 0:
+            continue
+        inv_r = requests.get(
+            f"{SUPABASE_URL}/rest/v1/inventory_items?id=eq.{iid}&select=qty_on_hand&limit=1",
+            headers=sb_headers()
+        )
+        if inv_r.ok and inv_r.json():
+            cur_qty = inv_r.json()[0].get("qty_on_hand") or 0
+            new_qty = max(0, cur_qty - qty)
+            requests.patch(
+                f"{SUPABASE_URL}/rest/v1/inventory_items?id=eq.{iid}",
+                headers={**sb_headers(), "Prefer": "return=minimal"},
+                json={"qty_on_hand": new_qty, "updated_at": "now()"}
+            )
+    # Mark request delivered
     payload = {
         "status": "Delivered",
         "delivered_by": delivered_by,
