@@ -1504,7 +1504,7 @@ function submitDelivery(){
   if(_sigCanvas){var px=_sigCtx.getImageData(0,0,_sigCanvas.width,_sigCanvas.height).data,signed=false;for(var i=3;i<px.length;i+=4){if(px[i]>0){signed=true;break;}}if(!signed){toast('Please sign before confirming','error');return;}}
   var by=localStorage.getItem('mbrAuth')||'',sig=_sigCanvas?_sigCanvas.toDataURL('image/png'):'';
   fetch('/api/material-requests/'+_sigReqId+'/deliver',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({delivered_by:by,signature_data:sig,pickup_by:pickupBy})})
-  .then(function(r){return r.json();}).then(function(d){if(d.ok){toast('Delivered!');document.getElementById('sigModal').style.display='none';loadInboxCount();openInbox('all');}else toast(d.error||'Error','error');}).catch(function(){toast('Error','error');});
+  .then(function(r){return r.json();}).then(function(d){if(d.ok){toast('Delivered! Inventory updated.');document.getElementById('sigModal').style.display='none';loadInboxCount();loadInv();setTimeout(loadLowStock,1500);openInbox('all');}else toast(d.error||'Error','error');}).catch(function(){toast('Error','error');});
 }
 
 function inlineReqs(){
