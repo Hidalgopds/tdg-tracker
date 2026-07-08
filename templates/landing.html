@@ -402,7 +402,7 @@ function timeAgo(iso){
   var role = localStorage.getItem('mbrRole') || 'worker';
   if (!auth) { location.replace('/login'); return; }
   // Role-based card visibility
-  var roleLevel = {admin:5, boss:4, inventory:3, lead:2, worker:1, contractor:2};
+  var roleLevel = {admin:5, boss:4, inventory:3, dispatcher:3, lead:2, worker:1, contractor:2};
   var level = roleLevel[role] || 1;
   
   // Session version check — force logout if admin invalidated sessions
