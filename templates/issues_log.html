@@ -372,6 +372,13 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   var name = localStorage.getItem('mbrAuth') || '';
   var lvl  = {admin:5,boss:4,inventory:3,lead:2,worker:1}[role] || 0;
   if(!name || lvl < 2) { location.href='/home'; }
+  // Hide Labor category from dropdowns for non-Boss/Admin
+  if(lvl < 4){
+    document.addEventListener('DOMContentLoaded', function(){
+      var opts = document.querySelectorAll('#fcat-labor, .cat-labor-opt');
+      opts.forEach(function(o){ o.style.display='none'; });
+    });
+  }
 })();
 </script>
 
@@ -458,7 +465,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <select id="fCat" onchange="applyFilters()">
     <option value="">All Categories</option>
     <option>Quality</option><option>Safety</option><option>Schedule</option>
-    <option>Material</option><option>Labor</option><option>Design</option><option>Other</option>
+    <option>Material</option><option id='fcat-labor'>Labor</option><option>Design</option><option>Other</option>
   </select>
   <input type="text" id="fSearch" placeholder="Search title or description…" oninput="applyFilters()">
 </div>
@@ -493,6 +500,10 @@ async function loadIssues() {
     var r = await fetch('/api/issues/all');
     ALL_ISSUES = await r.json();
     if (!Array.isArray(ALL_ISSUES)) ALL_ISSUES = [];
+    // Labor issues: Boss+Admin only (lvl >= 4)
+    var _role = localStorage.getItem('mbrRole')||'';
+    var _lvl  = {admin:5,boss:4,inventory:3,lead:2,worker:1}[_role]||0;
+    if(_lvl < 4){ ALL_ISSUES = ALL_ISSUES.filter(function(i){ return i.category !== 'Labor'; }); }
     updateKPIs(ALL_ISSUES);
     applyFilters();
     document.getElementById('lastRefresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
@@ -962,7 +973,7 @@ function sendEmail(){
       <label>Category</label>
       <select id="ei-cat">
         <option>Quality</option><option>Safety</option><option>Schedule</option>
-        <option>Material</option><option>Labor</option><option>Design</option><option>Other</option>
+        <option>Material</option><option class='cat-labor-opt'>Labor</option><option>Design</option><option>Other</option>
       </select>
     </div>
     <div class="mfield">
