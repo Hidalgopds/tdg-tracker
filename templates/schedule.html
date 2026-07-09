@@ -7,88 +7,110 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:#060c18;color:#e2e8f0;min-height:100vh;}
-header{background:#0a1628;border-bottom:1px solid #1a2535;padding:12px 16px;display:flex;align-items:center;gap:10px;}
-.back-btn{background:#132035;border:1px solid #2d3f57;border-radius:8px;color:#94a3b8;padding:6px 12px;font-size:12px;cursor:pointer;text-decoration:none;font-weight:600;}
+
+/* ── Header — same as inventory ── */
+header{background:#0a1525;border-bottom:1px solid #1a2535;padding:12px 16px;display:flex;align-items:center;gap:10px;}
+.back-btn{background:#0d1a2d;border:1px solid #1e2d45;border-radius:8px;color:#94a3b8;padding:6px 12px;font-size:12px;cursor:pointer;text-decoration:none;font-weight:600;transition:.15s;}
 .back-btn:hover{border-color:#38bdf8;color:#38bdf8;}
 .page-title{font-size:16px;font-weight:700;color:#e2e8f0;}
 .page-sub{font-size:11px;color:#64748b;margin-top:1px;}
 
 .container{max-width:720px;margin:0 auto;padding:16px 14px 80px;}
 
-/* Month nav */
+/* ── Month nav ── */
 .month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
 .month-label{font-size:17px;font-weight:800;color:#e2e8f0;letter-spacing:-.3px;}
-.nav-btn{background:#132035;border:1px solid #2d3f57;border-radius:8px;color:#94a3b8;width:34px;height:34px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;}
+.nav-btn{background:#0d1a2d;border:1px solid #1e2d45;border-radius:8px;color:#94a3b8;width:34px;height:34px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;}
 .nav-btn:hover{border-color:#38bdf8;color:#38bdf8;}
 
-/* Calendar grid */
-.cal-grid{background:#0a1628;border:1px solid #1a2535;border-radius:14px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.4);}
-.cal-days-hdr{display:grid;grid-template-columns:repeat(7,1fr);background:#080f1e;border-bottom:1px solid #1a2535;}
-.cal-day-hdr{text-align:center;padding:9px 0;font-size:10px;font-weight:700;color:#334155;letter-spacing:.7px;text-transform:uppercase;}
+/* ── Calendar grid ── */
+.cal-grid{background:#0d1520;border:1px solid #1a2535;border-radius:14px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.4);}
+.cal-days-hdr{display:grid;grid-template-columns:repeat(7,1fr);background:#080e1c;border-bottom:1px solid #1a2535;}
+.cal-day-hdr{text-align:center;padding:9px 0;font-size:10px;font-weight:700;color:#2d3f57;letter-spacing:.7px;text-transform:uppercase;}
 .cal-cells{display:grid;grid-template-columns:repeat(7,1fr);}
-.cal-cell{min-height:76px;padding:6px 5px;border-right:1px solid #0f1c30;border-bottom:1px solid #0f1c30;cursor:default;transition:.1s;}
+.cal-cell{min-height:80px;padding:5px 4px 0;border-right:1px solid #0d1520;border-bottom:1px solid #0d1520;cursor:default;position:relative;overflow:hidden;}
 .cal-cell:nth-child(7n){border-right:none;}
-.cal-cell.empty{background:#070d1a;}
-.cal-cell.has-event{background:#0c1a2e;cursor:pointer;}
-.cal-cell.has-event:hover{background:#112240;}
+.cal-cell.empty{background:#070c18;}
+.cal-cell.has-event{cursor:pointer;}
+.cal-cell.has-event:hover{background:#0f1e32;}
 .cal-cell.today .day-num{background:#38bdf8;color:#000;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:800;}
-.day-num{font-size:11px;color:#334155;font-weight:600;margin-bottom:4px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
+.day-num{font-size:11px;color:#2d3f57;font-weight:600;margin-bottom:3px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
 .cal-cell.has-event .day-num{color:#94a3b8;}
 
-/* Event pills */
-.event-pill{font-size:9px;font-weight:700;border-radius:5px;padding:2px 6px;margin-bottom:2px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.pill-h3{background:rgba(168,85,247,.2);color:#c084fc;border-left:2px solid #a855f7;}
-.pill-h4{background:rgba(56,189,248,.15);color:#7dd3fc;border-left:2px solid #38bdf8;}
+/* ── Range bar (bottom of cell) ── */
+.range-track{position:absolute;bottom:0;left:0;right:0;height:6px;}
+.range-seg{position:absolute;bottom:0;height:6px;}
+/* start: right half */
+.range-seg.seg-start{left:50%;right:0;border-radius:3px 0 0 3px;}
+/* mid: full width */
+.range-seg.seg-mid{left:0;right:0;border-radius:0;}
+/* end: left half */
+.range-seg.seg-end{left:0;right:50%;border-radius:0 3px 3px 0;}
+/* row-start (Sun continuation): left edge to right */
+.range-seg.seg-rowstart{left:0;right:0;border-radius:0;}
+/* row-end (Sat continuation): full width */
+.range-seg.seg-rowend{left:0;right:0;border-radius:0;}
+/* single day: full pill */
+.range-seg.seg-single{left:10%;right:10%;border-radius:3px;}
+/* colors */
+.seg-h3{background:#a855f7;}
+.seg-h4{background:#38bdf8;}
+.seg-shipped{background:#22c55e;}
+
+/* ── Event pills (ship / arrive labels) ── */
+.event-pill{font-size:9px;font-weight:700;border-radius:5px;padding:2px 5px;margin-bottom:2px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;}
+.pill-h3{background:rgba(168,85,247,.18);color:#c084fc;border-left:2px solid #a855f7;}
+.pill-h4{background:rgba(56,189,248,.14);color:#7dd3fc;border-left:2px solid #38bdf8;}
 .pill-shipped{background:rgba(34,197,94,.12);color:#4ade80;border-left:2px solid #22c55e;}
 
-/* Legend */
-.legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;align-items:center;}
+/* ── Legend ── */
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px;align-items:center;}
 .legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b;font-weight:600;}
-.legend-dot{width:10px;height:10px;border-radius:3px;}
+.legend-dot{width:10px;height:6px;border-radius:3px;}
 .ld-h3{background:#a855f7;}
 .ld-h4{background:#38bdf8;}
 .ld-shipped{background:#22c55e;}
 
-/* Detail panel */
-.detail-panel{background:#0a1628;border:1px solid #1e3a5f;border-radius:12px;padding:14px;margin-top:12px;display:none;box-shadow:0 4px 16px rgba(0,0,0,.3);}
+/* ── Detail panel ── */
+.detail-panel{background:#0d1a2d;border:1px solid #1e2d45;border-radius:12px;padding:14px;margin-top:12px;display:none;}
 .detail-panel.open{display:block;}
-.detail-date{font-size:12px;font-weight:700;color:#38bdf8;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;}
-.detail-item{background:#0f1e35;border-radius:8px;padding:10px 12px;margin-bottom:8px;border-left:3px solid #38bdf8;}
+.detail-date{font-size:11px;font-weight:700;color:#38bdf8;margin-bottom:10px;text-transform:uppercase;letter-spacing:.6px;}
+.detail-item{background:#0a1525;border-radius:8px;padding:10px 12px;margin-bottom:8px;border-left:3px solid #38bdf8;}
 .detail-item.h3{border-left-color:#a855f7;}
 .detail-item.shipped{border-left-color:#22c55e;}
 .detail-project{font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
 .detail-name{font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:3px;}
 .detail-meta{font-size:11px;color:#64748b;}
+.detail-range{font-size:10px;color:#475569;margin-top:3px;}
 .detail-status{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;display:inline-block;margin-top:5px;}
 .status-shipped{background:rgba(34,197,94,.15);color:#4ade80;}
 .status-upcoming{background:rgba(56,189,248,.15);color:#38bdf8;}
 .status-thisweek{background:rgba(251,191,36,.15);color:#fbbf24;}
 
-/* Notify button */
-.notify-btn{display:flex;align-items:center;gap:7px;background:#1e3a5f;border:1px solid #2d5a8e;border-radius:9px;color:#7dd3fc;font-size:12px;font-weight:700;padding:8px 14px;cursor:pointer;transition:.15s;margin-bottom:16px;}
-.notify-btn:hover{background:#254e80;border-color:#38bdf8;color:#fff;}
-.notify-btn:active{transform:scale(.97);}
-#notifyMsg{font-size:11px;color:#4ade80;margin-left:8px;display:none;}
+/* ── Notify button ── */
+.notify-btn{display:flex;align-items:center;gap:7px;background:#0d1a2d;border:1px solid #1e2d45;border-radius:9px;color:#7dd3fc;font-size:12px;font-weight:700;padding:8px 14px;cursor:pointer;transition:.15s;margin-bottom:14px;}
+.notify-btn:hover{border-color:#38bdf8;color:#e2e8f0;}
+#notifyMsg{font-size:11px;color:#4ade80;margin-left:4px;display:none;}
 
-/* Section label */
-.section-label{font-size:10px;font-weight:700;color:#334155;letter-spacing:.8px;text-transform:uppercase;margin:20px 0 8px;}
-.section-row{display:flex;align-items:center;justify-content:space-between;margin:20px 0 8px;}
+/* ── Section label ── */
+.section-label{font-size:10px;font-weight:700;color:#2d3f57;letter-spacing:.8px;text-transform:uppercase;margin:18px 0 8px;}
 
-/* Upcoming list */
-.upcoming-item{background:#0a1628;border:1px solid #1a2535;border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;transition:.15s;}
-.upcoming-item:hover{border-color:#2d3f57;}
-.upcoming-date-box{background:#0f1e35;border-radius:8px;padding:6px 10px;text-align:center;min-width:52px;flex-shrink:0;border:1px solid #1a2535;}
+/* ── Upcoming list ── */
+.upcoming-item{background:#0d1a2d;border:1px solid #1a2535;border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;transition:.15s;}
+.upcoming-item:hover{border-color:#1e2d45;}
+.upcoming-date-box{background:#0a1525;border-radius:8px;padding:6px 10px;text-align:center;min-width:52px;flex-shrink:0;border:1px solid #1a2535;}
 .udb-month{font-size:9px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.4px;}
 .udb-day{font-size:20px;font-weight:800;line-height:1.1;}
 .upcoming-info{flex:1;min-width:0;}
 .upcoming-project{font-size:10px;font-weight:700;color:#475569;letter-spacing:.4px;}
 .upcoming-name{font-size:13px;font-weight:700;color:#e2e8f0;margin:2px 0;}
 .upcoming-units{font-size:11px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.upcoming-range{font-size:10px;color:#334155;margin-top:2px;}
 .upcoming-badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;flex-shrink:0;}
 
 @media(max-width:480px){
-  .cal-cell{min-height:58px;padding:4px 3px;}
-  .event-pill{font-size:8px;padding:1px 4px;}
+  .cal-cell{min-height:60px;padding:4px 3px 0;}
+  .event-pill{font-size:8px;padding:1px 3px;}
   .day-num{font-size:10px;}
   .container{padding:12px 10px 80px;}
 }
@@ -96,10 +118,10 @@ header{background:#0a1628;border-bottom:1px solid #1a2535;padding:12px 16px;disp
 </head>
 <body>
 <header>
-  <a class="back-btn" href="/home">← Home</a>
+  <a class="back-btn" href="/home">&#8592; Home</a>
   <div>
-    <div class="page-title">📅 Shipping Schedule</div>
-    <div class="page-sub">Expected arrivals at Katy yard — ship date +4 days transit</div>
+    <div class="page-title">&#128197; Shipping Schedule</div>
+    <div class="page-sub">Katy yard arrivals — Horizon 3 &amp; Horizon 4 (ship date +4 days transit)</div>
   </div>
 </header>
 
@@ -109,12 +131,14 @@ header{background:#0a1628;border-bottom:1px solid #1a2535;padding:12px 16px;disp
     <div class="legend-item"><div class="legend-dot ld-h3"></div> Horizon 3</div>
     <div class="legend-item"><div class="legend-dot ld-h4"></div> Horizon 4</div>
     <div class="legend-item"><div class="legend-dot ld-shipped"></div> Already Shipped</div>
+    <div class="legend-item" style="color:#334155;font-size:10px;">&#9632;&#9472;&#9472;&#9472;&#9632; = transit window</div>
   </div>
 
   <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
-    <button class="notify-btn" onclick="notifyLeads()">🔔 Notify Leads</button>
+    <button class="notify-btn" onclick="notifyLeads()">&#128276; Notify Leads</button>
     <span id="notifyMsg"></span>
   </div>
+
   <div class="month-nav">
     <button class="nav-btn" onclick="prevMonth()">&#8249;</button>
     <div class="month-label" id="monthLabel"></div>
@@ -139,190 +163,163 @@ header{background:#0a1628;border-bottom:1px solid #1a2535;padding:12px 16px;disp
     <div id="detailItems"></div>
   </div>
 
-  <div class="section-label">Upcoming Deliveries — Katy Yard</div>
+  <div class="section-label">Upcoming Arrivals — Katy Yard</div>
   <div id="upcomingList"></div>
 
 </div>
 
 <script>
-// ── All Katy shipments ────────────────────────────────────────────────────────
+// ── Shipment data — ship_date = PDF date, date = arrival (ship +4 days) ─────
 var SHIPMENTS = [
   // Horizon THREE
-  {date:'2026-07-14', project:'H3', name:'Core Building UPSO SWBDs', po:'14195', units:'Shipment 2 — 1 unit', status:'upcoming'},
-
+  {ship:'2026-07-10', date:'2026-07-14', project:'H3', name:'Core Building UPSO SWBDs', po:'14195', units:'Shipment 2 — 1 unit', status:'upcoming'},
   // Horizon FOUR
-  {date:'2026-07-14', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Shipment 1 — Units 1, 2', status:'shipped'},
-  {date:'2026-07-21', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Units 3, 4, 5', status:'upcoming'},
-  {date:'2026-07-28', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Shipment 2 — Units 6, 7, 8, 9', status:'upcoming'},
-  {date:'2026-08-04', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Shipment 3 — Units 10, 11, 12, 13', status:'upcoming'},
-  {date:'2026-08-11', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Shipment 4 — Units 14, 15, 16, 17', status:'upcoming'},
-  {date:'2026-08-18', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Shipment 5 — Units 18, 19, 20, 21', status:'upcoming'},
-  {date:'2026-08-25', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Shipment 6 — Units 22, 23, 24', status:'upcoming'},
-  {date:'2026-09-01', project:'H4', name:'Core Building UPSO SWBDs', po:'14196', units:'Shipment 1 — 2 units', status:'upcoming'},
+  {ship:'2026-07-10', date:'2026-07-14', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Shipment 1 — Units 1, 2', status:'shipped'},
+  {ship:'2026-07-17', date:'2026-07-21', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Units 3, 4, 5', status:'upcoming'},
+  {ship:'2026-07-24', date:'2026-07-28', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Shipment 2 — Units 6–9', status:'upcoming'},
+  {ship:'2026-07-31', date:'2026-08-04', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Shipment 3 — Units 10–13', status:'upcoming'},
+  {ship:'2026-08-07', date:'2026-08-11', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Shipment 4 — Units 14–17', status:'upcoming'},
+  {ship:'2026-08-14', date:'2026-08-18', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Shipment 5 — Units 18–21', status:'upcoming'},
+  {ship:'2026-08-21', date:'2026-08-25', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Shipment 6 — Units 22–24', status:'upcoming'},
+  {ship:'2026-08-28', date:'2026-09-01', project:'H4', name:'Core Building UPSO SWBDs', po:'14196', units:'Shipment 1 — 2 units', status:'upcoming'},
 ];
 
 var today = new Date();
-var curYear = 2026;
-var curMonth = 6; // 0-indexed: 6 = July
-var selectedDate = null;
-
+var curYear = 2026, curMonth = 6; // July = index 6
 var MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 var SHORT_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-function getEventsForDate(dateStr){
-  return SHIPMENTS.filter(function(s){return s.date===dateStr;});
-}
+function dateKey(y,m,d){ return y+'-'+(m+1<10?'0':'')+(m+1)+'-'+(d<10?'0':'')+d; }
+function parseDate(s){ return new Date(s+'T12:00:00'); }
+function addDays(s,n){ var d=parseDate(s);d.setDate(d.getDate()+n);return d.toISOString().slice(0,10); }
 
-function getEventsForMonth(year, month){
-  var prefix = year+'-'+(month+1<10?'0':'')+(month+1);
-  return SHIPMENTS.filter(function(s){return s.date.startsWith(prefix);});
-}
+// Build range map: dateStr → [{ev, role, colorClass}]
+function buildRangeMap(year, month){
+  var map={};
+  var monthStart=new Date(year,month,1);
+  var monthEnd=new Date(year,month+1,0);
 
-function dateKey(year, month, day){
-  return year+'-'+(month+1<10?'0':'')+(month+1)+'-'+(day<10?'0':'')+day;
+  SHIPMENTS.forEach(function(ev){
+    var colorClass = ev.status==='shipped'?'seg-shipped':(ev.project==='H3'?'seg-h3':'seg-h4');
+    var shipDate=parseDate(ev.ship);
+    var arrDate=parseDate(ev.date);
+
+    // Walk each day in the range
+    var cur=new Date(shipDate);
+    while(cur<=arrDate){
+      var dk=cur.toISOString().slice(0,10);
+      var dow=cur.getDay(); // 0=Sun,6=Sat
+      var isShip=(dk===ev.ship);
+      var isArr=(dk===ev.date);
+
+      var role;
+      if(isShip&&isArr) role='single';
+      else if(isShip) role='start';
+      else if(isArr) role='end';
+      else role='mid';
+
+      // Handle row boundaries: if mid/start reaching Sat, cap it; if mid/end starting from Sun, open it
+      var segClass;
+      if(role==='single') segClass='seg-single';
+      else if(role==='start'){
+        segClass=(dow===6)?'seg-mid':'seg-start'; // if ships on Sat, full bar
+      } else if(role==='end'){
+        segClass=(dow===0)?'seg-mid':'seg-end'; // if arrives on Sun, full bar
+      } else {
+        // mid — check if it wraps
+        segClass='seg-mid';
+      }
+
+      if(!map[dk]) map[dk]=[];
+      map[dk].push({ev:ev, role:role, segClass:segClass, colorClass:colorClass});
+      cur.setDate(cur.getDate()+1);
+    }
+  });
+  return map;
 }
 
 function renderCalendar(){
-  document.getElementById('monthLabel').textContent = MONTH_NAMES[curMonth] + ' ' + curYear;
-  var firstDay = new Date(curYear, curMonth, 1).getDay(); // 0=Sun
-  var daysInMonth = new Date(curYear, curMonth+1, 0).getDate();
-  var cells = document.getElementById('calCells');
-  cells.innerHTML = '';
+  document.getElementById('monthLabel').textContent=MONTH_NAMES[curMonth]+' '+curYear;
+  var firstDay=new Date(curYear,curMonth,1).getDay();
+  var daysInMonth=new Date(curYear,curMonth+1,0).getDate();
+  var todayStr=today.toISOString().slice(0,10);
+  var rangeMap=buildRangeMap(curYear,curMonth);
+  var cells=document.getElementById('calCells');
+  cells.innerHTML='';
 
-  // Empty cells before first day
   for(var i=0;i<firstDay;i++){
-    var empty=document.createElement('div');
-    empty.className='cal-cell empty';
-    cells.appendChild(empty);
+    var e=document.createElement('div');e.className='cal-cell empty';cells.appendChild(e);
   }
-
-  var todayStr = today.getFullYear()+'-'+(today.getMonth()+1<10?'0':'')+(today.getMonth()+1)+'-'+(today.getDate()<10?'0':'')+today.getDate();
 
   for(var d=1;d<=daysInMonth;d++){
     var dk=dateKey(curYear,curMonth,d);
-    var evs=getEventsForDate(dk);
-    var cell=document.createElement('div');
-    cell.className='cal-cell'+(evs.length?' has-event':'')+(dk===todayStr?' today':'');
-    cell.dataset.date=dk;
-    if(evs.length) cell.onclick=function(){openDetail(this.dataset.date);};
+    var ranges=rangeMap[dk]||[];
+    // Events to show as pills: ship day or arrival day only
+    var pills=ranges.filter(function(r){return r.role==='start'||r.role==='single'||r.role==='end';});
 
-    var num=document.createElement('div');
-    num.className='day-num';
-    num.textContent=d;
+    var cell=document.createElement('div');
+    var isToday=(dk===todayStr);
+    cell.className='cal-cell'+(ranges.length?' has-event':'')+(isToday?' today':'');
+    cell.dataset.date=dk;
+    if(ranges.length) cell.onclick=function(){openDetail(this.dataset.date);};
+
+    // Day number
+    var num=document.createElement('div');num.className='day-num';num.textContent=d;
     cell.appendChild(num);
 
-    evs.forEach(function(ev){
+    // Pill labels (only on ship/arrive days)
+    pills.forEach(function(r){
       var pill=document.createElement('div');
-      var cls = ev.status==='shipped'?'pill-shipped':(ev.project==='H3'?'pill-h3':'pill-h4');
+      var cls=r.ev.status==='shipped'?'pill-shipped':(r.ev.project==='H3'?'pill-h3':'pill-h4');
       pill.className='event-pill '+cls;
-      pill.textContent=(ev.project==='H3'?'H3':'H4')+' '+ev.name.replace('SWBDs','').replace('Building','Bldg').trim();
+      var prefix=r.role==='start'?'&#128230; ':(r.role==='end'?'&#127919; ':'');
+      var label=(r.ev.project==='H3'?'H3':'H4')+' '+(r.role==='end'?'Arrives':'Ships');
+      pill.innerHTML=prefix+label;
       cell.appendChild(pill);
     });
 
+    // Range bar track
+    if(ranges.length){
+      var track=document.createElement('div');track.className='range-track';
+      // Stack up to 3 ranges at different vertical offsets
+      ranges.forEach(function(r,i){
+        var seg=document.createElement('div');
+        seg.className='range-seg '+r.segClass+' '+r.colorClass;
+        seg.style.bottom=(i*7)+'px';
+        seg.style.height='5px';
+        track.appendChild(seg);
+      });
+      cell.appendChild(track);
+    }
+
     cells.appendChild(cell);
   }
-
-  // Close detail if month changed
   document.getElementById('detailPanel').classList.remove('open');
-  selectedDate=null;
 }
 
 function openDetail(dateStr){
-  var evs=getEventsForDate(dateStr);
-  if(!evs.length) return;
-  var panel=document.getElementById('detailPanel');
-  var d=new Date(dateStr+'T12:00:00');
-  document.getElementById('detailDate').textContent=d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  var rangeMap=buildRangeMap(curYear,curMonth);
+  var ranges=rangeMap[dateStr];
+  if(!ranges||!ranges.length) return;
+
+  var d=parseDate(dateStr);
+  document.getElementById('detailDate').textContent=
+    d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+
+  // Show unique shipments that have this date in their range
+  var seen={};
   var html='';
-  evs.forEach(function(ev){
+  ranges.forEach(function(r){
+    var key=r.ev.ship+r.ev.project+r.ev.po;
+    if(seen[key]) return; seen[key]=1;
+    var ev=r.ev;
     var borderCls=ev.status==='shipped'?'shipped':(ev.project==='H3'?'h3':'');
-    var badgeCls=ev.status==='shipped'?'status-shipped':'status-upcoming';
-    var badgeTxt=ev.status==='shipped'?'Already Shipped':'Incoming';
+    var badgeCls=ev.status==='shipped'?'status-shipped':(r.role==='end'?'status-thisweek':'status-upcoming');
+    var badgeTxt=ev.status==='shipped'?'Already Shipped':(r.role==='end'?'Arrives Today':(r.role==='start'?'Departs Today':'In Transit'));
     html+='<div class="detail-item '+borderCls+'">'
       +'<div class="detail-project">'+ev.project+' &mdash; PO '+ev.po+'</div>'
       +'<div class="detail-name">'+ev.name+'</div>'
       +'<div class="detail-meta">'+ev.units+' &middot; Delivery: Katy, TX</div>'
+      +'<div class="detail-range">&#128230; Ships: '+ev.ship+' &nbsp;&rarr;&nbsp; &#127919; Arrives: '+ev.date+'</div>'
       +'<span class="detail-status '+badgeCls+'">'+badgeTxt+'</span>'
       +'</div>';
-  });
-  document.getElementById('detailItems').innerHTML=html;
-  panel.classList.add('open');
-  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
-}
-
-function prevMonth(){
-  curMonth--;
-  if(curMonth<0){curMonth=11;curYear--;}
-  renderCalendar();
-}
-function nextMonth(){
-  curMonth++;
-  if(curMonth>11){curMonth=0;curYear++;}
-  renderCalendar();
-}
-
-// Upcoming list (all future + this week)
-function renderUpcoming(){
-  var todayMs=new Date(today.getFullYear(),today.getMonth(),today.getDate()).getTime();
-  var future=SHIPMENTS.filter(function(s){
-    var dt=new Date(s.date+'T12:00:00');
-    return dt.getTime()>=todayMs;
-  }).sort(function(a,b){return a.date.localeCompare(b.date);});
-
-  var html='';
-  if(!future.length){html='<div style="color:#475569;font-size:13px;padding:12px 0;">No upcoming deliveries scheduled.</div>';}
-  future.forEach(function(ev){
-    var dt=new Date(ev.date+'T12:00:00');
-    var diffDays=Math.round((dt.getTime()-todayMs)/(1000*60*60*24));
-    var badgeCls=ev.status==='shipped'?'status-shipped':(diffDays<=7?'status-thisweek':'status-upcoming');
-    var badgeTxt=ev.status==='shipped'?'Already Shipped':(diffDays===0?'Today':(diffDays<=7?'This Week':diffDays+' days'));
-    var projColor=ev.project==='H3'?'#c084fc':'#38bdf8';
-    html+='<div class="upcoming-item">'
-      +'<div class="upcoming-date-box"><div class="udb-month">'+SHORT_MONTHS[dt.getMonth()]+'</div><div class="udb-day" style="color:'+projColor+'">'+dt.getDate()+'</div></div>'
-      +'<div class="upcoming-info">'
-        +'<div class="upcoming-project">'+ev.project+' &mdash; PO '+ev.po+' &middot; Katy, TX</div>'
-        +'<div class="upcoming-name">'+ev.name+'</div>'
-        +'<div class="upcoming-units">'+ev.units+'</div>'
-      +'</div>'
-      +'<span class="upcoming-badge '+badgeCls+'">'+badgeTxt+'</span>'
-      +'</div>';
-  });
-  document.getElementById('upcomingList').innerHTML=html;
-}
-
-function notifyLeads(){
-  var btn=document.querySelector('.notify-btn');
-  var msg=document.getElementById('notifyMsg');
-  btn.disabled=true;btn.textContent='Sending...';
-  var today=new Date();
-  var todayMs=new Date(today.getFullYear(),today.getMonth(),today.getDate()).getTime();
-  var upcoming=SHIPMENTS.filter(function(s){
-    var dt=new Date(s.date+'T12:00:00');
-    return dt.getTime()>=todayMs && s.status!=='shipped';
-  });
-  var sends=upcoming.map(function(ev){
-    var dt=new Date(ev.date+'T12:00:00');
-    var diffDays=Math.round((dt.getTime()-todayMs)/(1000*60*60*24));
-    var when=diffDays===0?'Today':diffDays===1?'Tomorrow':'In '+diffDays+' days';
-    var title='📦 '+ev.project+' Delivery — '+when;
-    var body=ev.name+' · '+ev.units+' · Katy, TX · '+ev.date;
-    return fetch('/api/notifications',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({title:title,body:body,target:'supervisor',created_by:'Schedule'})
-    });
-  });
-  Promise.all(sends).then(function(){
-    btn.textContent='✅ Notified';
-    msg.style.display='inline';
-    msg.textContent=upcoming.length+' notification'+(upcoming.length!==1?'s':'')+' sent to leads.';
-    setTimeout(function(){btn.disabled=false;btn.textContent='🔔 Notify Leads';msg.style.display='none';},4000);
-  }).catch(function(){
-    btn.disabled=false;btn.textContent='🔔 Notify Leads';
-    msg.style.color='#f87171';msg.style.display='inline';msg.textContent='Error sending.';
-  });
-}
-
-renderCalendar();
-renderUpcoming();
-</script>
-</body>
-</html>
