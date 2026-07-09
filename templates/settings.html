@@ -310,18 +310,22 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 #mbr-bell-btn{position:relative;background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.5);font-size:18px;padding:2px 4px;transition:.2s;}
 #mbr-bell-btn:hover{color:#fff;}
 #mbr-bell-badge{position:absolute;top:-2px;right:-2px;background:#ef4444;color:#fff;font-size:9px;font-weight:700;min-width:15px;height:15px;border-radius:999px;display:none;align-items:center;justify-content:center;padding:0 3px;}
-#mbr-notif-panel{position:fixed;top:36px;right:0;width:320px;max-height:420px;overflow-y:auto;background:#0f1e35;border:1px solid rgba(255,255,255,0.1);border-top:none;border-radius:0 0 0 12px;z-index:499;display:none;box-shadow:0 8px 32px rgba(0,0,0,0.4);}
+#mbr-notif-panel{position:fixed;top:48px;right:0;width:340px;max-height:460px;overflow-y:auto;background:#0f1e35;border:1px solid rgba(255,255,255,0.12);border-top:2px solid #1a6bc4;border-radius:0 0 0 14px;z-index:499;display:none;box-shadow:0 12px 40px rgba(0,0,0,0.5);}
 #mbr-notif-panel .np-header{padding:10px 14px;font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;justify-content:space-between;align-items:center;}
-.np-item{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.06);cursor:pointer;transition:.15s;}
-.np-item:hover{background:rgba(255,255,255,0.04);}
-.np-item.unread{border-left:3px solid #0ea5e9;}
-.np-item.read{border-left:3px solid transparent;opacity:.65;}
-.np-title{font-size:13px;font-weight:600;color:#fff;margin-bottom:3px;}
-.np-body{font-size:12px;color:rgba(255,255,255,0.5);line-height:1.4;}
-.np-time{font-size:10px;color:rgba(255,255,255,0.3);margin-top:5px;}
-.np-empty{padding:24px;text-align:center;font-size:12px;color:rgba(255,255,255,0.3);}
-.np-read-btn{padding:2px 10px;font-size:11px;font-weight:600;background:rgba(14,165,233,0.12);border:1px solid rgba(14,165,233,0.3);border-radius:4px;color:#0ea5e9;cursor:pointer;line-height:1.6;white-space:nowrap;}
-.np-read-btn:hover{background:rgba(14,165,233,0.25);}
+.np-item{padding:13px 15px;border-bottom:1px solid rgba(255,255,255,0.06);cursor:default;transition:.15s;display:flex;gap:10px;align-items:flex-start;}
+.np-item:hover{background:rgba(255,255,255,0.03);}
+.np-item.unread{border-left:3px solid #0ea5e9;background:rgba(14,165,233,0.05);}
+.np-item.read{border-left:3px solid transparent;opacity:.6;}
+.np-dot{width:8px;height:8px;border-radius:50%;background:#0ea5e9;flex-shrink:0;margin-top:4px;}
+.np-item.read .np-dot{background:transparent;}
+.np-content{flex:1;min-width:0;}
+.np-title{font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:3px;line-height:1.3;}
+.np-body{font-size:12px;color:rgba(255,255,255,0.55);line-height:1.45;margin-bottom:6px;}
+.np-meta{display:flex;align-items:center;gap:8px;}
+.np-time{font-size:10px;color:rgba(255,255,255,0.3);}
+.np-empty{padding:28px 16px;text-align:center;font-size:12px;color:rgba(255,255,255,0.3);}
+.np-read-btn{padding:3px 10px;font-size:10px;font-weight:700;background:rgba(14,165,233,0.15);border:1px solid rgba(14,165,233,0.35);border-radius:4px;color:#38bdf8;cursor:pointer;white-space:nowrap;letter-spacing:.02em;}
+.np-read-btn:hover{background:rgba(14,165,233,0.3);}
 body{padding-top:48px!important;}
 
 /* ── Mobile responsive ── */
@@ -440,15 +444,16 @@ function loadNotifications(){
       list.innerHTML = notifs.map(function(n){
         var ago = timeAgo(n.created_at);
         var readBtn = !n.read
-          ? '<button class="np-read-btn" onclick="markRead(\''+n.id+'\');event.stopPropagation()">Read</button>'
+          ? '<button class="np-read-btn" onclick="markRead(\''+n.id+'\');event.stopPropagation()">Mark read</button>'
           : '';
         return '<div class="np-item '+(n.read?'read':'unread')+'" data-notif-id="'+n.id+'">'
-          +'<div class="np-title">'+escHtml(n.title)+'</div>'
-          +(n.body?'<div class="np-body">'+escHtml(n.body)+'</div>':'')
-          +'<div style="display:flex;align-items:center;justify-content:space-between;margin-top:5px;">'
-          +'<div class="np-time">'+ago+'</div>'
-          +readBtn
-          +'</div></div>';
+          +'<div class="np-dot"></div>'
+          +'<div class="np-content">'
+            +'<div class="np-title">'+escHtml(n.title)+'</div>'
+            +(n.body?'<div class="np-body">'+escHtml(n.body)+'</div>':'')
+            +'<div class="np-meta"><span class="np-time">'+ago+'</span>'+readBtn+'</div>'
+          +'</div>'
+          +'</div>';
       }).join('');
     }).catch(function(){});
 }
@@ -694,14 +699,27 @@ function timeAgo(iso){
           style="padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface,#fff);color:var(--text);font-size:13px;">
         <textarea id="notif-body" placeholder="Message body (optional)" rows="2"
           style="padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface,#fff);color:var(--text);font-size:13px;resize:vertical;font-family:inherit;"></textarea>
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-          <select id="notif-target" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface,#fff);color:var(--text);font-size:13px;flex:1;">
-            <option value="all">Everyone</option>
-            <option value="supervisor">Leads, Boss &amp; Admin</option>
-            <option value="lead">Leads only</option>
-            <option value="worker">Workers only</option>
-          </select>
-          <button onclick="sendNotification()" style="padding:9px 18px;background:#1a6bc4;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">Send 🔔</button>
+        <!-- Target checkboxes -->
+        <div style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Send To</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+            <label id="lbl-everyone" onclick="notifToggleEveryone(event)" style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;border:1.5px solid #1a6bc4;background:#eff6ff;cursor:pointer;font-size:12px;font-weight:700;color:#1d4ed8;user-select:none;">
+              <input type="checkbox" id="nt-everyone" style="display:none;" checked> 🌐 Everyone
+            </label>
+            <label id="lbl-admin" onclick="notifToggleGroup(event,'nt-admin')" style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;border:1.5px solid #e2e8f0;background:#f8fafc;cursor:pointer;font-size:12px;font-weight:600;color:#475569;user-select:none;">
+              <input type="checkbox" id="nt-admin" style="display:none;"> 🔑 Admin
+            </label>
+            <label id="lbl-boss" onclick="notifToggleGroup(event,'nt-boss')" style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;border:1.5px solid #e2e8f0;background:#f8fafc;cursor:pointer;font-size:12px;font-weight:600;color:#475569;user-select:none;">
+              <input type="checkbox" id="nt-boss" style="display:none;"> 🏢 Boss
+            </label>
+            <label id="lbl-lead" onclick="notifToggleGroup(event,'nt-lead')" style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;border:1.5px solid #e2e8f0;background:#f8fafc;cursor:pointer;font-size:12px;font-weight:600;color:#475569;user-select:none;">
+              <input type="checkbox" id="nt-lead" style="display:none;"> 👷 Lead
+            </label>
+            <label id="lbl-worker" onclick="notifToggleGroup(event,'nt-worker')" style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;border:1.5px solid #e2e8f0;background:#f8fafc;cursor:pointer;font-size:12px;font-weight:600;color:#475569;user-select:none;">
+              <input type="checkbox" id="nt-worker" style="display:none;"> 🧰 Workers
+            </label>
+          </div>
+          <button onclick="sendNotification()" style="width:100%;padding:10px 0;background:#1a6bc4;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">Send 🔔</button>
         </div>
         <div id="notif-status" style="font-size:12px;display:none;"></div>
       </div>
@@ -1498,6 +1516,7 @@ function showToast(msg,err){var t=document.getElementById('toast');t.textContent
   }
 })();
 </script>
+<script>
 // ── Notifications Admin Tab ───────────────────────────────────────────────────
 async function loadAllNotifs(){
   var list = document.getElementById('notif-admin-list');
@@ -1589,6 +1608,7 @@ async function deleteNotif(id){
   }catch(e){ alert('Network error: '+e.message); }
 }
 
+</script>
 <!-- GNAV -->
 <nav class="gnav" id="gnav"></nav>
 <script>
@@ -1881,10 +1901,74 @@ async function saveChangePw(){
   else { err.style.display='block'; err.textContent = d.error||'Error updating password.'; }
 }
 
+// ── Notification target checkbox helpers ──────────────────────────────────
+var _NT_GROUPS = ['nt-admin','nt-boss','nt-lead','nt-worker'];
+function _ntLbl(id){
+  return document.getElementById(id.replace('nt-','lbl-'));
+}
+function _ntSetChip(id, on){
+  var inp = document.getElementById(id);
+  var lbl = _ntLbl(id);
+  if(!inp||!lbl) return;
+  inp.checked = on;
+  if(on){ lbl.style.borderColor='#1a6bc4';lbl.style.background='#eff6ff';lbl.style.color='#1d4ed8'; }
+  else  { lbl.style.borderColor='#e2e8f0';lbl.style.background='#f8fafc';lbl.style.color='#475569'; }
+}
+function notifToggleEveryone(e){
+  e.preventDefault();
+  var ev = document.getElementById('nt-everyone');
+  if(!ev) return;
+  ev.checked = !ev.checked;
+  var lev = document.getElementById('lbl-everyone');
+  if(ev.checked){
+    lev.style.borderColor='#1a6bc4';lev.style.background='#eff6ff';lev.style.color='#1d4ed8';
+    _NT_GROUPS.forEach(function(id){_ntSetChip(id,false);});
+  } else {
+    lev.style.borderColor='#e2e8f0';lev.style.background='#f8fafc';lev.style.color='#475569';
+  }
+}
+function notifToggleGroup(e, id){
+  e.preventDefault();
+  var inp = document.getElementById(id);
+  if(!inp) return;
+  // Uncheck Everyone when selecting specific groups
+  var ev = document.getElementById('nt-everyone');
+  if(ev && ev.checked){
+    ev.checked=false;
+    var lev=document.getElementById('lbl-everyone');
+    if(lev){lev.style.borderColor='#e2e8f0';lev.style.background='#f8fafc';lev.style.color='#475569';}
+  }
+  _ntSetChip(id, !inp.checked);
+  // If all 4 checked, revert to Everyone
+  var allOn = _NT_GROUPS.every(function(gid){ return (document.getElementById(gid)||{}).checked; });
+  if(allOn){
+    if(ev){ ev.checked=true; var lev2=document.getElementById('lbl-everyone'); if(lev2){lev2.style.borderColor='#1a6bc4';lev2.style.background='#eff6ff';lev2.style.color='#1d4ed8';} }
+    _NT_GROUPS.forEach(function(gid){_ntSetChip(gid,false);});
+  }
+}
+
 async function sendNotification(){
   var title  = (document.getElementById('notif-title')||{}).value||'';
   var body   = (document.getElementById('notif-body')||{}).value||'';
-  var target = (document.getElementById('notif-target')||{}).value||'all';
+  // Compute target from checkboxes
+  var everyone = document.getElementById('nt-everyone');
+  var target;
+  if(everyone && everyone.checked){
+    target = 'all';
+  } else {
+    var parts=[];
+    if((document.getElementById('nt-admin')||{}).checked) parts.push('admin');
+    if((document.getElementById('nt-boss')||{}).checked) parts.push('boss');
+    if((document.getElementById('nt-lead')||{}).checked) parts.push('lead');
+    if((document.getElementById('nt-worker')||{}).checked) parts.push('worker');
+    if(!parts.length){ alert('Select at least one target group.'); return; }
+    // Map common combos to legacy values
+    var joined = parts.sort().join(',');
+    if(joined==='admin,boss,lead,worker') target='all';
+    else if(joined==='admin,boss,lead') target='supervisor';
+    else if(parts.length===1) target=parts[0];
+    else target=joined;
+  }
   var st     = document.getElementById('notif-status');
   if(!title.trim()){ st.style.display='block';st.style.color='#ef4444';st.textContent='Title is required.';return; }
   var auth = localStorage.getItem('mbrAuth')||'';
