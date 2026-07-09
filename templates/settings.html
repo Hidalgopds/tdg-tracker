@@ -526,6 +526,7 @@ function timeAgo(iso){
     <button class="tab-btn active" id="tab-btn-users" onclick="switchTab('users',this)">👥 Users &amp; Roles</button>
     <button class="tab-btn" id="tab-btn-hours" onclick="switchTab('hours',this)">🕐 Hours</button>
     <button class="tab-btn" id="tab-btn-roles" onclick="switchTab('roles',this)">🔑 Role Access</button>
+    <button class="tab-btn" id="tab-btn-notifs" onclick="switchTab('notifs',this);loadAllNotifs()" style="display:none;">🔔 Notifications</button>
     <button class="tab-btn" id="tab-btn-contractor" onclick="switchTab('contractor',this)">👤 My Profile</button>
   </div>
 
@@ -533,29 +534,6 @@ function timeAgo(iso){
   <div id="tab-users" class="tab-panel active">
     <!-- Pending approvals -->
   
-  <!-- Notifications — Admin/Boss only -->
-  <div id="notifAdminSection" style="display:none;margin-top:16px;">
-    <div class="section-card">
-      <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;">
-        <h3>🔔 Send Notification</h3>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
-        <input type="text" id="notif-title" placeholder="Title (e.g. Safety reminder, Checks are here...)"
-          style="padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;">
-        <textarea id="notif-body" placeholder="Message (optional)" rows="2"
-          style="padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;resize:vertical;"></textarea>
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-          <select id="notif-target" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;flex:1;">
-            <option value="all">All workers</option>
-            <option value="worker">Workers only</option>
-            <option value="lead">Leads only</option>
-          </select>
-          <button class="btn btn-primary btn-sm" onclick="sendNotification()" style="white-space:nowrap;">Send 🔔</button>
-        </div>
-        <div id="notif-status" style="font-size:12px;display:none;"></div>
-      </div>
-    </div>
-  </div>
 
   <!-- Log Everyone Out — Admin only -->
   <div id="forceLogoutSection" style="display:none;margin-top:16px;">
@@ -702,6 +680,75 @@ function timeAgo(iso){
     </div>
 
   </div>
+
+  <!-- ═══ NOTIFICATIONS ═══ (Boss / Admin only) -->
+  <div id="tab-notifs" class="tab-panel">
+
+    <!-- Send new notification -->
+    <div class="section-card" style="margin-bottom:20px;">
+      <div class="section-header">
+        <h3>🔔 Send Notification</h3>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px;">
+        <input type="text" id="notif-title" placeholder="Title (e.g. Safety reminder, Checks are here…)"
+          style="padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface,#fff);color:var(--text);font-size:13px;">
+        <textarea id="notif-body" placeholder="Message body (optional)" rows="2"
+          style="padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface,#fff);color:var(--text);font-size:13px;resize:vertical;font-family:inherit;"></textarea>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <select id="notif-target" style="padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface,#fff);color:var(--text);font-size:13px;flex:1;">
+            <option value="all">Everyone</option>
+            <option value="supervisor">Leads, Boss &amp; Admin</option>
+            <option value="lead">Leads only</option>
+            <option value="worker">Workers only</option>
+          </select>
+          <button onclick="sendNotification()" style="padding:9px 18px;background:#1a6bc4;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">Send 🔔</button>
+        </div>
+        <div id="notif-status" style="font-size:12px;display:none;"></div>
+      </div>
+    </div>
+
+    <!-- All notifications list -->
+    <div class="section-card">
+      <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <h3>📋 All Notifications</h3>
+        <button onclick="loadAllNotifs()" style="background:none;border:1px solid var(--border);border-radius:7px;color:var(--muted);padding:4px 10px;font-size:12px;cursor:pointer;">↻ Refresh</button>
+      </div>
+      <div id="notif-admin-list">
+        <div style="color:var(--muted);font-size:13px;text-align:center;padding:24px;">Loading…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit-notification modal -->
+  <div id="editNotifModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:400;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:14px;padding:24px;width:90%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.18);">
+      <div style="font-size:15px;font-weight:800;color:#0f172a;margin-bottom:16px;">✏️ Edit Notification</div>
+      <input type="hidden" id="editNotifId">
+      <div style="margin-bottom:10px;">
+        <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;margin-bottom:5px;">Title</div>
+        <input id="editNotifTitle" type="text" style="width:100%;padding:9px 12px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:13px;color:#0f172a;background:#f8fafc;outline:none;">
+      </div>
+      <div style="margin-bottom:10px;">
+        <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;margin-bottom:5px;">Body</div>
+        <textarea id="editNotifBody" rows="3" style="width:100%;padding:9px 12px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:13px;color:#0f172a;background:#f8fafc;resize:vertical;font-family:inherit;outline:none;"></textarea>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;margin-bottom:5px;">Target</div>
+        <select id="editNotifTarget" style="width:100%;padding:9px 12px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:13px;color:#0f172a;background:#f8fafc;">
+          <option value="all">Everyone</option>
+          <option value="supervisor">Leads, Boss &amp; Admin</option>
+          <option value="lead">Leads only</option>
+          <option value="worker">Workers only</option>
+        </select>
+      </div>
+      <div id="editNotifStatus" style="font-size:12px;min-height:18px;margin-bottom:10px;text-align:center;"></div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="document.getElementById('editNotifModal').style.display='none'" style="flex:1;padding:10px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;cursor:pointer;color:#475569;font-weight:600;">Cancel</button>
+        <button onclick="saveEditNotif()" style="flex:1;padding:10px;background:#1a6bc4;border:none;border-radius:8px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
 
   <!-- ═══ ROLES ═══ -->
   <div id="tab-roles" class="tab-panel">
@@ -1437,20 +1484,111 @@ function showToast(msg,err){var t=document.getElementById('toast');t.textContent
     window._bossReadOnly = true;
     loadUsers(); setThisWeek();
     var ab=document.getElementById('addUserBtn'); if(ab) ab.style.display='none';
-    var nas = document.getElementById('notifAdminSection');
-    if(nas) nas.style.display = 'block';
+    var notifsBtn = document.getElementById('tab-btn-notifs');
+    if(notifsBtn) notifsBtn.style.display = 'inline-block';
     setTimeout(function(){loadContractorArea();},0);
   } else {
     // Admin: full access
     loadUsers(); loadWorkers(); loadPerms(); setThisWeek();
-    var nas = document.getElementById('notifAdminSection');
-    if(nas) nas.style.display = 'block';
+    var notifsBtn = document.getElementById('tab-btn-notifs');
+    if(notifsBtn) notifsBtn.style.display = 'inline-block';
     var fls = document.getElementById('forceLogoutSection');
     if(fls) fls.style.display = 'block';
     setTimeout(function(){loadContractorArea();},0);
   }
 })();
 </script>
+// ── Notifications Admin Tab ───────────────────────────────────────────────────
+async function loadAllNotifs(){
+  var list = document.getElementById('notif-admin-list');
+  if(!list) return;
+  list.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:24px;">Loading…</div>';
+  try {
+    var r = await fetch('/api/notifications/admin');
+    var d = await r.json();
+    if(!d.ok || !d.notifications){ list.innerHTML='<div style="color:#ef4444;font-size:13px;padding:16px;">Error loading notifications.</div>'; return; }
+    var notifs = d.notifications;
+    if(!notifs.length){ list.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:24px;">No notifications yet.</div>'; return; }
+    var TARGET_LABELS = {all:'Everyone', supervisor:'Leads+Boss+Admin', lead:'Leads only', worker:'Workers only'};
+    list.innerHTML = notifs.map(function(n){
+      var ago = _notifTimeAgo(n.created_at);
+      var tgt = TARGET_LABELS[n.target] || n.target || '—';
+      var rc  = n.read_count || 0;
+      return '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:13px 15px;margin-bottom:8px;background:#fff;" data-notif-id="'+n.id+'">'
+        +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">'
+          +'<div style="flex:1;min-width:0;">'
+            +'<div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:3px;">'+escHtmlN(n.title)+'</div>'
+            +(n.body?'<div style="font-size:12px;color:#475569;margin-bottom:6px;line-height:1.5;">'+escHtmlN(n.body)+'</div>':'')
+            +'<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">'
+              +'<span style="font-size:10px;font-weight:700;background:#dbeafe;color:#1d4ed8;border-radius:6px;padding:2px 8px;">→ '+tgt+'</span>'
+              +'<span style="font-size:10px;color:#94a3b8;">'+ago+'</span>'
+              +'<span style="font-size:10px;color:#64748b;">by '+escHtmlN(n.created_by||'—')+'</span>'
+              +'<span style="font-size:10px;font-weight:700;background:#dcfce7;color:#15803d;border-radius:6px;padding:2px 8px;">'+rc+' read</span>'
+            +'</div>'
+          +'</div>'
+          +'<div style="display:flex;gap:6px;flex-shrink:0;align-items:center;">'
+            +'<button onclick="openEditNotif(''+n.id+'','+JSON.stringify(n.title)+','+JSON.stringify(n.body||'')+',''+n.target+'')" style="padding:5px 10px;font-size:11px;font-weight:700;border:1px solid #3b82f6;background:#eff6ff;color:#1d4ed8;border-radius:6px;cursor:pointer;">✎ Edit</button>'
+            +'<button onclick="deleteNotif(''+n.id+'')" style="padding:5px 10px;font-size:11px;font-weight:700;border:1px solid #ef4444;background:#fef2f2;color:#b91c1c;border-radius:6px;cursor:pointer;">✕</button>'
+          +'</div>'
+        +'</div>'
+        +'</div>';
+    }).join('');
+  } catch(e){ list.innerHTML='<div style="color:#ef4444;font-size:13px;padding:16px;">Error: '+e.message+'</div>'; }
+}
+
+function escHtmlN(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function _notifTimeAgo(iso){
+  if(!iso)return '';
+  var d=new Date(iso),now=new Date();
+  var mins=Math.floor((now-d)/60000);
+  if(mins<1)return 'Just now';
+  if(mins<60)return mins+'m ago';
+  var hrs=Math.floor(mins/60);
+  if(hrs<24)return hrs+'h ago';
+  return Math.floor(hrs/24)+'d ago';
+}
+
+function openEditNotif(id, title, body, target){
+  document.getElementById('editNotifId').value = id;
+  document.getElementById('editNotifTitle').value = title || '';
+  document.getElementById('editNotifBody').value = body || '';
+  document.getElementById('editNotifTarget').value = target || 'all';
+  document.getElementById('editNotifStatus').textContent = '';
+  document.getElementById('editNotifModal').style.display = 'flex';
+}
+
+async function saveEditNotif(){
+  var id     = document.getElementById('editNotifId').value;
+  var title  = document.getElementById('editNotifTitle').value.trim();
+  var body   = document.getElementById('editNotifBody').value.trim();
+  var target = document.getElementById('editNotifTarget').value;
+  var status = document.getElementById('editNotifStatus');
+  if(!title){ status.style.color='#b91c1c'; status.textContent='Title is required.'; return; }
+  status.style.color='#64748b'; status.textContent='Saving…';
+  try{
+    var r = await fetch('/api/notifications/'+id, {
+      method:'PATCH', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({title,body,target})
+    });
+    var d = await r.json();
+    if(d.ok){
+      status.style.color='#15803d'; status.textContent='Saved!';
+      setTimeout(function(){ document.getElementById('editNotifModal').style.display='none'; loadAllNotifs(); }, 700);
+    } else { status.style.color='#b91c1c'; status.textContent='Error saving.'; }
+  }catch(e){ status.style.color='#b91c1c'; status.textContent='Network error.'; }
+}
+
+async function deleteNotif(id){
+  if(!confirm('Delete this notification for everyone? This cannot be undone.')) return;
+  try{
+    var r = await fetch('/api/notifications/'+id, {method:'DELETE'});
+    var d = await r.json();
+    if(d.ok){ loadAllNotifs(); }
+    else{ alert('Error deleting notification.'); }
+  }catch(e){ alert('Network error: '+e.message); }
+}
+
 <!-- GNAV -->
 <nav class="gnav" id="gnav"></nav>
 <script>

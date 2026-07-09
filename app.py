@@ -3060,6 +3060,50 @@ def mark_notification_read(nid):
 
 
 # ── Contractor: hours by week ─────────────────────────────────────────────────
+@app.route("/api/notifications/admin", methods=["GET"])
+def notifications_admin():
+    """Admin/Boss: full notification list with per-notification read counts."""
+    r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/notifications?order=created_at.desc&limit=200",
+        headers=sb_headers(), timeout=5
+    )
+    notifs = r.json() if r.ok else []
+    # Attach read-count to each notification
+    for n in notifs:
+        r2 = requests.get(
+            f"{SUPABASE_URL}/rest/v1/notification_reads"
+            f"?notification_id=eq.{n['id']}&select=worker_name",
+            headers=sb_headers(), timeout=5
+        )
+        n["read_count"] = len(r2.json()) if r2.ok else 0
+    return jsonify({"ok": True, "notifications": notifs})
+
+@app.route("/api/notifications/<nid>", methods=["PATCH","DELETE"])
+def notification_manage(nid):
+    if request.method == "PATCH":
+        data = request.get_json() or {}
+        payload = {}
+        if "title" in data: payload["title"] = str(data["title"]).strip()
+        if "body"  in data: payload["body"]  = str(data["body"]).strip()
+        if "target" in data: payload["target"] = str(data["target"])
+        if not payload: return jsonify({"ok": False, "error": "nothing to update"}), 400
+        r = requests.patch(
+            f"{SUPABASE_URL}/rest/v1/notifications?id=eq.{nid}",
+            json=payload,
+            headers={**sb_headers(), "Prefer": "return=minimal"}
+        )
+        return jsonify({"ok": r.ok})
+    else:  # DELETE
+        requests.delete(
+            f"{SUPABASE_URL}/rest/v1/notification_reads?notification_id=eq.{nid}",
+            headers=sb_headers(), timeout=5
+        )
+        r = requests.delete(
+            f"{SUPABASE_URL}/rest/v1/notifications?id=eq.{nid}",
+            headers=sb_headers(), timeout=5
+        )
+        return jsonify({"ok": r.ok})
+
 @app.route("/api/contractor/hours", methods=["GET"])
 def contractor_hours():
     name       = request.args.get("name","").strip()
