@@ -2672,7 +2672,7 @@ def update_contractor_profile():
     r = requests.patch(
         f"{SUPABASE_URL}/rest/v1/app_users?name=eq.{requests.utils.quote(name)}",
         headers={**sb_headers(), "Prefer": "return=minimal"},
-        json={"contractor_company": company}
+        json={"company": company}
     )
     return jsonify({"ok": r.ok})
 

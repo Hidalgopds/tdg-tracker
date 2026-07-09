@@ -832,6 +832,25 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <button class="btn-s" onclick="closeModal('shareModal')">Close</button>
 </div></div>
 
+<!-- My Profile Modal -->
+<div class="modal-bg" id="profileModal">
+<div class="modal" style="max-width:400px;">
+  <div class="mhandle"></div>
+  <div class="mtitle">👤 My Profile</div>
+  <div class="fg"><label class="fl">Name</label>
+    <input class="fi" id="profName" readonly style="opacity:.7;cursor:default;">
+  </div>
+  <div class="fg"><label class="fl">Role</label>
+    <input class="fi" id="profRole" readonly style="opacity:.7;cursor:default;text-transform:capitalize;">
+  </div>
+  <div class="fg"><label class="fl">Company</label>
+    <input class="fi" id="profCompany" type="text" placeholder="Your company name...">
+  </div>
+  <div id="profMsg" style="font-size:12px;text-align:center;min-height:18px;margin-bottom:4px;"></div>
+  <button class="btn-p" onclick="saveProfile()">💾 Save Company</button>
+  <button class="btn-s" onclick="closeModal('profileModal')" style="margin-top:8px;">Close</button>
+</div></div>
+
 <script>
 var ITEMS=[],REQS=[],activeCat='All',srchQ='',edUser=null,curPinUser=null,pinBuf='',setNewPin=false,pin1st='';
 var CURRENT_INBOX_TAB='pending';
@@ -839,6 +858,39 @@ var _sigReqId=null;
 var _sigCtx=null,_sigCanvas=null,_sigDrawing=false;
 var _ROLE=localStorage.getItem('mbrRole')||'worker';
 var _LVL={admin:5,boss:4,inventory:3,dispatcher:3,lead:2,worker:1,contractor:2}[_ROLE]||1;
+
+// ── My Profile ──────────────────────────────────────────────────────────────
+function openProfile(){
+  var n=localStorage.getItem('mbrAuth')||'';
+  var r=localStorage.getItem('mbrRole')||'';
+  document.getElementById('profName').value=n;
+  document.getElementById('profRole').value=r;
+  document.getElementById('profCompany').value='';
+  document.getElementById('profMsg').textContent='';
+  if(n){
+    fetch('/api/contractor/profile?name='+encodeURIComponent(n))
+      .then(function(res){return res.json();})
+      .then(function(d){if(d.ok)document.getElementById('profCompany').value=d.contractor_company||'';})
+      .catch(function(){});
+  }
+  openModal('profileModal');
+}
+function saveProfile(){
+  var n=localStorage.getItem('mbrAuth')||'';
+  var co=document.getElementById('profCompany').value.trim();
+  var msg=document.getElementById('profMsg');
+  if(!n){msg.style.color='#f87171';msg.textContent='Not logged in.';return;}
+  msg.style.color='#94a3b8';msg.textContent='Saving...';
+  fetch('/api/contractor/profile',{method:'PATCH',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:n,contractor_company:co})})
+  .then(function(r){return r.json();})
+  .then(function(d){
+    if(d.ok){msg.style.color='#4ade80';msg.textContent='Saved!';
+      var rf=document.getElementById('rqCompany');if(rf)rf.value=co;
+    }else{msg.style.color='#f87171';msg.textContent='Error saving.';}
+  }).catch(function(){msg.style.color='#f87171';msg.textContent='Network error.';});
+}
+
 
 document.addEventListener('DOMContentLoaded',function(){
   loadInv();
