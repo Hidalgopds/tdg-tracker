@@ -1763,6 +1763,10 @@ def timesheet_page():
 def inventory_page():
     return render_template("inventory.html")
 
+@app.route("/schedule")
+def schedule_page():
+    return render_template("schedule.html")
+
 # ── Inventory items ──────────────────────────────────────────────
 @app.route("/api/inventory", methods=["GET"])
 def get_inventory():

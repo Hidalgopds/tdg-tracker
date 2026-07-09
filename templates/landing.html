@@ -430,17 +430,17 @@ function timeAgo(iso){
     // Hide cards based on role
     if (level < 2) {
       // Worker: only Timesheet visible
-      document.querySelectorAll('.card-log,.card-inv,.card-mgmt,.card-issues').forEach(function(el){el.style.display='none';});
+      document.querySelectorAll('.card-log,.card-inv,.card-mgmt,.card-issues,.card-schedule').forEach(function(el){el.style.display='none';});
     }
     if (level >= 2 && level < 3) {
-      // Lead: hide dashboard, settings
-      document.querySelectorAll('.card-mgmt').forEach(function(el){el.style.display='none';});
+      // Lead: hide dashboard, settings, schedule
+      document.querySelectorAll('.card-mgmt,.card-schedule').forEach(function(el){el.style.display='none';});
     }
 
     if (level === 3) {
       if (role === 'dispatcher' || auth === 'Dispatcher') {
         // Dispatcher: only Inventory card visible
-        document.querySelectorAll('.card-log,.card-mgmt,.card-issues,.card-settings,.card-tablet').forEach(function(el){el.style.display='none';});
+        document.querySelectorAll('.card-log,.card-mgmt,.card-issues,.card-settings,.card-tablet,.card-schedule').forEach(function(el){el.style.display='none';});
         var tsCard = document.querySelector('a.card[href="/timesheet"]');
         if(tsCard) tsCard.style.display='none';
       } else {
@@ -451,7 +451,7 @@ function timeAgo(iso){
     }
     if (role === 'contractor') {
       // Contractor: only Inventory visible
-      document.querySelectorAll('.card-log,.card-mgmt,.card-issues').forEach(function(el){el.style.display='none';});
+      document.querySelectorAll('.card-log,.card-mgmt,.card-issues,.card-schedule').forEach(function(el){el.style.display='none';});
       var tsCard = document.querySelector('a.card[href="/timesheet"]');
       if(tsCard) tsCard.style.display='none';
       var settCard = document.querySelector('.card-settings');
@@ -512,6 +512,18 @@ function timeAgo(iso){
       </div>
       <div class="card-footer">
         <span class="tag tag-inv">All Crew</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <a class="card card-schedule" href="/schedule">
+      <div class="card-icon" style="background:rgba(56,189,248,.12)">📅</div>
+      <div class="card-body">
+        <h3>Shipping Schedule</h3>
+        <p>Upcoming equipment deliveries to the Katy yard. Horizon 3 &amp; Horizon 4 shipment calendar.</p>
+      </div>
+      <div class="card-footer">
+        <span class="tag" style="background:rgba(56,189,248,.12);color:#38bdf8">MANAGEMENT</span>
         <span class="card-arrow">→</span>
       </div>
     </a>
