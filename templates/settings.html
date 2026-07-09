@@ -1518,22 +1518,26 @@ function showToast(msg,err){var t=document.getElementById('toast');t.textContent
 </script>
 <script>
 // ── Notifications Admin Tab ───────────────────────────────────────────────────
+// Store notifs globally for click handlers
+var _allNotifs = [];
+
 async function loadAllNotifs(){
   var list = document.getElementById('notif-admin-list');
   if(!list) return;
   list.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:24px;">Loading…</div>';
   try {
     var r = await fetch('/api/notifications/admin');
+    if(!r.ok){ list.innerHTML='<div style="color:#ef4444;font-size:13px;padding:16px;">Server error '+r.status+'</div>'; return; }
     var d = await r.json();
     if(!d.ok || !d.notifications){ list.innerHTML='<div style="color:#ef4444;font-size:13px;padding:16px;">Error loading notifications.</div>'; return; }
-    var notifs = d.notifications;
-    if(!notifs.length){ list.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:24px;">No notifications yet.</div>'; return; }
-    var TARGET_LABELS = {all:'Everyone', supervisor:'Leads+Boss+Admin', lead:'Leads only', worker:'Workers only'};
-    list.innerHTML = notifs.map(function(n){
+    _allNotifs = d.notifications;
+    if(!_allNotifs.length){ list.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:24px;">No notifications yet.</div>'; return; }
+    var TL = {all:'Everyone', supervisor:'Leads+Boss+Admin', lead:'Leads only', worker:'Workers only', admin:'Admin only', boss:'Boss only'};
+    list.innerHTML = _allNotifs.map(function(n, idx){
       var ago = _notifTimeAgo(n.created_at);
-      var tgt = TARGET_LABELS[n.target] || n.target || '—';
+      var tgt = TL[n.target] || n.target || '—';
       var rc  = n.read_count || 0;
-      return '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:13px 15px;margin-bottom:8px;background:#fff;" data-notif-id="'+n.id+'">'
+      return '<div style="border:1px solid #e2e8f0;border-radius:10px;padding:13px 15px;margin-bottom:8px;background:#fff;">'
         +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">'
           +'<div style="flex:1;min-width:0;">'
             +'<div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:3px;">'+escHtmlN(n.title)+'</div>'
@@ -1546,8 +1550,8 @@ async function loadAllNotifs(){
             +'</div>'
           +'</div>'
           +'<div style="display:flex;gap:6px;flex-shrink:0;align-items:center;">'
-            +'<button onclick="openEditNotif(''+n.id+'','+JSON.stringify(n.title)+','+JSON.stringify(n.body||'')+',''+n.target+'')" style="padding:5px 10px;font-size:11px;font-weight:700;border:1px solid #3b82f6;background:#eff6ff;color:#1d4ed8;border-radius:6px;cursor:pointer;">✎ Edit</button>'
-            +'<button onclick="deleteNotif(''+n.id+'')" style="padding:5px 10px;font-size:11px;font-weight:700;border:1px solid #ef4444;background:#fef2f2;color:#b91c1c;border-radius:6px;cursor:pointer;">✕</button>'
+            +'<button data-idx="'+idx+'" onclick="var n=_allNotifs[this.dataset.idx];openEditNotif(n.id,n.title,n.body||\'\',n.target);" style="padding:5px 10px;font-size:11px;font-weight:700;border:1px solid #3b82f6;background:#eff6ff;color:#1d4ed8;border-radius:6px;cursor:pointer;">✎ Edit</button>'
+            +'<button data-nid="'+n.id+'" onclick="deleteNotif(this.dataset.nid);" style="padding:5px 10px;font-size:11px;font-weight:700;border:1px solid #ef4444;background:#fef2f2;color:#b91c1c;border-radius:6px;cursor:pointer;">✕</button>'
           +'</div>'
         +'</div>'
         +'</div>';

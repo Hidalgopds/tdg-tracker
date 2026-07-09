@@ -3062,20 +3062,31 @@ def mark_notification_read(nid):
 # ── Contractor: hours by week ─────────────────────────────────────────────────
 @app.route("/api/notifications/admin", methods=["GET"])
 def notifications_admin():
-    """Admin/Boss: full notification list with per-notification read counts."""
+    """Admin/Boss: full notification list with per-notification read counts (batched)."""
     r = requests.get(
         f"{SUPABASE_URL}/rest/v1/notifications?order=created_at.desc&limit=200",
-        headers=sb_headers(), timeout=5
+        headers=sb_headers(), timeout=8
     )
+    if not r.ok:
+        return jsonify({"ok": False, "notifications": [], "error": r.text}), 500
     notifs = r.json() if r.ok else []
-    # Attach read-count to each notification
+    if not notifs:
+        return jsonify({"ok": True, "notifications": []})
+    # Batch: fetch ALL reads in one query
+    ids = [str(n["id"]) for n in notifs]
+    id_filter = "(" + ",".join(ids) + ")"
+    r2 = requests.get(
+        f"{SUPABASE_URL}/rest/v1/notification_reads"
+        f"?notification_id=in.{id_filter}&select=notification_id",
+        headers=sb_headers(), timeout=8
+    )
+    read_counts = {}
+    if r2.ok:
+        for row in r2.json():
+            nid = str(row["notification_id"])
+            read_counts[nid] = read_counts.get(nid, 0) + 1
     for n in notifs:
-        r2 = requests.get(
-            f"{SUPABASE_URL}/rest/v1/notification_reads"
-            f"?notification_id=eq.{n['id']}&select=worker_name",
-            headers=sb_headers(), timeout=5
-        )
-        n["read_count"] = len(r2.json()) if r2.ok else 0
+        n["read_count"] = read_counts.get(str(n["id"]), 0)
     return jsonify({"ok": True, "notifications": notifs})
 
 @app.route("/api/notifications/<nid>", methods=["PATCH","DELETE"])
