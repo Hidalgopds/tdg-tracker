@@ -562,6 +562,7 @@ function timeAgo(iso){
       <button class="tab-btn" id="tab-btn-myteam" style="display:none;" onclick="switchTab('myteam',this);loadMyTeam()">👥 My Team</button>
       <button class="tab-btn" id="tab-btn-qr" onclick="switchTab('qr',this)">📱 QR Check-In/Out</button>
       <button class="tab-btn" id="tab-btn-yardmap" onclick="switchTab('yardmap',this);loadYardMap()" style="display:none;">📍 Yard Map</button>
+      <button class="tab-btn" id="tab-btn-shipping" onclick="switchTab('shipping',this)" style="display:none;">📅 Schedule</button>
     </div>
 
     <!-- TAB: Safety Meeting -->
@@ -655,6 +656,253 @@ function timeAgo(iso){
     </div>
 
     <!-- TAB: Attendance -->
+
+
+    <!-- TAB: Shipping Schedule (Lead+ only) -->
+    <div class="tab-panel" id="tab-shipping">
+      <div style="padding:4px 0 16px;">
+        <div style="font-size:16px;font-weight:800;margin-bottom:2px;">📅 Shipping Schedule</div>
+        <div style="font-size:12px;color:#64748b;">Katy yard arrivals — H3 &amp; H4 (ship date +4 days transit)</div>
+      </div>
+
+      <!-- Legend -->
+      <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b;font-weight:600;"><div style="width:12px;height:5px;border-radius:3px;background:#a855f7;"></div> Horizon 3</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b;font-weight:600;"><div style="width:12px;height:5px;border-radius:3px;background:#2563eb;"></div> Horizon 4</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b;font-weight:600;"><div style="width:12px;height:5px;border-radius:3px;background:#16a34a;"></div> Already Arrived</div>
+      </div>
+
+      <!-- Notify button -->
+      <div style="margin-bottom:16px;">
+        <button onclick="shipNotifyLeads()" style="display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #cbd5e1;border-radius:9px;color:#475569;font-size:12px;font-weight:700;padding:8px 14px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.07);">🔔 Notify Leads</button>
+        <span id="shipNotifyMsg" style="font-size:11px;color:#15803d;margin-left:8px;font-weight:600;display:none;"></span>
+      </div>
+
+      <!-- Month nav -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <button onclick="shipPrev()" style="background:#fff;border:1px solid #cbd5e1;border-radius:8px;color:#475569;width:34px;height:34px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.07);">‹</button>
+        <div id="shipMonthLabel" style="font-size:17px;font-weight:800;color:#0f172a;"></div>
+        <button onclick="shipNext()" style="background:#fff;border:1px solid #cbd5e1;border-radius:8px;color:#475569;width:34px;height:34px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.07);">›</button>
+      </div>
+
+      <!-- Calendar grid -->
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:14px;">
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);background:#f8fafc;border-bottom:1px solid #e2e8f0;">
+          <div style="text-align:center;padding:8px 0;font-size:9px;font-weight:700;color:#94a3b8;letter-spacing:.7px;text-transform:uppercase;">Sun</div>
+          <div style="text-align:center;padding:8px 0;font-size:9px;font-weight:700;color:#94a3b8;letter-spacing:.7px;text-transform:uppercase;">Mon</div>
+          <div style="text-align:center;padding:8px 0;font-size:9px;font-weight:700;color:#94a3b8;letter-spacing:.7px;text-transform:uppercase;">Tue</div>
+          <div style="text-align:center;padding:8px 0;font-size:9px;font-weight:700;color:#94a3b8;letter-spacing:.7px;text-transform:uppercase;">Wed</div>
+          <div style="text-align:center;padding:8px 0;font-size:9px;font-weight:700;color:#94a3b8;letter-spacing:.7px;text-transform:uppercase;">Thu</div>
+          <div style="text-align:center;padding:8px 0;font-size:9px;font-weight:700;color:#94a3b8;letter-spacing:.7px;text-transform:uppercase;">Fri</div>
+          <div style="text-align:center;padding:8px 0;font-size:9px;font-weight:700;color:#94a3b8;letter-spacing:.7px;text-transform:uppercase;">Sat</div>
+        </div>
+        <div id="shipCalCells" style="display:grid;grid-template-columns:repeat(7,1fr);"></div>
+      </div>
+
+      <!-- Detail popup -->
+      <div id="shipDetailPanel" style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:14px;display:none;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+        <div id="shipDetailDate" style="font-size:11px;font-weight:700;color:#1a6bc4;margin-bottom:10px;text-transform:uppercase;letter-spacing:.6px;"></div>
+        <div id="shipDetailItems"></div>
+      </div>
+
+      <!-- Upcoming list -->
+      <div style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.8px;text-transform:uppercase;margin:18px 0 10px;">Upcoming Arrivals — Katy Yard</div>
+      <div id="shipUpcomingList"></div>
+    </div>
+
+<style>
+.ship-cell{min-height:70px;padding:5px 4px 0;border-right:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9;cursor:default;position:relative;overflow:hidden;background:#fff;}
+.ship-cell:nth-child(7n){border-right:none;}
+.ship-cell.ship-empty{background:#fafbfc;}
+.ship-cell.ship-has-event{cursor:pointer;}
+.ship-cell.ship-has-event:hover{background:#f0f7ff;}
+.ship-cell.ship-today .ship-dn{background:#1a6bc4;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-weight:800;}
+.ship-dn{font-size:10px;color:#94a3b8;font-weight:600;margin-bottom:2px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;}
+.ship-cell.ship-has-event .ship-dn{color:#334155;}
+.ship-pill{font-size:8px;font-weight:700;border-radius:4px;padding:1px 4px;margin-bottom:2px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;}
+.spill-h3{background:#f3e8ff;color:#7e22ce;border-left:2px solid #a855f7;}
+.spill-h4{background:#dbeafe;color:#1d4ed8;border-left:2px solid #2563eb;}
+.spill-shipped{background:#dcfce7;color:#15803d;border-left:2px solid #16a34a;}
+.ship-seg{position:absolute;bottom:0;height:4px;}
+.ship-seg.sseg-start{left:50%;right:0;}
+.ship-seg.sseg-mid{left:0;right:0;}
+.ship-seg.sseg-end{left:0;right:50%;}
+.ship-seg.sseg-single{left:10%;right:10%;border-radius:2px;}
+.sclr-h3{background:#a855f7;}
+.sclr-h4{background:#2563eb;}
+.sclr-shipped{background:#16a34a;}
+</style>
+
+<script>
+var SHIP_DATA=[
+  {ship:'2026-07-10',date:'2026-07-14',project:'H3',name:'Core Building UPSO SWBDs',po:'14195',units:'Shipment 2 — 1 unit',status:'shipped'},
+  {ship:'2026-07-10',date:'2026-07-14',project:'H4',name:'LVS/UPSO SWBDs',po:'14102',units:'Shipment 1 — Units 1, 2',status:'shipped'},
+  {ship:'2026-07-17',date:'2026-07-21',project:'H4',name:'LVS/UPSO SWBDs',po:'14102',units:'Units 3, 4, 5',status:'upcoming'},
+  {ship:'2026-07-24',date:'2026-07-28',project:'H4',name:'LVS/UPSO SWBDs',po:'14102',units:'Shipment 2 — Units 6-9',status:'upcoming'},
+  {ship:'2026-07-31',date:'2026-08-04',project:'H4',name:'LVS/UPSO SWBDs',po:'14102',units:'Shipment 3 — Units 10-13',status:'upcoming'},
+  {ship:'2026-08-07',date:'2026-08-11',project:'H4',name:'LVS/UPSO SWBDs',po:'14102',units:'Shipment 4 — Units 14-17',status:'upcoming'},
+  {ship:'2026-08-14',date:'2026-08-18',project:'H4',name:'LVS/UPSO SWBDs',po:'14102',units:'Shipment 5 — Units 18-21',status:'upcoming'},
+  {ship:'2026-08-21',date:'2026-08-25',project:'H4',name:'LVS/UPSO SWBDs',po:'14102',units:'Shipment 6 — Units 22-24',status:'upcoming'},
+  {ship:'2026-08-28',date:'2026-09-01',project:'H4',name:'Core Building UPSO SWBDs',po:'14196',units:'Shipment 1 — 2 units',status:'upcoming'}
+];
+var SHIP_MNAMES=['January','February','March','April','May','June','July','August','September','October','November','December'];
+var SHIP_SMONS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var shipYear=2026,shipMonth=6;
+var shipToday=new Date();
+
+function shipDk(y,m,d){return y+'-'+(m+1<10?'0':'')+(m+1)+'-'+(d<10?'0':'')+d;}
+function shipPd(s){return new Date(s+'T12:00:00');}
+
+function shipBuildRangeMap(){
+  var map={};
+  SHIP_DATA.forEach(function(ev){
+    var cc=ev.status==='shipped'?'sclr-shipped':(ev.project==='H3'?'sclr-h3':'sclr-h4');
+    var cur=shipPd(ev.ship),arr=shipPd(ev.date);
+    while(cur<=arr){
+      var key=cur.toISOString().slice(0,10);
+      var isS=(key===ev.ship),isA=(key===ev.date);
+      var role=isS&&isA?'single':isS?'start':isA?'end':'mid';
+      var dow=cur.getDay();
+      var sc=role==='single'?'sseg-single':role==='start'?(dow===6?'sseg-mid':'sseg-start'):role==='end'?(dow===0?'sseg-mid':'sseg-end'):'sseg-mid';
+      if(!map[key])map[key]=[];
+      map[key].push({ev:ev,role:role,sc:sc,cc:cc});
+      cur.setDate(cur.getDate()+1);
+    }
+  });
+  return map;
+}
+
+function shipRenderCalendar(){
+  var lbl=document.getElementById('shipMonthLabel');
+  if(!lbl)return;
+  lbl.textContent=SHIP_MNAMES[shipMonth]+' '+shipYear;
+  var fd=new Date(shipYear,shipMonth,1).getDay();
+  var dim=new Date(shipYear,shipMonth+1,0).getDate();
+  var ts=shipToday.toISOString().slice(0,10);
+  var rm=shipBuildRangeMap();
+  var cells=document.getElementById('shipCalCells');
+  if(!cells)return;
+  cells.innerHTML='';
+  for(var i=0;i<fd;i++){var e=document.createElement('div');e.className='ship-cell ship-empty';cells.appendChild(e);}
+  for(var d=1;d<=dim;d++){
+    var key=shipDk(shipYear,shipMonth,d);
+    var ranges=rm[key]||[];
+    var pills=ranges.filter(function(r){return r.role==='start'||r.role==='single'||r.role==='end';});
+    var cell=document.createElement('div');
+    cell.className='ship-cell'+(ranges.length?' ship-has-event':'')+(key===ts?' ship-today':'');
+    cell.dataset.date=key;
+    if(ranges.length)cell.onclick=function(){shipOpenDetail(this.dataset.date);};
+    var dn=document.createElement('div');dn.className='ship-dn';dn.textContent=d;cell.appendChild(dn);
+    pills.forEach(function(r){
+      var pill=document.createElement('div');
+      var pc=r.ev.status==='shipped'?'spill-shipped':(r.ev.project==='H3'?'spill-h3':'spill-h4');
+      pill.className='ship-pill '+pc;
+      var em=r.role==='start'?'📦':(r.role==='end'?'🎯':'');
+      pill.textContent=em+(r.ev.project==='H3'?'H3':'H4')+' '+(r.role==='end'?'Arr':'Ship');
+      cell.appendChild(pill);
+    });
+    ranges.forEach(function(r,i){
+      var seg=document.createElement('div');
+      seg.className='ship-seg '+r.sc+' '+r.cc;
+      seg.style.bottom=(i*5)+'px';
+      cell.appendChild(seg);
+    });
+    cells.appendChild(cell);
+  }
+  var dp=document.getElementById('shipDetailPanel');
+  if(dp)dp.style.display='none';
+  shipRenderUpcoming();
+}
+
+function shipOpenDetail(dateStr){
+  var rm=shipBuildRangeMap();
+  var ranges=rm[dateStr];
+  if(!ranges||!ranges.length)return;
+  var d=shipPd(dateStr);
+  var ddEl=document.getElementById('shipDetailDate');
+  var diEl=document.getElementById('shipDetailItems');
+  var dpEl=document.getElementById('shipDetailPanel');
+  if(!ddEl||!diEl||!dpEl)return;
+  ddEl.textContent=d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  var seen={},html='';
+  ranges.forEach(function(r){
+    var k=r.ev.ship+r.ev.project+r.ev.po;
+    if(seen[k])return;seen[k]=1;
+    var ev=r.ev;
+    var bc=ev.status==='shipped'?'#16a34a':(ev.project==='H3'?'#a855f7':'#2563eb');
+    var bdc=ev.status==='shipped'?'background:#dcfce7;color:#15803d':(r.role==='end'?'background:#fef9c3;color:#a16207':'background:#dbeafe;color:#1d4ed8');
+    var bdt=ev.status==='shipped'?'Arrived':(r.role==='end'?'Arrives Today':(r.role==='start'?'Departs Today':'In Transit'));
+    html+='<div style="background:#f8fafc;border-radius:8px;padding:10px 12px;margin-bottom:8px;border-left:3px solid '+bc+';">'
+      +'<div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">'+ev.project+' — PO '+ev.po+'</div>'
+      +'<div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:2px;">'+ev.name+'</div>'
+      +'<div style="font-size:11px;color:#64748b;">'+ev.units+' · Katy, TX</div>'
+      +'<div style="font-size:10px;color:#94a3b8;margin-top:3px;">📦 Ships: '+ev.ship+' → 🎯 Arrives: '+ev.date+'</div>'
+      +'<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;display:inline-block;margin-top:5px;'+bdc+'">'+bdt+'</span>'
+      +'</div>';
+  });
+  diEl.innerHTML=html;
+  dpEl.style.display='block';
+}
+
+function shipPrev(){shipMonth--;if(shipMonth<0){shipMonth=11;shipYear--;}shipRenderCalendar();}
+function shipNext(){shipMonth++;if(shipMonth>11){shipMonth=0;shipYear++;}shipRenderCalendar();}
+
+function shipRenderUpcoming(){
+  var ul=document.getElementById('shipUpcomingList');
+  if(!ul)return;
+  var t0=new Date(shipToday.getFullYear(),shipToday.getMonth(),shipToday.getDate()).getTime();
+  var fut=SHIP_DATA.filter(function(s){return shipPd(s.date).getTime()>=t0;})
+    .sort(function(a,b){return a.date.localeCompare(b.date);});
+  var html='';
+  if(!fut.length){ul.innerHTML='<div style="color:#94a3b8;font-size:13px;padding:8px 0;">No upcoming deliveries.</div>';return;}
+  fut.forEach(function(ev){
+    var dt=shipPd(ev.date);
+    var diff=Math.round((dt.getTime()-t0)/86400000);
+    var bc=ev.status==='shipped'?'background:#dcfce7;color:#15803d':(diff<=7?'background:#fef9c3;color:#a16207':'background:#dbeafe;color:#1d4ed8');
+    var bt=ev.status==='shipped'?'Arrived':(diff===0?'Today':(diff<=7?'This Week':diff+'d'));
+    var pc=ev.project==='H3'?'#a855f7':'#2563eb';
+    html+='<div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,.04);">'
+      +'<div style="background:#f0f7ff;border-radius:8px;padding:5px 9px;text-align:center;min-width:48px;flex-shrink:0;border:1px solid #dbeafe;">'
+        +'<div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;">'+SHIP_SMONS[dt.getMonth()]+'</div>'
+        +'<div style="font-size:18px;font-weight:800;line-height:1.1;color:'+pc+'">'+dt.getDate()+'</div>'
+      +'</div>'
+      +'<div style="flex:1;min-width:0;">'
+        +'<div style="font-size:10px;font-weight:700;color:#94a3b8;">'+ev.project+' — PO '+ev.po+' · Katy, TX</div>'
+        +'<div style="font-size:13px;font-weight:700;color:#0f172a;margin:2px 0;">'+ev.name+'</div>'
+        +'<div style="font-size:11px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+ev.units+'</div>'
+        +'<div style="font-size:10px;color:#94a3b8;margin-top:2px;">📦 '+ev.ship+' → 🎯 '+ev.date+'</div>'
+      +'</div>'
+      +'<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;flex-shrink:0;'+bc+'">'+bt+'</span>'
+      +'</div>';
+  });
+  ul.innerHTML=html;
+}
+
+function shipNotifyLeads(){
+  var msg=document.getElementById('shipNotifyMsg');
+  var t0=new Date(shipToday.getFullYear(),shipToday.getMonth(),shipToday.getDate()).getTime();
+  var ups=SHIP_DATA.filter(function(s){return shipPd(s.date).getTime()>=t0&&s.status!=='shipped';});
+  if(!ups.length){if(msg){msg.style.display='inline';msg.textContent='No upcoming arrivals to notify.';}return;}
+  Promise.all(ups.map(function(ev){
+    var diff=Math.round((shipPd(ev.date).getTime()-t0)/86400000);
+    var when=diff===0?'Today':diff===1?'Tomorrow':'In '+diff+' days';
+    return fetch('/api/notifications',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({title:'📦 '+ev.project+' Arrives '+when+' — Katy Yard',
+        body:ev.name+' | '+ev.units+' | Ships: '+ev.ship+' → Arrives: '+ev.date,
+        target:'supervisor',created_by:'Schedule'})});
+  })).then(function(){
+    if(msg){msg.style.display='inline';msg.style.color='#15803d';msg.textContent=ups.length+' notifications sent.';}
+    setTimeout(function(){if(msg)msg.style.display='none';},4000);
+  }).catch(function(){
+    if(msg){msg.style.display='inline';msg.style.color='#dc2626';msg.textContent='Error sending.';}
+  });
+}
+
+// Init when tab becomes active
+document.addEventListener('DOMContentLoaded', function(){
+  shipRenderCalendar();
+});
+</script>
 
     <!-- TAB: Yard Map (Boss/Lead/Admin only) -->
     <div class="tab-panel" id="tab-yardmap">
@@ -957,6 +1205,9 @@ function applyTabVisibility(){
   // My Team: lead+ (lvl>=2)
   var myTeamBtn = document.getElementById('tab-btn-myteam');
   if(myTeamBtn) myTeamBtn.style.display = lvl >= 2 ? 'inline-block' : 'none';
+  // Shipping Schedule: lead+ (lvl>=2)
+  var shippingBtn = document.getElementById('tab-btn-shipping');
+  if(shippingBtn) shippingBtn.style.display = lvl >= 2 ? 'inline-block' : 'none';
   // Leads (lvl==2 or 3): default to My Team tab, not Safety Meeting
   if(lvl >= 2 && lvl < 4){
     // Remove smReadOnlyStyle if it exists (leads can interact with My Team chiclets)
