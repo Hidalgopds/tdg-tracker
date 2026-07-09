@@ -7,76 +7,90 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:#060c18;color:#e2e8f0;min-height:100vh;}
-header{background:#0d1a2d;border-bottom:1px solid #1a2535;padding:12px 16px;display:flex;align-items:center;gap:10px;}
-.back-btn{background:#1a2535;border:1px solid #2d3f57;border-radius:8px;color:#94a3b8;padding:6px 12px;font-size:12px;cursor:pointer;text-decoration:none;}
+header{background:#0a1628;border-bottom:1px solid #1a2535;padding:12px 16px;display:flex;align-items:center;gap:10px;}
+.back-btn{background:#132035;border:1px solid #2d3f57;border-radius:8px;color:#94a3b8;padding:6px 12px;font-size:12px;cursor:pointer;text-decoration:none;font-weight:600;}
+.back-btn:hover{border-color:#38bdf8;color:#38bdf8;}
 .page-title{font-size:16px;font-weight:700;color:#e2e8f0;}
 .page-sub{font-size:11px;color:#64748b;margin-top:1px;}
 
-.container{max-width:720px;margin:0 auto;padding:16px;}
+.container{max-width:720px;margin:0 auto;padding:16px 14px 80px;}
 
 /* Month nav */
-.month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-.month-label{font-size:18px;font-weight:700;color:#e2e8f0;}
-.nav-btn{background:#1a2535;border:1px solid #2d3f57;border-radius:8px;color:#94a3b8;width:34px;height:34px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.month-label{font-size:17px;font-weight:800;color:#e2e8f0;letter-spacing:-.3px;}
+.nav-btn{background:#132035;border:1px solid #2d3f57;border-radius:8px;color:#94a3b8;width:34px;height:34px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;}
 .nav-btn:hover{border-color:#38bdf8;color:#38bdf8;}
 
 /* Calendar grid */
-.cal-grid{background:#0d1a2d;border:1px solid #1a2535;border-radius:14px;overflow:hidden;}
-.cal-days-hdr{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid #1a2535;}
-.cal-day-hdr{text-align:center;padding:8px 0;font-size:10px;font-weight:700;color:#475569;letter-spacing:.6px;text-transform:uppercase;}
+.cal-grid{background:#0a1628;border:1px solid #1a2535;border-radius:14px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.4);}
+.cal-days-hdr{display:grid;grid-template-columns:repeat(7,1fr);background:#080f1e;border-bottom:1px solid #1a2535;}
+.cal-day-hdr{text-align:center;padding:9px 0;font-size:10px;font-weight:700;color:#334155;letter-spacing:.7px;text-transform:uppercase;}
 .cal-cells{display:grid;grid-template-columns:repeat(7,1fr);}
-.cal-cell{min-height:72px;padding:6px 4px;border-right:1px solid #111a28;border-bottom:1px solid #111a28;position:relative;cursor:default;}
+.cal-cell{min-height:76px;padding:6px 5px;border-right:1px solid #0f1c30;border-bottom:1px solid #0f1c30;cursor:default;transition:.1s;}
 .cal-cell:nth-child(7n){border-right:none;}
-.cal-cell.empty{background:#080e1a;}
+.cal-cell.empty{background:#070d1a;}
+.cal-cell.has-event{background:#0c1a2e;cursor:pointer;}
+.cal-cell.has-event:hover{background:#112240;}
 .cal-cell.today .day-num{background:#38bdf8;color:#000;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:800;}
-.day-num{font-size:11px;color:#475569;font-weight:600;margin-bottom:3px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
-.cal-cell.has-event .day-num{color:#e2e8f0;}
+.day-num{font-size:11px;color:#334155;font-weight:600;margin-bottom:4px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;}
+.cal-cell.has-event .day-num{color:#94a3b8;}
 
 /* Event pills */
-.event-pill{font-size:9px;font-weight:700;border-radius:4px;padding:2px 5px;margin-bottom:2px;line-height:1.3;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.pill-h3{background:rgba(168,85,247,.25);color:#c084fc;border:1px solid rgba(168,85,247,.3);}
-.pill-h4{background:rgba(56,189,248,.2);color:#38bdf8;border:1px solid rgba(56,189,248,.25);}
-.pill-shipped{background:rgba(34,197,94,.15);color:#4ade80;border:1px solid rgba(34,197,94,.2);}
+.event-pill{font-size:9px;font-weight:700;border-radius:5px;padding:2px 6px;margin-bottom:2px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pill-h3{background:rgba(168,85,247,.2);color:#c084fc;border-left:2px solid #a855f7;}
+.pill-h4{background:rgba(56,189,248,.15);color:#7dd3fc;border-left:2px solid #38bdf8;}
+.pill-shipped{background:rgba(34,197,94,.12);color:#4ade80;border-left:2px solid #22c55e;}
 
 /* Legend */
-.legend{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
-.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#94a3b8;}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;align-items:center;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b;font-weight:600;}
 .legend-dot{width:10px;height:10px;border-radius:3px;}
-.ld-h3{background:rgba(168,85,247,.4);border:1px solid #c084fc;}
-.ld-h4{background:rgba(56,189,248,.3);border:1px solid #38bdf8;}
-.ld-shipped{background:rgba(34,197,94,.25);border:1px solid #4ade80;}
+.ld-h3{background:#a855f7;}
+.ld-h4{background:#38bdf8;}
+.ld-shipped{background:#22c55e;}
 
 /* Detail panel */
-.detail-panel{background:#0d1a2d;border:1px solid #1a2535;border-radius:12px;padding:14px;margin-top:14px;display:none;}
+.detail-panel{background:#0a1628;border:1px solid #1e3a5f;border-radius:12px;padding:14px;margin-top:12px;display:none;box-shadow:0 4px 16px rgba(0,0,0,.3);}
 .detail-panel.open{display:block;}
-.detail-date{font-size:13px;font-weight:700;color:#38bdf8;margin-bottom:10px;}
-.detail-item{background:#111f35;border-radius:8px;padding:10px 12px;margin-bottom:8px;border-left:3px solid #38bdf8;}
-.detail-item.h3{border-left-color:#c084fc;}
-.detail-item.shipped{border-left-color:#4ade80;}
-.detail-project{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+.detail-date{font-size:12px;font-weight:700;color:#38bdf8;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;}
+.detail-item{background:#0f1e35;border-radius:8px;padding:10px 12px;margin-bottom:8px;border-left:3px solid #38bdf8;}
+.detail-item.h3{border-left-color:#a855f7;}
+.detail-item.shipped{border-left-color:#22c55e;}
+.detail-project{font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
 .detail-name{font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:3px;}
 .detail-meta{font-size:11px;color:#64748b;}
-.detail-status{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;display:inline-block;margin-top:4px;}
+.detail-status{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;display:inline-block;margin-top:5px;}
 .status-shipped{background:rgba(34,197,94,.15);color:#4ade80;}
 .status-upcoming{background:rgba(56,189,248,.15);color:#38bdf8;}
 .status-thisweek{background:rgba(251,191,36,.15);color:#fbbf24;}
 
+/* Notify button */
+.notify-btn{display:flex;align-items:center;gap:7px;background:#1e3a5f;border:1px solid #2d5a8e;border-radius:9px;color:#7dd3fc;font-size:12px;font-weight:700;padding:8px 14px;cursor:pointer;transition:.15s;margin-bottom:16px;}
+.notify-btn:hover{background:#254e80;border-color:#38bdf8;color:#fff;}
+.notify-btn:active{transform:scale(.97);}
+#notifyMsg{font-size:11px;color:#4ade80;margin-left:8px;display:none;}
+
+/* Section label */
+.section-label{font-size:10px;font-weight:700;color:#334155;letter-spacing:.8px;text-transform:uppercase;margin:20px 0 8px;}
+.section-row{display:flex;align-items:center;justify-content:space-between;margin:20px 0 8px;}
+
 /* Upcoming list */
-.section-label{font-size:10px;font-weight:700;color:#475569;letter-spacing:.7px;text-transform:uppercase;margin:20px 0 8px;}
-.upcoming-item{background:#0d1a2d;border:1px solid #1a2535;border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;}
-.upcoming-date-box{background:#111f35;border-radius:8px;padding:6px 10px;text-align:center;min-width:52px;flex-shrink:0;}
-.udb-month{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;}
-.udb-day{font-size:20px;font-weight:800;color:#38bdf8;line-height:1;}
-.upcoming-info{flex:1;}
-.upcoming-project{font-size:10px;font-weight:700;color:#64748b;letter-spacing:.4px;}
+.upcoming-item{background:#0a1628;border:1px solid #1a2535;border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;transition:.15s;}
+.upcoming-item:hover{border-color:#2d3f57;}
+.upcoming-date-box{background:#0f1e35;border-radius:8px;padding:6px 10px;text-align:center;min-width:52px;flex-shrink:0;border:1px solid #1a2535;}
+.udb-month{font-size:9px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.4px;}
+.udb-day{font-size:20px;font-weight:800;line-height:1.1;}
+.upcoming-info{flex:1;min-width:0;}
+.upcoming-project{font-size:10px;font-weight:700;color:#475569;letter-spacing:.4px;}
 .upcoming-name{font-size:13px;font-weight:700;color:#e2e8f0;margin:2px 0;}
-.upcoming-units{font-size:11px;color:#64748b;}
-.upcoming-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;}
+.upcoming-units{font-size:11px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.upcoming-badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;flex-shrink:0;}
 
 @media(max-width:480px){
-  .cal-cell{min-height:54px;padding:4px 2px;}
-  .event-pill{font-size:8px;padding:1px 3px;}
+  .cal-cell{min-height:58px;padding:4px 3px;}
+  .event-pill{font-size:8px;padding:1px 4px;}
   .day-num{font-size:10px;}
+  .container{padding:12px 10px 80px;}
 }
 </style>
 </head>
@@ -85,7 +99,7 @@ header{background:#0d1a2d;border-bottom:1px solid #1a2535;padding:12px 16px;disp
   <a class="back-btn" href="/home">← Home</a>
   <div>
     <div class="page-title">📅 Shipping Schedule</div>
-    <div class="page-sub">Katy yard deliveries — Horizon 3 &amp; Horizon 4</div>
+    <div class="page-sub">Expected arrivals at Katy yard — ship date +4 days transit</div>
   </div>
 </header>
 
@@ -97,6 +111,10 @@ header{background:#0d1a2d;border-bottom:1px solid #1a2535;padding:12px 16px;disp
     <div class="legend-item"><div class="legend-dot ld-shipped"></div> Already Shipped</div>
   </div>
 
+  <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+    <button class="notify-btn" onclick="notifyLeads()">🔔 Notify Leads</button>
+    <span id="notifyMsg"></span>
+  </div>
   <div class="month-nav">
     <button class="nav-btn" onclick="prevMonth()">&#8249;</button>
     <div class="month-label" id="monthLabel"></div>
@@ -130,17 +148,17 @@ header{background:#0d1a2d;border-bottom:1px solid #1a2535;padding:12px 16px;disp
 // ── All Katy shipments ────────────────────────────────────────────────────────
 var SHIPMENTS = [
   // Horizon THREE
-  {date:'2026-07-10', project:'H3', name:'Core Building UPSO SWBDs', po:'14195', units:'Shipment 2 — 1 unit', status:'upcoming'},
+  {date:'2026-07-14', project:'H3', name:'Core Building UPSO SWBDs', po:'14195', units:'Shipment 2 — 1 unit', status:'upcoming'},
 
   // Horizon FOUR
-  {date:'2026-07-10', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Shipment 1 — Units 1, 2', status:'shipped'},
-  {date:'2026-07-17', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Units 3, 4, 5', status:'upcoming'},
-  {date:'2026-07-24', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Shipment 2 — Units 6, 7, 8, 9', status:'upcoming'},
-  {date:'2026-07-31', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Shipment 3 — Units 10, 11, 12, 13', status:'upcoming'},
-  {date:'2026-08-07', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Shipment 4 — Units 14, 15, 16, 17', status:'upcoming'},
-  {date:'2026-08-14', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Shipment 5 — Units 18, 19, 20, 21', status:'upcoming'},
-  {date:'2026-08-21', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Shipment 6 — Units 22, 23, 24', status:'upcoming'},
-  {date:'2026-08-28', project:'H4', name:'Core Building UPSO SWBDs', po:'14196', units:'Shipment 1 — 2 units', status:'upcoming'},
+  {date:'2026-07-14', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Shipment 1 — Units 1, 2', status:'shipped'},
+  {date:'2026-07-21', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Units 3, 4, 5', status:'upcoming'},
+  {date:'2026-07-28', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Shipment 2 — Units 6, 7, 8, 9', status:'upcoming'},
+  {date:'2026-08-04', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Shipment 3 — Units 10, 11, 12, 13', status:'upcoming'},
+  {date:'2026-08-11', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Shipment 4 — Units 14, 15, 16, 17', status:'upcoming'},
+  {date:'2026-08-18', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Shipment 5 — Units 18, 19, 20, 21', status:'upcoming'},
+  {date:'2026-08-25', project:'H4', name:'LVS/UPSO SWBDs', po:'14102', units:'Shipment 6 — Units 22, 23, 24', status:'upcoming'},
+  {date:'2026-09-01', project:'H4', name:'Core Building UPSO SWBDs', po:'14196', units:'Shipment 1 — 2 units', status:'upcoming'},
 ];
 
 var today = new Date();
@@ -270,6 +288,37 @@ function renderUpcoming(){
       +'</div>';
   });
   document.getElementById('upcomingList').innerHTML=html;
+}
+
+function notifyLeads(){
+  var btn=document.querySelector('.notify-btn');
+  var msg=document.getElementById('notifyMsg');
+  btn.disabled=true;btn.textContent='Sending...';
+  var today=new Date();
+  var todayMs=new Date(today.getFullYear(),today.getMonth(),today.getDate()).getTime();
+  var upcoming=SHIPMENTS.filter(function(s){
+    var dt=new Date(s.date+'T12:00:00');
+    return dt.getTime()>=todayMs && s.status!=='shipped';
+  });
+  var sends=upcoming.map(function(ev){
+    var dt=new Date(ev.date+'T12:00:00');
+    var diffDays=Math.round((dt.getTime()-todayMs)/(1000*60*60*24));
+    var when=diffDays===0?'Today':diffDays===1?'Tomorrow':'In '+diffDays+' days';
+    var title='📦 '+ev.project+' Delivery — '+when;
+    var body=ev.name+' · '+ev.units+' · Katy, TX · '+ev.date;
+    return fetch('/api/notifications',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({title:title,body:body,target:'supervisor',created_by:'Schedule'})
+    });
+  });
+  Promise.all(sends).then(function(){
+    btn.textContent='✅ Notified';
+    msg.style.display='inline';
+    msg.textContent=upcoming.length+' notification'+(upcoming.length!==1?'s':'')+' sent to leads.';
+    setTimeout(function(){btn.disabled=false;btn.textContent='🔔 Notify Leads';msg.style.display='none';},4000);
+  }).catch(function(){
+    btn.disabled=false;btn.textContent='🔔 Notify Leads';
+    msg.style.color='#f87171';msg.style.display='inline';msg.textContent='Error sending.';
+  });
 }
 
 renderCalendar();
