@@ -18,9 +18,10 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .si{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:12px;pointer-events:none;}
 .editor-btn{height:36px;padding:0 10px;background:#1a1a2e;border:1px solid #2a3a5c;border-radius:8px;color:#7db4ff;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;}
 .editor-btn.active{background:#1a3a6c;border-color:var(--accent);}
-.cat-bar{padding:9px 14px;display:flex;gap:7px;overflow-x:auto;border-bottom:1px solid var(--border);-webkit-overflow-scrolling:touch;}
+.cat-bar{padding:8px 12px;display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--border);}
 .cat-bar::-webkit-scrollbar{display:none;}
-.chip{padding:5px 11px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;background:#111d2b;color:var(--muted);border:1px solid var(--border);flex-shrink:0;}
+.chip{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;background:#111d2b;color:var(--muted);border:1px solid var(--border);flex-shrink:0;}
+@media(max-width:640px){.chip{font-size:10px;padding:4px 9px;}}
 .chip.active{background:var(--accent);color:#fff;border-color:var(--accent);}
 .pending-banner{display:none;padding:9px 16px;background:#1a1500;border-bottom:1px solid rgba(245,158,11,.3);display:flex;align-items:center;justify-content:space-between;}
 .pending-banner.hidden{display:none!important;}
@@ -110,7 +111,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .inv-tab{height:38px;padding:0 18px;background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;color:#64748b;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;}
 .inv-tab.active{color:#f59e0b;border-bottom-color:#f59e0b;}
 .inv-tab:hover{color:#e2e8f0;}
-@media(max-width:640px){.inv-tab{font-size:11px;padding:0 10px;height:34px;}#itab-dispatch,#itab-queries{flex:1;border-top:1px solid #0f1824;border-bottom:3px solid transparent;margin-bottom:0;}#itab-dispatch.active,#itab-queries.active{border-bottom-color:#f59e0b;}}
+@media(max-width:640px){.inv-tab{font-size:11px;padding:0 10px;height:34px;}}
 /* ── Unit Materials panel ── */
 .um-panel{display:none;padding:14px 14px 80px;}
 .um-topbar{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
