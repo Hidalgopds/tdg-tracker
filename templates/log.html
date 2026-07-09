@@ -382,6 +382,9 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   .gnav a { font-size: 9px !important; min-width: 36px !important; }
   .gnav a .gi { font-size: 17px !important; }
 }
+#chip-label{display:none!important;}
+#mbr-checkin-chip{padding:4px!important;gap:0!important;}
+.chip-dot,#chip-dot{width:10px!important;height:10px!important;}
 </style>
 
 </head>
@@ -393,9 +396,9 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <div style="margin-left:auto;display:flex;align-items:center;gap:10px;">
     <div id="mbr-checkin-chip" style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px;background:rgba(100,116,139,0.15);color:#94a3b8;border:1px solid rgba(100,116,139,0.2);cursor:default;white-space:nowrap;">
       <span id="chip-dot" style="width:6px;height:6px;border-radius:50%;background:#64748b;display:inline-block;"></span>
-      <span id="chip-label">—</span>
+      <span id="chip-label" style="display:none;"></span>
     </div>
-    <div id="log-user-pill" style="font-size:12px;font-weight:700;color:#94a3b8;"></div>
+    <button onclick="localStorage.removeItem('mbrAuth');localStorage.removeItem('mbrRole');location.href='/login';" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#94a3b8;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✕</button>
   </div>
 </div>
 <script>

@@ -122,6 +122,9 @@ tbody td.td-date{white-space:nowrap;font-size:12px}
 .ag-pk:hover{background:#1a3a5c}
 .ag-err{color:#ef4444;font-size:12px;min-height:16px;margin-top:6px}
 
+#chip-label{display:none!important;}
+#mbr-checkin-chip{padding:4px!important;gap:0!important;}
+.chip-dot,#chip-dot{width:10px!important;height:10px!important;}
 </style>
 
 <style id="gnav-style">
@@ -325,8 +328,8 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 
 </head>
 <body>
-<div style="display:flex;align-items:center;padding:8px 16px;background:#060c18;border-bottom:1px solid #1a2535;"><a href="/" style="color:#94a3b8;text-decoration:none;font-size:13px;">← Home</a><div id="headerUser" style="display:flex;align-items:center;gap:8px;margin-left:auto;"></div></div>
-<script>(function(){var n=localStorage.getItem('mbrAuth')||'';var r=localStorage.getItem('mbrRole')||'';var el=document.getElementById('headerUser');if(!el||!n)return;var cap=r?r.charAt(0).toUpperCase()+r.slice(1):'';el.innerHTML='<span style="font-size:12px;font-weight:700;color:#94a3b8;">'+n+(cap?' &middot; '+cap:'')+' </span>'+'<button onclick="localStorage.removeItem(\'mbrAuth\');localStorage.removeItem(\'mbrRole\');location.href=\'/login\';" '+'style="padding:5px 12px;background:#1e2d45;border:1px solid #2d3f57;border-radius:8px;color:#94a3b8;font-size:12px;cursor:pointer;">Sign Out</button>';})();</script>
+<div style="display:flex;align-items:center;padding:0 16px;background:#1e3a5f;border-bottom:1px solid #0f2d52;height:48px;"><a href="/" style="color:#94a3b8;text-decoration:none;font-size:13px;">← Home</a><div id="headerUser" style="display:flex;align-items:center;gap:8px;margin-left:auto;"></div></div>
+<script>(function(){var n=localStorage.getItem('mbrAuth')||'';var r=localStorage.getItem('mbrRole')||'';var el=document.getElementById('headerUser');if(!el||!n)return;var cap=r?r.charAt(0).toUpperCase()+r.slice(1):'';el.innerHTML='<button onclick="localStorage.removeItem(\'mbrAuth\');localStorage.removeItem(\'mbrRole\');location.href=\'/login\';" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#94a3b8;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✕</button>';})();</script>
 <script>
 (function(){
   var _a=localStorage.getItem('mbrAuth')||'';

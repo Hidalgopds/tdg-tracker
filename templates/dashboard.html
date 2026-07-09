@@ -492,10 +492,11 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 }
 @media (max-width: 520px) {
   .hdr-name { display: none !important; }
-  .hdr-signout { font-size: 0 !important; padding: 5px 8px !important; }
-  .hdr-signout::after { content: '✕'; font-size: 12px; }
   .header-right { gap: 5px; }
 }
+#chip-label{display:none!important;}
+#mbr-checkin-chip{padding:4px!important;gap:0!important;}
+.chip-dot,#chip-dot{width:10px!important;height:10px!important;}
 </style>
 </head>
 <body>
@@ -554,7 +555,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
     <div id="headerUser" style="display:flex;align-items:center;gap:8px;margin-left:8px;"></div>
   </div>
 </header>
-<script>(function(){var n=localStorage.getItem('mbrAuth')||'';var r=localStorage.getItem('mbrRole')||'';var el=document.getElementById('headerUser');if(!el||!n)return;var cap=r?r.charAt(0).toUpperCase()+r.slice(1):'';el.innerHTML='<span class="hdr-name" style="font-size:12px;font-weight:700;color:#94a3b8;">'+n+(cap?' &middot; '+cap:'')+' </span>'+'<button class="hdr-signout" onclick="localStorage.removeItem(\'mbrAuth\');localStorage.removeItem(\'mbrRole\');location.href=\'/login\';" '+'style="padding:5px 12px;background:#1e2d45;border:1px solid #2d3f57;border-radius:8px;color:#94a3b8;font-size:12px;cursor:pointer;">Sign Out</button>';})();</script>
+<script>(function(){var n=localStorage.getItem('mbrAuth')||'';var r=localStorage.getItem('mbrRole')||'';var el=document.getElementById('headerUser');if(!el||!n)return;var cap=r?r.charAt(0).toUpperCase()+r.slice(1):'';el.innerHTML='<span class="hdr-name" style="font-size:12px;font-weight:700;color:#94a3b8;">'+n+(cap?' &middot; '+cap:'')+' </span>'+'<button class="hdr-signout" onclick="localStorage.removeItem(\'mbrAuth\');localStorage.removeItem(\'mbrRole\');location.href=\'/login\';" '+'style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#94a3b8;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✕</button>';})();</script>
 <script>
 (function(){
   var _a=localStorage.getItem('mbrAuth')||'';
