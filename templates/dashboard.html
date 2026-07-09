@@ -1065,6 +1065,18 @@ function renderLog(records){
     }
   }
 
+  // Post-process: anchor each trade line at 0% before its first logged value
+  // so a trade first seen at 60% shows as 0 → 60, not just 60
+  CHART_SERIES.forEach(function(trade, i){
+    var arr = tradeDataArrays[i];
+    for(var j=0;j<arr.length;j++){
+      if(arr[j]!==null){
+        if(j>0 && arr[j-1]===null) arr[j-1]=0; // slot before first data → 0
+        break;
+      }
+    }
+  });
+
   // Labels: "Jun 22 AM", "Jun 22 PM"
   var labels = shiftOrder.map(function(key){
     var sh = shiftsSeen[key];
