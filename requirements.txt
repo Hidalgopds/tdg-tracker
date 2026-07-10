@@ -5,3 +5,4 @@ fpdf2==2.8.3
 reportlab==4.2.5
 APScheduler==3.10.4
 pytz==2024.1
+qrcode[pil]==7.4.2

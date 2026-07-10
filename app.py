@@ -1768,6 +1768,18 @@ def schedule_page():
     return render_template("schedule.html")
 
 # ── Inventory items ──────────────────────────────────────────────
+
+# ── Inventory SKU generation ─────────────────────────────────────────────────
+_CAT_PREFIX = {
+    'Cable Tray':'CBL','Conduit':'CON','Electrical':'ELE','Fasteners':'FST',
+    'Hardware':'HRW','Roofing':'ROF','Sealant':'SEL','Trim':'TRM',
+    'Drainage':'DRN','Insulation':'INS','Wall Panels':'WLP',
+    'Coatings':'CTG','General':'GEN'
+}
+def gen_sku(category, item_id):
+    pfx = _CAT_PREFIX.get(category, (category[:3].upper() if category else 'GEN'))
+    return f"MBR-{pfx}-{str(item_id).zfill(4)}"
+
 @app.route("/api/inventory", methods=["GET"])
 def get_inventory():
     url = f"{SUPABASE_URL}/rest/v1/inventory_items?select=*&order=category.asc,name.asc&limit=500"
@@ -1779,11 +1791,21 @@ def add_inventory_item():
     data = request.json or {}
     if not is_editor(data.get("editor", "")):
         return jsonify({"error": "Editor access required"}), 403
-    payload = {k: data[k] for k in ["name","category","unit","qty_on_hand","notes","safe_qty"] if k in data}
+    payload = {k: data[k] for k in ["name","category","unit","qty_on_hand","notes","safe_qty","location_code"] if k in data}
     if data.get("created_by"): payload["created_by"] = data["created_by"]
     url = f"{SUPABASE_URL}/rest/v1/inventory_items"
     r = requests.post(url, headers={**sb_headers(), "Prefer": "return=representation"}, json=payload)
     if r.ok:
+        rows = r.json()
+        if rows and isinstance(rows, list):
+            new_id = rows[0].get("id")
+            cat = payload.get("category", "General")
+            sku = gen_sku(cat, new_id)
+            requests.patch(
+                f"{SUPABASE_URL}/rest/v1/inventory_items?id=eq.{new_id}",
+                headers=sb_headers(), json={"sku": sku}
+            )
+            return jsonify({"ok": True, "sku": sku})
         return jsonify({"ok": True})
     return jsonify({"error": r.text}), 400
 
@@ -1810,6 +1832,7 @@ def update_inventory_item(item_id):
     if "unit" in data: payload["unit"] = data["unit"]
     if "notes" in data: payload["notes"] = data["notes"]
     if "safe_qty" in data: payload["safe_qty"] = data["safe_qty"]
+    if "location_code" in data: payload["location_code"] = data["location_code"]
     if data.get("updated_by"): payload["updated_by"] = data["updated_by"]
     payload["updated_at"] = "now()"
     url = f"{SUPABASE_URL}/rest/v1/inventory_items?id=eq.{item_id}"
@@ -1881,6 +1904,144 @@ def email_low_stock():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+
+@app.route("/api/inventory/locations", methods=["GET"])
+def get_inventory_locations():
+    """Return items grouped by location_code."""
+    url = f"{SUPABASE_URL}/rest/v1/inventory_items?select=id,name,category,sku,location_code,qty_on_hand,unit&order=location_code.asc,name.asc&limit=500"
+    r = requests.get(url, headers=sb_headers())
+    if not r.ok:
+        return jsonify([])
+    items = r.json()
+    groups = {}
+    unassigned = []
+    for it in items:
+        loc = (it.get("location_code") or "").strip()
+        if loc:
+            if loc not in groups:
+                groups[loc] = []
+            groups[loc].append(it)
+        else:
+            unassigned.append(it)
+    result = [{"location": k, "items": v} for k, v in sorted(groups.items())]
+    if unassigned:
+        result.append({"location": None, "items": unassigned})
+    return jsonify(result)
+
+
+@app.route("/api/inventory/locations/qr-pdf", methods=["GET"])
+def inventory_locations_qr_pdf():
+    """Generate a PDF with one QR code per location."""
+    import qrcode
+    import io as _io
+    from reportlab.pdfgen import canvas as rl_canvas
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.utils import ImageReader
+
+    # Fetch distinct locations
+    url = f"{SUPABASE_URL}/rest/v1/inventory_items?select=location_code&not.location_code.is=null&order=location_code.asc&limit=500"
+    r = requests.get(url, headers=sb_headers())
+    if not r.ok:
+        return "Error fetching locations", 500
+    rows = r.json()
+    locs = sorted(set((row.get("location_code") or "").strip() for row in rows if (row.get("location_code") or "").strip()))
+    if not locs:
+        return "No locations assigned yet", 404
+
+    # Build PDF
+    buf = _io.BytesIO()
+    W, H = letter
+    c = rl_canvas.Canvas(buf, pagesize=letter)
+    
+    # Header
+    c.setFillColorRGB(0.118, 0.227, 0.373)  # #1e3a5f
+    c.rect(0, H-52, W, 52, fill=1, stroke=0)
+    c.setFillColorRGB(1,1,1)
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(36, H-34, "MBR Texas — Inventory Location QR Codes")
+    c.setFont("Helvetica", 9)
+    from datetime import datetime
+    c.drawString(36, H-47, f"Generated {datetime.utcnow().strftime('%Y-%m-%d %H:%M')} UTC")
+
+    # Grid layout
+    COLS = 3
+    QR_SIZE = 120
+    CELL_W = (W - 72) / COLS
+    CELL_H = QR_SIZE + 44
+    MARGIN_TOP = H - 52 - 20
+    x0, y0 = 36, MARGIN_TOP
+
+    for i, loc in enumerate(locs):
+        col = i % COLS
+        row = i // COLS
+        cx = x0 + col * CELL_W
+        cy = y0 - row * CELL_H
+
+        # New page if needed
+        if cy - CELL_H < 36:
+            c.showPage()
+            c.setFillColorRGB(0.118, 0.227, 0.373)
+            c.rect(0, H-52, W, 52, fill=1, stroke=0)
+            c.setFillColorRGB(1,1,1)
+            c.setFont("Helvetica-Bold", 16)
+            c.drawString(36, H-34, "MBR Texas — Inventory Location QR Codes")
+            cy = H - 52 - 20
+            row = 0
+
+        # Generate QR
+        qr_url = f"https://tdg-tracker.onrender.com/inventory?loc={loc}"
+        qr_img = qrcode.make(qr_url)
+        qr_buf = _io.BytesIO()
+        qr_img.save(qr_buf, format='PNG')
+        qr_buf.seek(0)
+
+        # Draw QR
+        qx = cx + (CELL_W - QR_SIZE) / 2
+        qy = cy - QR_SIZE - 8
+        c.drawImage(ImageReader(qr_buf), qx, qy, width=QR_SIZE, height=QR_SIZE)
+
+        # Location label
+        c.setFillColorRGB(0.12, 0.22, 0.35)
+        c.setFont("Helvetica-Bold", 13)
+        label_x = cx + CELL_W / 2
+        c.drawCentredString(label_x, qy - 16, loc)
+        c.setFillColorRGB(0.4, 0.5, 0.6)
+        c.setFont("Helvetica", 8)
+        c.drawCentredString(label_x, qy - 28, "Scan to view inventory at this location")
+
+        # Border
+        c.setStrokeColorRGB(0.88, 0.91, 0.94)
+        c.roundRect(cx + 4, qy - 34, CELL_W - 8, QR_SIZE + 42, 6, stroke=1, fill=0)
+
+    c.save()
+    buf.seek(0)
+    from flask import send_file
+    return send_file(buf, mimetype='application/pdf',
+                     as_attachment=True,
+                     download_name='MBR_Inventory_Locations_QR.pdf')
+
+
+@app.route("/api/inventory/sku-backfill", methods=["POST"])
+def sku_backfill():
+    """Generate SKUs for existing items that don't have one."""
+    data = request.json or {}
+    if not is_editor(data.get("editor","")):
+        return jsonify({"error":"Editor access required"}),403
+    url = f"{SUPABASE_URL}/rest/v1/inventory_items?sku=is.null&select=id,category&limit=500"
+    r = requests.get(url, headers=sb_headers())
+    if not r.ok:
+        return jsonify({"error":r.text}),500
+    items = r.json()
+    updated = 0
+    for it in items:
+        sku = gen_sku(it.get("category","General"), it["id"])
+        requests.patch(
+            f"{SUPABASE_URL}/rest/v1/inventory_items?id=eq.{it['id']}",
+            headers=sb_headers(), json={"sku": sku}
+        )
+        updated += 1
+    return jsonify({"ok":True,"updated":updated})
 
 @app.route("/api/inventory/<item_id>", methods=["DELETE"])
 def delete_inventory_item(item_id):

@@ -40,6 +40,11 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .s-ok{background:rgba(34,197,94,.1);color:var(--green);}
 .s-low{background:rgba(245,158,11,.1);color:var(--amber);}
 .s-out{background:rgba(239,68,68,.1);color:var(--red);}.s-alert{background:rgba(251,146,60,.12);color:#fb923c;}
+
+.ic-sku{font-size:9px;font-weight:700;color:#6366f1;letter-spacing:.4px;font-family:monospace;background:rgba(99,102,241,.08);padding:1px 5px;border-radius:4px;display:inline-block;}
+.ic-loc{font-size:9px;font-weight:700;color:#0ea5e9;background:rgba(14,165,233,.08);padding:1px 6px;border-radius:4px;display:inline-flex;align-items:center;gap:3px;cursor:pointer;}
+.ic-loc::before{content:"📍";font-size:8px;}
+.loc-inp{flex:1;min-width:60px;height:28px;background:#0a0f1a;border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;padding:0 6px;font-family:monospace;text-transform:uppercase;}
 .ic-edit{display:none;gap:6px;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;flex-wrap:wrap;}
 .editor-active .ic-edit{display:flex;}
 .qty-inp{width:55px;height:30px;background:#0a0f1a;border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;text-align:center;}
@@ -355,6 +360,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 .rg-cell{border-top-color:#f1f5f9 !important;}
 </style>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 <script>
@@ -616,24 +622,25 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 
 <!-- LOCATIONS TAB -->
 <div id="loc-tab-content" style="display:none;">
-  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:340px;gap:18px;text-align:center;padding:32px 16px;">
-    <div style="font-size:56px;">🚧</div>
-    <div style="font-size:20px;font-weight:800;color:var(--text);">Locations — Under Construction</div>
-    <div style="font-size:13px;color:var(--muted);max-width:360px;">Each inventory item will have a shelf/bin location you can assign and update via QR code scan. Coming soon.</div>
-    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:8px;">
-      <div style="background:#111d2b;border:1px solid var(--border);border-radius:12px;padding:16px 20px;min-width:130px;">
-        <div style="font-size:28px;margin-bottom:6px;">📍</div>
-        <div style="font-size:11px;font-weight:700;color:var(--muted);">Bin / Shelf</div>
+  <div style="padding:16px;">
+    <!-- Toolbar -->
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input id="locSearch" type="text" placeholder="Search locations..." oninput="renderLocations()"
+          style="height:34px;padding:0 10px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:12px;width:180px;">
+        <button onclick="loadLocations()" style="height:34px;padding:0 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--muted);font-size:12px;cursor:pointer;">↺ Refresh</button>
       </div>
-      <div style="background:#111d2b;border:1px solid var(--border);border-radius:12px;padding:16px 20px;min-width:130px;">
-        <div style="font-size:28px;margin-bottom:6px;">📷</div>
-        <div style="font-size:11px;font-weight:700;color:var(--muted);">QR Scanner</div>
-      </div>
-      <div style="background:#111d2b;border:1px solid var(--border);border-radius:12px;padding:16px 20px;min-width:130px;">
-        <div style="font-size:28px;margin-bottom:6px;">🔄</div>
-        <div style="font-size:11px;font-weight:700;color:var(--muted);">Real-Time Sync</div>
+      <div style="display:flex;gap:8px;">
+        <button id="locSkuBackfillBtn" onclick="skuBackfill()" style="height:34px;padding:0 12px;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:8px;color:#818cf8;font-size:12px;cursor:pointer;font-weight:700;">⚡ Generate SKUs</button>
+        <button onclick="window.open('/api/inventory/locations/qr-pdf','_blank')" style="height:34px;padding:0 14px;background:#1a6bc4;border:none;border-radius:8px;color:#fff;font-size:12px;cursor:pointer;font-weight:700;">📄 Export QR PDF</button>
       </div>
     </div>
+    <!-- Location grid -->
+    <div id="locGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;"></div>
+    <div id="locEmpty" style="display:none;text-align:center;padding:48px 16px;color:var(--muted);font-size:13px;">
+      No locations assigned yet.<br>Edit items and set a location code (e.g. A-01, RACK-2) to get started.
+    </div>
+    <div id="locLoading" style="text-align:center;padding:48px;color:var(--muted);font-size:13px;">Loading locations...</div>
   </div>
 </div>
 
@@ -854,10 +861,15 @@ var _sigReqId=null;
 var _sigCtx=null,_sigCanvas=null,_sigDrawing=false;
 var _ROLE=localStorage.getItem('mbrRole')||'worker';
 var _LVL={admin:5,boss:4,inventory:3,dispatcher:3,lead:2,worker:1,contractor:2}[_ROLE]||1;
-// Show Dispatch tab for dispatcher/admin/boss; Locations stays hidden always
+// Show Dispatch tab for dispatcher/admin/boss
 if(_ROLE==='dispatcher'||_LVL>=4){
   var _dtab=document.getElementById('itab-dispatch');
   if(_dtab)_dtab.style.display='';
+}
+// Show Locations tab for inventory/admin/boss (not dispatcher or workers)
+if(_LVL>=3&&_ROLE!=='dispatcher'){
+  var _ltab=document.getElementById('itab-locations');
+  if(_ltab)_ltab.style.display='';
 }
 
 // ── My Profile ──────────────────────────────────────────────────────────────
@@ -916,15 +928,16 @@ function buildChips(){
   cats.forEach(function(c){
     var b=document.createElement('button');
     b.className='chip'+(c===activeCat?' active':'');b.textContent=c;
-    b.onclick=function(){activeCat=c;document.querySelectorAll('.chip').forEach(function(x){x.classList.remove('active');});b.classList.add('active');renderGrid();};
+    b.onclick=function(){activeCat=c;activeLoc='';document.querySelectorAll('.chip').forEach(function(x){x.classList.remove('active');});b.classList.add('active');renderGrid();};
     bar.appendChild(b);
   });
 }
 
 function renderGrid(){
   var q=srchQ.toLowerCase();
+  if(activeLoc&&!q){q=activeLoc.toLowerCase();}
   var f=ITEMS.filter(function(it){
-    return(activeCat==='All'||it.category===activeCat)&&(!q||it.name.toLowerCase().includes(q)||it.category.toLowerCase().includes(q));
+    return(activeCat==='All'||it.category===activeCat)&&(!q||(it.name||'').toLowerCase().includes(q)||(it.category||'').toLowerCase().includes(q)||(it.location_code||'').toLowerCase().includes(q)||(it.sku||'').toLowerCase().includes(q));
   });
   var g=document.getElementById('invGrid');
   document.getElementById('emptyEl').style.display=f.length?'none':'block';
@@ -943,7 +956,9 @@ function mkCard(it){
   var ALL_CATS=['Cable Tray','Coatings','Conduit','Drainage','Electrical','Fasteners','Hardware','Insulation','Roofing','Sealant','Trim','Wall Panels','General'];
   var catOpts=ALL_CATS.map(function(c){return'<option value="'+c+'"'+(c===it.category?' selected':'')+'>'+c+'</option>';}).join('');
   d.innerHTML='<div class="ic-cat">'+esc(it.category)+'</div>'+
+    (it.sku?'<span class="ic-sku">'+esc(it.sku)+'</span> ':'')+
     '<div class="ic-name">'+esc(it.name)+'</div>'+
+    (it.location_code?'<div class="ic-loc" onclick="filterByLoc(\'' + esc(it.location_code) + '\')">'+esc(it.location_code)+'</div>':'')+
     '<div class="ic-bottom"><div><span class="ic-qty">'+qty+'</span> <span class="ic-unit">'+esc(it.unit||'EA')+'</span></div>'+
     (stxt?'<span class="ic-stat '+sc+'">'+stxt+'</span>':'')+
     (lastR?'<div style="font-size:9px;color:var(--muted);margin-top:3px;">Restocked: '+lastR+'</div>':'')+
@@ -951,6 +966,7 @@ function mkCard(it){
     '<div class="ic-edit">'+
       '<input class="qty-inp" id="q-'+it.id+'" type="number" min="0" value="'+qty+'" title="On Hand">'+
       '<input class="qty-inp" id="sq-'+it.id+'" type="number" min="0" placeholder="Safe" title="Safe qty" value="'+(safeQ||'')+"'>"+
+      '<input class="loc-inp" id="loc-'+it.id+'" type="text" placeholder="Location (e.g. A-01)" title="Location" value="'+(it.location_code||'')+'">'+
       '<button class="ic-save" onclick="saveQty(\''+it.id+'\')">Save</button>'+
       '<button class="ic-del" onclick="delItem(\''+it.id+'\',\''+esc(it.name).replace(/'/g,"\\'")+ '\')" title="Delete">🗑️</button>'+
     '</div>'+
@@ -961,7 +977,113 @@ function mkCard(it){
   return d;
 }
 
-function doFilter(){srchQ=document.getElementById('srch').value;renderGrid();}
+function doFilter(){srchQ=document.getElementById('srch').value;activeLoc='';renderGrid();}
+
+// ── Locations tab ────────────────────────────────────────────────────────────
+var _LOC_DATA = [];
+
+function loadLocations(){
+  var g=document.getElementById('locGrid');
+  var loading=document.getElementById('locLoading');
+  var empty=document.getElementById('locEmpty');
+  if(g)g.innerHTML='';
+  if(loading)loading.style.display='block';
+  if(empty)empty.style.display='none';
+  fetch('/api/inventory/locations')
+    .then(function(r){return r.json();})
+    .then(function(data){
+      _LOC_DATA=data;
+      if(loading)loading.style.display='none';
+      renderLocations();
+    }).catch(function(){
+      if(loading)loading.style.display='none';
+      if(empty){empty.style.display='block';empty.textContent='Failed to load locations.';}
+    });
+}
+
+function renderLocations(){
+  var g=document.getElementById('locGrid');
+  var empty=document.getElementById('locEmpty');
+  if(!g)return;
+  var q=(document.getElementById('locSearch')||{}).value||'';
+  q=q.toLowerCase();
+  var data=_LOC_DATA.filter(function(gr){
+    return !q||(gr.location||'unassigned').toLowerCase().includes(q);
+  });
+  g.innerHTML='';
+  var total=data.reduce(function(s,gr){return s+gr.items.length;},0);
+  if(!total&&!q){empty.style.display='block';g.style.display='none';return;}
+  empty.style.display='none';g.style.display='grid';
+  data.forEach(function(gr){
+    var loc=gr.location;
+    var items=gr.items||[];
+    var card=document.createElement('div');
+    card.style.cssText='background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px;';
+    // QR placeholder div
+    var qrId='qr-loc-'+(loc||'none').replace(/[^a-z0-9]/gi,'-');
+    var locLabel=loc||'Unassigned';
+    var itemCount=items.length;
+    // Item list (first 4)
+    var itemListHtml=items.slice(0,4).map(function(it){
+      return '<div style="font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">· '+(it.sku?'<span style="color:#6366f1;font-family:monospace;">'+esc(it.sku)+'</span> ':'')+esc(it.name)+'</div>';
+    }).join('');
+    if(items.length>4)itemListHtml+='<div style="font-size:10px;color:var(--muted);">+' +(items.length-4)+' more</div>';
+    card.innerHTML=
+      (loc?'<div id="'+qrId+'" style="width:120px;height:120px;margin:0 auto;"></div>':
+           '<div style="width:120px;height:120px;margin:0 auto;display:flex;align-items:center;justify-content:center;background:var(--border);border-radius:8px;font-size:28px;">📦</div>')+
+      '<div style="text-align:center;">'+
+        '<div style="font-size:14px;font-weight:800;color:var(--text);font-family:monospace;">'+esc(locLabel)+'</div>'+
+        '<div style="font-size:10px;color:var(--muted);">'+itemCount+' item'+(itemCount!==1?'s':'')+'</div>'+
+      '</div>'+
+      '<div style="border-top:1px solid var(--border);padding-top:8px;">'+itemListHtml+'</div>'+
+      (loc?'<button onclick="filterByLoc(\''+loc+'\');" style="margin-top:4px;padding:5px;background:rgba(14,165,233,.1);border:1px solid rgba(14,165,233,.2);border-radius:6px;color:#38bdf8;font-size:10px;cursor:pointer;font-weight:700;">View Items</button>':'');
+    g.appendChild(card);
+    // Render QR
+    if(loc&&typeof QRCode!=='undefined'){
+      var qrUrl='https://tdg-tracker.onrender.com/inventory?loc='+encodeURIComponent(loc);
+      try{
+        new QRCode(document.getElementById(qrId),{
+          text:qrUrl,width:112,height:112,
+          colorDark:'#1e3a5f',colorLight:'#ffffff',
+          correctLevel:QRCode.CorrectLevel.M
+        });
+      }catch(e){}
+    }
+  });
+}
+
+function skuBackfill(){
+  var btn=document.getElementById('locSkuBackfillBtn');
+  if(btn)btn.disabled=true;
+  fetch('/api/inventory/sku-backfill',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({editor:edUser})
+  }).then(function(r){return r.json();})
+  .then(function(d){
+    if(d.ok){toast('Generated SKUs for '+d.updated+' items');loadInv();}
+    else toast(d.error||'Error','error');
+    if(btn)btn.disabled=false;
+  }).catch(function(){toast('Error','error');if(btn)btn.disabled=false;});
+}
+
+// Load locations when tab is activated
+var _origSwitchInvTab=switchInvTab;
+function switchInvTab(t){
+  _origSwitchInvTab(t);
+  if(t==='locations'&&_LOC_DATA.length===0)loadLocations();
+}
+
+
+
+function filterByLoc(loc){
+  // Switch to Inventory tab and filter by location
+  switchInvTab('inv');
+  // Highlight location filter visually
+  srchQ=''; document.getElementById('srch').value='';
+  activeLoc=loc;
+  renderGrid();
+}
 
 // ── Request modal ────────────────────────────────────────────────────────────
 function openReqModal(){
@@ -1631,8 +1753,10 @@ function saveQty(id){
   var v=parseFloat(document.getElementById('q-'+id).value)||0;
   var sqEl=document.getElementById('sq-'+id);
   var sqv=sqEl?parseInt(sqEl.value)||0:undefined;
+  var locEl=document.getElementById('loc-'+id);
   var payload={qty_on_hand:v,editor:edUser,updated_by:localStorage.getItem('mbrAuth')||edUser};
   if(sqEl)payload.safe_qty=sqv;
+  if(locEl)payload.location_code=(locEl.value||'').trim().toUpperCase()||null;
   fetch('/api/inventory/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
   .then(function(r){return r.json();}).then(function(d){if(d.ok){toast('Saved!');loadInv();}else toast(d.error||'Error','error');});
 }
