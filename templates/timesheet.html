@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>On-Site Timesheet – MBR Texas</title>
 <style>
-:root{--bg:#0a0f1a;--card:#0d1520;--border:#1a2535;--text:#e8edf2;--muted:#64748b;--accent:#a855f7;--green:#22c55e;--red:#ef4444;}
+:root{--bg:#f0f4f8;--card:#ffffff;--border:#e2e8f0;--text:#f0f4f8;--muted:#64748b;--accent:#1a6bc4;--green:#16a34a;--amber:#d97706;--red:#dc2626;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;}
-.header{background:#060c18;border-bottom:2px solid #1e2d3d;padding:12px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100;}
+.header{background:#060c18;border-bottom:2px solid #e2e8f0;padding:12px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100;}
 .back-btn{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;}
 .hlogo{font-size:15px;font-weight:900;color:var(--accent);}
 .gate{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh;padding:24px;}
@@ -16,14 +16,14 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .gate-icon{font-size:40px;margin-bottom:12px;}
 .gate-title{font-size:18px;font-weight:800;margin-bottom:6px;}
 .gate-sub{font-size:13px;color:var(--muted);margin-bottom:20px;}
-.name-btn{width:100%;height:48px;background:#111d2b;border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:15px;font-weight:700;cursor:pointer;text-align:left;padding:0 16px;margin-bottom:9px;}
-.name-btn:active{background:#1a2535;}
+.name-btn{width:100%;height:48px;background:#f8fafc;border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:15px;font-weight:700;cursor:pointer;text-align:left;padding:0 16px;margin-bottom:9px;}
+.name-btn:active{background:#e2e8f0;}
 .pin-display{display:flex;gap:14px;justify-content:center;margin:14px 0;}
 .pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border);}
 .pin-dot.on{background:var(--accent);border-color:var(--accent);}
 .pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:280px;margin:0 auto;}
-.pk{height:58px;background:#111d2b;border:1px solid var(--border);border-radius:10px;font-size:22px;font-weight:700;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;}
-.pk:active{background:#1a2535;}
+.pk{height:58px;background:#f8fafc;border:1px solid var(--border);border-radius:10px;font-size:22px;font-weight:700;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;}
+.pk:active{background:#e2e8f0;}
 .pin-err{color:var(--red);font-size:12px;min-height:18px;margin-top:6px;}
 .btn-s{width:100%;height:40px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:13px;cursor:pointer;margin-top:10px;}
 .content{display:block;padding:24px 16px;}
@@ -48,23 +48,23 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .phase-banner.signin{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:#4ade80;}
 .phase-banner.saved{background:rgba(79,142,247,.1);border:1px solid rgba(79,142,247,.3);color:#60a5fa;}
 .sm-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
-.sm-search{flex:1;min-width:140px;background:#0d1520;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:7px 12px;outline:none;}
+.sm-search{flex:1;min-width:140px;background:#ffffff;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:7px 12px;outline:none;}
 .sm-search:focus{border-color:var(--accent);}
-.tool-btn{height:34px;padding:0 12px;background:#111d2b;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.tool-btn{height:34px;padding:0 12px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;}
 .tool-btn:hover{border-color:var(--accent);color:var(--text);}
 .tool-btn.active{background:#2d1a4e;border-color:var(--accent);color:var(--accent);}
 .workers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:18px;}
-.worker-card{background:#0d1520;border:2px solid var(--border);border-radius:12px;padding:14px 10px 10px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;user-select:none;-webkit-tap-highlight-color:transparent;}
+.worker-card{background:#ffffff;border:2px solid var(--border);border-radius:12px;padding:14px 10px 10px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;user-select:none;-webkit-tap-highlight-color:transparent;}
 .worker-card.absent-card{opacity:.65;border-color:#7f1d1d;background:#1a0a0a;}
 .worker-card:active{transform:scale(.97);}
 .worker-card.present{background:#061410;border-color:var(--green);}
 .wc-status{font-size:22px;margin-bottom:6px;}
-.wc-name{font-size:12px;font-weight:700;color:#94a3b8;word-break:break-word;line-height:1.3;}
+.wc-name{font-size:12px;font-weight:700;color:#64748b;word-break:break-word;line-height:1.3;}
 .worker-card.present .wc-name{color:var(--text);}
 .wc-time{font-size:10px;color:#475569;margin-top:5px;}
 .worker-card.present .wc-time{color:#22c55e;}
 .worker-card.signin-mode{min-height:90px;}
-.worker-card.edit-card{cursor:default;background:#0d1520;border-color:#1e3a5f;padding:10px;}
+.worker-card.edit-card{cursor:default;background:#ffffff;border-color:#1e3a5f;padding:10px;}
 .worker-card.edit-card:active{transform:none;}
 .edit-btns{display:flex;gap:4px;margin-top:8px;justify-content:center;}
 .eb{height:28px;padding:0 8px;border:1px solid var(--border);border-radius:6px;background:#0a1525;color:#64748b;font-size:12px;cursor:pointer;}
@@ -73,7 +73,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .eb-del{border-color:#ef4444;color:#ef4444;}
 .eb-del:hover{background:#3b0a0a;}
 .add-row{display:flex;gap:8px;margin-top:4px;}
-.add-inp{flex:1;background:#0d1520;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:8px 12px;outline:none;}
+.add-inp{flex:1;background:#ffffff;border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:8px 12px;outline:none;}
 .add-inp:focus{border-color:var(--accent);}
 .add-btn{height:36px;padding:0 14px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;}
 .sm-complete-btn{width:100%;height:46px;background:linear-gradient(135deg,#14532d,#16a34a);border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-top:14px;}
@@ -81,7 +81,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .save-day-btn{width:100%;height:42px;background:linear-gradient(135deg,#1e3a6e,#1d4ed8);border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;}
 .save-day-btn:hover{opacity:.9;}
 .save-day-btn:disabled{opacity:.5;cursor:not-allowed;}
-.sm-reset-btn{width:100%;height:40px;background:transparent;border:1px solid #334155;border-radius:10px;color:#64748b;font-size:13px;cursor:pointer;margin-top:8px;}
+.sm-reset-btn{width:100%;height:40px;background:transparent;border:1px solid #e2e8f0;border-radius:10px;color:#64748b;font-size:13px;cursor:pointer;margin-top:8px;}
 .sm-reset-btn:hover{border-color:#f59e0b;color:#f59e0b;}
 .sm-status{text-align:center;font-size:12px;color:#475569;margin-top:8px;min-height:18px;}
 /* History tab */
@@ -94,9 +94,9 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .hd-saved{font-size:10px;background:rgba(79,142,247,.2);color:#60a5fa;border-radius:10px;padding:2px 8px;font-weight:700;}
 .hist-day-body{padding:10px 14px 14px;}
 .hist-workers{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
-.hist-chip{background:#111d2b;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:#94a3b8;display:flex;align-items:center;gap:5px;}
+.hist-chip{background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:#64748b;display:flex;align-items:center;gap:5px;}
 .hist-chip .hc-time{color:#22c55e;font-size:10px;}
-.hist-empty{padding:20px;text-align:center;color:#334155;font-size:13px;}
+.hist-empty{padding:20px;text-align:center;color:#0f172a;font-size:13px;}
 .hist-loading{text-align:center;padding:32px;color:var(--muted);font-size:13px;}
 /* Coming soon */
 .coming-soon{text-align:center;padding:48px 20px;}
@@ -108,7 +108,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .cs-feat{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--muted);}
 .cs-feat:last-child{border-bottom:none;}
 .cs-feat-icon{font-size:16px;flex-shrink:0;}
-.no-data{text-align:center;padding:32px;color:#334155;font-size:13px;}
+.no-data{text-align:center;padding:32px;color:#0f172a;font-size:13px;}
 /* Rename modal */
 .rename-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center;}
 .rename-overlay.open{display:flex;}
@@ -118,7 +118,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .rename-inp:focus{border-color:var(--accent);}
 .rename-btns{display:flex;gap:8px;}
 .rbtn{flex:1;height:38px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;}
-.rbtn-cancel{background:#1a2535;color:#64748b;}
+.rbtn-cancel{background:#e2e8f0;color:#64748b;}
 .rbtn-save{background:var(--accent);color:#fff;}
 
 /* ── Attendance Tab ── */
@@ -131,10 +131,10 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .att-sub{font-size:12px;color:#64748b;margin-bottom:16px;}
 .att-field{margin-bottom:12px;}
 .att-label{font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
-.att-input,.att-select,.att-textarea{width:100%;background:#f8fafc;border:1.5px solid #cbd5e1;border-radius:8px;color:#0f172a;font-size:13px;padding:9px 12px;outline:none;font-family:inherit;}
+.att-input,.att-select,.att-textarea{width:100%;background:#f8fafc;border:1.5px solid #cbd5e1;border-radius:8px;color:#f0f4f8;font-size:13px;padding:9px 12px;outline:none;font-family:inherit;}
 .att-input:focus,.att-select:focus,.att-textarea:focus{border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.15);}
 .att-textarea{resize:vertical;min-height:72px;}
-.att-select option{background:#fff;color:#0f172a;}
+.att-select option{background:#fff;color:#f0f4f8;}
 .att-btn{width:100%;height:42px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;margin-top:4px;}
 .att-btn.late{background:linear-gradient(135deg,#78350f,#f59e0b);color:#fff;}
 .att-btn.absent{background:linear-gradient(135deg,#7f1d1d,#ef4444);color:#fff;}
@@ -153,17 +153,17 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .att-name{font-weight:700;color:var(--text);flex:1;}
 .att-reason{color:var(--muted);flex:2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .att-date{color:#475569;white-space:nowrap;font-size:11px;}
-.att-empty{padding:24px;text-align:center;color:#334155;font-size:13px;}
+.att-empty{padding:24px;text-align:center;color:#0f172a;font-size:13px;}
 
 /* ── Attendance Calendar ── */
 .att-cal-wrap{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px;margin-top:16px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
 .att-cal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-.att-cal-title{font-size:15px;font-weight:800;color:#1e293b;}
+.att-cal-title{font-size:15px;font-weight:800;color:#ffffff;}
 .att-cal-nav{display:flex;gap:6px;}
 .cal-nav-btn{height:30px;width:30px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#475569;}
 .cal-nav-btn:hover{background:#e2e8f0;}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
-.cal-dow{text-align:center;font-size:10px;font-weight:800;color:#94a3b8;padding:4px 0;text-transform:uppercase;}
+.cal-dow{text-align:center;font-size:10px;font-weight:800;color:#64748b;padding:4px 0;text-transform:uppercase;}
 .cal-day{min-height:52px;background:#f8fafc;border:1px solid #f1f5f9;border-radius:8px;padding:5px;cursor:pointer;position:relative;transition:border-color .15s;}
 .cal-day:hover{border-color:#6366f1;}
 .cal-day.today{border-color:#6366f1;background:#f5f3ff;}
@@ -178,7 +178,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 /* Day detail popup */
 .cal-popup{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-top:12px;box-shadow:0 4px 12px rgba(0,0,0,.08);display:none;}
 .cal-popup.visible{display:block;}
-.cal-popup-title{font-size:13px;font-weight:800;color:#1e293b;margin-bottom:8px;}
+.cal-popup-title{font-size:13px;font-weight:800;color:#ffffff;margin-bottom:8px;}
 .cal-popup-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:12px;}
 .cal-popup-row:last-child{border-bottom:none;}
 </style>
@@ -186,7 +186,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 <style id="gnav-style">
 .gnav{position:fixed;bottom:0;left:0;right:0;height:54px;background:#060c18;border-top:1px solid #1a2535;display:flex;justify-content:space-around;align-items:center;z-index:9999;box-shadow:0 -4px 24px rgba(0,0,0,.5);}
 .gnav a{display:flex;flex-direction:column;align-items:center;gap:1px;text-decoration:none;color:#475569;padding:0 8px;font-size:10px;font-weight:500;transition:.15s;min-width:44px;}
-.gnav a:hover,.gnav a.gna{color:#a855f7;}
+.gnav a:hover,.gnav a.gna{color:#1a6bc4;}
 .gnav a .gi{font-size:19px;line-height:1.2;}
 body{padding-bottom:60px !important;}
 </style>
@@ -199,11 +199,11 @@ body{padding-bottom:60px !important;}
    ============================================ */
 :root{
   --bg:#f0f4f8;--card:#ffffff;--border:#cbd5e1;
-  --text:#0f172a;--muted:#475569;
+  --text:#f0f4f8;--muted:#475569;
   --accent:#1a6bc4;--green:#15803d;
   --red:#b91c1c;--yellow:#92400e;--purple:#6d28d9;
 }
-html,body{background:#f0f4f8 !important;color:#0f172a !important;}
+html,body{background:#f0f4f8 !important;color:#f0f4f8 !important;}
 
 /* ── Headers: stay dark blue (brand + readable with sunglasses) ── */
 .header,.topbar,header,#app-header{
@@ -215,48 +215,48 @@ html,body{background:#f0f4f8 !important;color:#0f172a !important;}
 
 /* ── Gate / auth area ── */
 .gate{background:#f0f4f8 !important;}
-.gate-card{background:#ffffff !important;border-color:#e2e8f0 !important;
+.gate-card{background:#ffffff !important;border-color:#0f172a !important;
   box-shadow:0 4px 24px rgba(0,0,0,.08) !important;}
-.gate-card h2{color:#0f172a !important;}
+.gate-card h2{color:#f0f4f8 !important;}
 .gate-card p{color:#475569 !important;}
 
 /* ── Name / user buttons ── */
 .name-btn,.user-btn{
-  background:#f1f5f9 !important;border-color:#e2e8f0 !important;color:#0f172a !important;
+  background:#f1f5f9 !important;border-color:#0f172a !important;color:#f0f4f8 !important;
 }
 .name-btn:hover,.name-btn:active,.user-btn.active,.user-btn:hover{
   background:#1a6bc4 !important;color:#ffffff !important;border-color:#1a6bc4 !important;
 }
 
 /* ── PIN pad ── */
-.pin-dot,.dot{background:#e2e8f0 !important;border-color:#cbd5e1 !important;}
+.pin-dot,.dot{background:#e2e8f0 !important;border-color:#64748b !important;}
 .pin-dot.on,.dot.filled{background:#1a6bc4 !important;border-color:#1a6bc4 !important;}
 .pk,.numpad button{
-  background:#f1f5f9 !important;border-color:#e2e8f0 !important;color:#0f172a !important;
+  background:#f1f5f9 !important;border-color:#0f172a !important;color:#f0f4f8 !important;
 }
 .pk:active,.numpad button:hover{background:#dbeafe !important;}
 .pin-err,.pinErr,#pinErr{color:#b91c1c !important;}
 
 /* ── Tabs ── */
-.tabs{border-bottom-color:#e2e8f0 !important;}
+.tabs{border-bottom-color:#0f172a !important;}
 .tab-btn{color:#475569 !important;}
-.tab-btn:hover{color:#0f172a !important;}
+.tab-btn:hover{color:#f0f4f8 !important;}
 .tab-btn.active{color:#1a6bc4 !important;border-bottom-color:#1a6bc4 !important;}
 .tab-btn.active,.tab-btn:hover{background:none !important;}
 
 /* ── Inputs / selects / textareas ── */
 input,select,textarea,.sm-search{
-  background:#ffffff !important;border-color:#cbd5e1 !important;
-  color:#0f172a !important;
+  background:#ffffff !important;border-color:#64748b !important;
+  color:#f0f4f8 !important;
 }
 input:focus,select:focus,textarea:focus,.sm-search:focus{
   border-color:#1a6bc4 !important;outline:none;
 }
-input::placeholder,.sm-search::placeholder{color:#94a3b8 !important;}
+input::placeholder,.sm-search::placeholder{color:#64748b !important;}
 
 /* ── Buttons ── */
 .btn-ghost,.tool-btn,.eb,.btn-s{
-  background:#f1f5f9 !important;border-color:#e2e8f0 !important;color:#1e293b !important;
+  background:#f1f5f9 !important;border-color:#0f172a !important;color:#ffffff !important;
 }
 .btn-ghost:hover,.tool-btn:hover{background:#e2e8f0 !important;}
 .tool-btn.active{background:#dbeafe !important;border-color:#1a6bc4 !important;color:#1a6bc4 !important;}
@@ -268,16 +268,16 @@ input::placeholder,.sm-search::placeholder{color:#94a3b8 !important;}
 /* ── Cards / panels ── */
 .section-card,.card,.modal,.gate-card,
 [class*="-card"]:not(.worker-card):not(.name-btn):not(.user-btn){
-  background:#ffffff !important;border-color:#e2e8f0 !important;
+  background:#ffffff !important;border-color:#0f172a !important;
 }
 .content{background:#f0f4f8 !important;}
 
 /* ── Worker attendance cards ── */
-.worker-card{background:#ffffff !important;border-color:#e2e8f0 !important;}
+.worker-card{background:#ffffff !important;border-color:#0f172a !important;}
 .worker-card.present{background:#dcfce7 !important;border-color:#16a34a !important;}
 .wc-name{color:#475569 !important;}
-.worker-card.present .wc-name{color:#0f172a !important;}
-.wc-time{color:#94a3b8 !important;}
+.worker-card.present .wc-name{color:#f0f4f8 !important;}
+.wc-time{color:#64748b !important;}
 .worker-card.present .wc-time{color:#15803d !important;}
 .worker-card.edit-card{background:#f8fafc !important;border-color:#bfdbfe !important;}
 
@@ -295,13 +295,13 @@ input::placeholder,.sm-search::placeholder{color:#94a3b8 !important;}
 
 /* ── Tables ── */
 table{background:transparent !important;}
-th{background:#f8fafc !important;color:#475569 !important;border-bottom-color:#e2e8f0 !important;}
-td{border-bottom-color:#f1f5f9 !important;color:#0f172a;}
+th{background:#f8fafc !important;color:#475569 !important;border-bottom-color:#0f172a !important;}
+td{border-bottom-color:#0f172a !important;color:#f0f4f8;}
 tr:hover td{background:#f8fafc !important;}
 
 /* ── Summary / stat cards ── */
 .summary-card,.summary-row .summary-card{
-  background:#ffffff !important;border-color:#e2e8f0 !important;
+  background:#ffffff !important;border-color:#0f172a !important;
   box-shadow:0 1px 4px rgba(0,0,0,.06) !important;
 }
 .summary-card .val{color:#1a6bc4 !important;}
@@ -314,13 +314,13 @@ tr:hover td{background:#f8fafc !important;}
 .badge-inactive{background:#f1f5f9 !important;color:#64748b !important;}
 
 /* ── Role access matrix ── */
-.role-matrix th{background:#f8fafc !important;border-bottom-color:#e2e8f0 !important;}
+.role-matrix th{background:#f8fafc !important;border-bottom-color:#0f172a !important;}
 .role-matrix th.admin-h{color:#5b21b6 !important;}
 .role-matrix th.lead-h{color:#1e40af !important;}
 .role-matrix th.worker-h{color:#15803d !important;}
 .role-matrix tr.sub-row{background:#fafafa !important;}
 .toggle-cell.on{background:#dcfce7 !important;color:#15803d !important;}
-.toggle-cell.off{background:#f1f5f9 !important;color:#94a3b8 !important;}
+.toggle-cell.off{background:#f1f5f9 !important;color:#64748b !important;}
 
 /* ── Modal overlay ── */
 .modal-overlay.open{background:rgba(15,23,42,0.55) !important;}
@@ -332,7 +332,7 @@ tr:hover td{background:#f8fafc !important;}
 .gnav a:hover,.gnav a.gna{color:#60a5fa !important;}
 
 /* ── Toast ── */
-#toast{background:#1e293b !important;color:#e2e8f0 !important;}
+#toast{background:#ffffff !important;color:#0f172a !important;}
 #toast.err{border-color:#b91c1c !important;color:#fca5a5 !important;}
 
 /* ── Scrollbars ── */
@@ -343,25 +343,25 @@ tr:hover td{background:#f8fafc !important;}
 .log-out-bar,.logout-area{background:#1e3a5f !important;}
 
 /* ── SM section ── */
-.sm-item{background:#ffffff !important;border-color:#e2e8f0 !important;}
+.sm-item{background:#ffffff !important;border-color:#0f172a !important;}
 .sm-date,.sm-counter span{color:#475569 !important;}
 
 /* ── Landing page cards ── */
-.card{background:#ffffff !important;border-color:#e2e8f0 !important;}
+.card{background:#ffffff !important;border-color:#0f172a !important;}
 .card:hover{border-color:#1a6bc4 !important;box-shadow:0 8px 32px rgba(26,107,196,.12) !important;}
 .card-body p{color:#475569 !important;}
-footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
+footer{color:#64748b !important;border-top-color:#0f172a !important;}
 
 /* ── Dashboard ── */
-.unit-progress-card,.kpi-card,.chart-card{background:#ffffff !important;border-color:#e2e8f0 !important;}
+.unit-progress-card,.kpi-card,.chart-card{background:#ffffff !important;border-color:#0f172a !important;}
 
 /* ── Week picker ── */
-.week-picker input{background:#ffffff !important;color:#0f172a !important;border-color:#cbd5e1 !important;}
+.week-picker input{background:#ffffff !important;color:#f0f4f8 !important;border-color:#64748b !important;}
 
 /* ── Roles grid (old) ── */
-.roles-grid{border-color:#e2e8f0 !important;}
+.roles-grid{border-color:#0f172a !important;}
 .rg-header{background:#f8fafc !important;color:#475569 !important;}
-.rg-cell{border-top-color:#f1f5f9 !important;}
+.rg-cell{border-top-color:#0f172a !important;}
 </style>
 
 </head>
@@ -409,18 +409,18 @@ body{padding-top:48px!important;}
   <!-- Left: navigation -->
   <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
     <button class="back-btn" onclick="window.location='/'" style="background:none;border:none;cursor:pointer;font-size:18px;color:#93c5fd;padding:0;line-height:1;">◀</button>
-    <span class="hlogo" style="font-size:15px;font-weight:700;color:#e2e8f0;white-space:nowrap;">📍 On-Site Timesheet</span>
+    <span class="hlogo" style="font-size:15px;font-weight:700;color:#0f172a;white-space:nowrap;">📍 On-Site Timesheet</span>
   </div>
   <!-- Right: status + user + bell -->
   <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-    <div id="mbr-loc-chip" style="font-size:11px;font-weight:600;color:#7a9cc4;padding:2px 8px;display:none;">📍 <span id="loc-chip-text"></span></div>
+    <div id="mbr-loc-chip" style="font-size:11px;font-weight:600;color:#64748b;padding:2px 8px;display:none;">📍 <span id="loc-chip-text"></span></div>
     <div id="mbr-checkin-chip" class="chip-out">
       <span class="chip-dot dot-out" id="chip-dot"></span>
       <span id="chip-label" style="display:none;"></span>
     </div>
     <span id="userPill" class="user-pill" style="font-size:12px;"></span>
-    <button id="mbr-bell-btn" onclick="toggleNotifPanel()" title="Notifications" style="position:relative;background:none;border:none;cursor:pointer;font-size:16px;padding:4px;color:#94a3b8;line-height:1;">🔔<div id="mbr-bell-badge"></div></button>
-    <button onclick="localStorage.removeItem('mbrAuth');localStorage.removeItem('mbrRole');location.href='/login';" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#94a3b8;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✕</button>
+    <button id="mbr-bell-btn" onclick="toggleNotifPanel()" title="Notifications" style="position:relative;background:none;border:none;cursor:pointer;font-size:16px;padding:4px;color:#64748b;line-height:1;">🔔<div id="mbr-bell-badge"></div></button>
+    <button onclick="localStorage.removeItem('mbrAuth');localStorage.removeItem('mbrRole');location.href='/login';" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#64748b;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✕</button>
   </div>
 </div>
 <div id="mbr-notif-panel">
@@ -600,8 +600,8 @@ function timeAgo(iso){
 
       <!-- Bulk Check-In / Check-Out (Boss/Admin only) -->
       <div id="smBulkRow" class="sm-boss-only" style="display:none;margin-bottom:10px;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0;">
-        <label style="font-size:12px;color:#94a3b8;font-weight:600;">Check-in time:</label>
-        <input type="time" id="smBulkTime" style="padding:5px 8px;border:1px solid #334155;border-radius:8px;background:#0f172a;color:#e2e8f0;font-size:13px;">
+        <label style="font-size:12px;color:#64748b;font-weight:600;">Check-in time:</label>
+        <input type="time" id="smBulkTime" style="padding:5px 8px;border:1px solid #e2e8f0;border-radius:8px;background:#f0f4f8;color:#0f172a;font-size:13px;">
         <button onclick="allCheckIn()" style="padding:6px 14px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✓ All Check In</button>
         <button onclick="allCheckOut()" style="padding:6px 14px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✗ All Check Out</button>
         <button onclick="openManualCheckin()" style="padding:6px 14px;background:#d97706;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">⏱ Manual Check-In</button>
@@ -677,7 +677,7 @@ function timeAgo(iso){
 
       <!-- Legend -->
       <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
-        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b;font-weight:600;"><div style="width:12px;height:5px;border-radius:3px;background:#a855f7;"></div> Horizon 3</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b;font-weight:600;"><div style="width:12px;height:5px;border-radius:3px;background:#1a6bc4;"></div> Horizon 3</div>
         <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b;font-weight:600;"><div style="width:12px;height:5px;border-radius:3px;background:#2563eb;"></div> Horizon 4</div>
         <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b;font-weight:600;"><div style="width:12px;height:5px;border-radius:3px;background:#16a34a;"></div> Already Arrived</div>
       </div>
@@ -691,20 +691,20 @@ function timeAgo(iso){
       <!-- Month nav -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
         <button onclick="shipPrev()" style="background:#fff;border:1px solid #cbd5e1;border-radius:8px;color:#475569;width:34px;height:34px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.07);">‹</button>
-        <div id="shipMonthLabel" style="font-size:17px;font-weight:800;color:#0f172a;"></div>
+        <div id="shipMonthLabel" style="font-size:17px;font-weight:800;color:#f0f4f8;"></div>
         <button onclick="shipNext()" style="background:#fff;border:1px solid #cbd5e1;border-radius:8px;color:#475569;width:34px;height:34px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.07);">›</button>
       </div>
 
       <!-- Calendar grid -->
       <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:14px;">
         <div style="display:grid;grid-template-columns:repeat(7,1fr);background:#f8fafc;border-bottom:1px solid #e2e8f0;">
-          <div style="text-align:center;padding:8px 0;font-size:9px;font-weight:700;color:#94a3b8;letter-spacing:.7px;text-transform:uppercase;">Sun</div>
-          <div style="text-align:center;padding:8px 0;font-size:9px;font-weight:700;color:#94a3b8;letter-spacing:.7px;text-transform:uppercase;">Mon</div>
-          <div style="text-align:center;padding:8px 0;font-size:9px;font-weight:700;color:#94a3b8;letter-spacing:.7px;text-transform:uppercase;">Tue</div>
-          <div style="text-align:center;padding:8px 0;font-size:9px;font-weight:700;color:#94a3b8;letter-spacing:.7px;text-transform:uppercase;">Wed</div>
-          <div style="text-align:center;padding:8px 0;font-size:9px;font-weight:700;color:#94a3b8;letter-spacing:.7px;text-transform:uppercase;">Thu</div>
-          <div style="text-align:center;padding:8px 0;font-size:9px;font-weight:700;color:#94a3b8;letter-spacing:.7px;text-transform:uppercase;">Fri</div>
-          <div style="text-align:center;padding:8px 0;font-size:9px;font-weight:700;color:#94a3b8;letter-spacing:.7px;text-transform:uppercase;">Sat</div>
+          <div style="text-align:center;padding:8px 0;font-size:9px;font-weight:700;color:#64748b;letter-spacing:.7px;text-transform:uppercase;">Sun</div>
+          <div style="text-align:center;padding:8px 0;font-size:9px;font-weight:700;color:#64748b;letter-spacing:.7px;text-transform:uppercase;">Mon</div>
+          <div style="text-align:center;padding:8px 0;font-size:9px;font-weight:700;color:#64748b;letter-spacing:.7px;text-transform:uppercase;">Tue</div>
+          <div style="text-align:center;padding:8px 0;font-size:9px;font-weight:700;color:#64748b;letter-spacing:.7px;text-transform:uppercase;">Wed</div>
+          <div style="text-align:center;padding:8px 0;font-size:9px;font-weight:700;color:#64748b;letter-spacing:.7px;text-transform:uppercase;">Thu</div>
+          <div style="text-align:center;padding:8px 0;font-size:9px;font-weight:700;color:#64748b;letter-spacing:.7px;text-transform:uppercase;">Fri</div>
+          <div style="text-align:center;padding:8px 0;font-size:9px;font-weight:700;color:#64748b;letter-spacing:.7px;text-transform:uppercase;">Sat</div>
         </div>
         <div id="shipCalCells" style="display:grid;grid-template-columns:repeat(7,1fr);"></div>
       </div>
@@ -716,7 +716,7 @@ function timeAgo(iso){
       </div>
 
       <!-- Upcoming list -->
-      <div style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.8px;text-transform:uppercase;margin:18px 0 10px;">Upcoming Arrivals — Katy Yard</div>
+      <div style="font-size:10px;font-weight:700;color:#64748b;letter-spacing:.8px;text-transform:uppercase;margin:18px 0 10px;">Upcoming Arrivals — Katy Yard</div>
       <div id="shipUpcomingList"></div>
     </div>
 
@@ -727,10 +727,10 @@ function timeAgo(iso){
 .ship-cell.ship-has-event{cursor:pointer;}
 .ship-cell.ship-has-event:hover{background:#f0f7ff;}
 .ship-cell.ship-today .ship-dn{background:#1a6bc4;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-weight:800;}
-.ship-dn{font-size:10px;color:#94a3b8;font-weight:600;margin-bottom:2px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;}
-.ship-cell.ship-has-event .ship-dn{color:#334155;}
+.ship-dn{font-size:10px;color:#64748b;font-weight:600;margin-bottom:2px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;}
+.ship-cell.ship-has-event .ship-dn{color:#0f172a;}
 .ship-pill{font-size:8px;font-weight:700;border-radius:4px;padding:1px 4px;margin-bottom:2px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;}
-.spill-h3{background:#f3e8ff;color:#7e22ce;border-left:2px solid #a855f7;}
+.spill-h3{background:#f3e8ff;color:#7e22ce;border-left:2px solid #1a6bc4;}
 .spill-h4{background:#dbeafe;color:#1d4ed8;border-left:2px solid #2563eb;}
 .spill-shipped{background:#dcfce7;color:#15803d;border-left:2px solid #16a34a;}
 .ship-seg{position:absolute;bottom:0;height:4px;}
@@ -738,7 +738,7 @@ function timeAgo(iso){
 .ship-seg.sseg-mid{left:0;right:0;}
 .ship-seg.sseg-end{left:0;right:50%;}
 .ship-seg.sseg-single{left:10%;right:10%;border-radius:2px;}
-.sclr-h3{background:#a855f7;}
+.sclr-h3{background:#1a6bc4;}
 .sclr-h4{background:#2563eb;}
 .sclr-shipped{background:#16a34a;}
 </style>
@@ -839,14 +839,14 @@ function shipOpenDetail(dateStr){
     var k=r.ev.ship+r.ev.project+r.ev.po;
     if(seen[k])return;seen[k]=1;
     var ev=r.ev;
-    var bc=ev.status==='shipped'?'#16a34a':(ev.project==='H3'?'#a855f7':'#2563eb');
+    var bc=ev.status==='shipped'?'#16a34a':(ev.project==='H3'?'#1a6bc4':'#2563eb');
     var bdc=ev.status==='shipped'?'background:#dcfce7;color:#15803d':(r.role==='end'?'background:#fef9c3;color:#a16207':'background:#dbeafe;color:#1d4ed8');
     var bdt=ev.status==='shipped'?'Arrived':(r.role==='end'?'Arrives Today':(r.role==='start'?'Departs Today':'In Transit'));
     html+='<div style="background:#f8fafc;border-radius:8px;padding:10px 12px;margin-bottom:8px;border-left:3px solid '+bc+';">'
-      +'<div style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">'+ev.project+' — PO '+ev.po+'</div>'
-      +'<div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:2px;">'+ev.name+'</div>'
+      +'<div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">'+ev.project+' — PO '+ev.po+'</div>'
+      +'<div style="font-size:13px;font-weight:700;color:#f0f4f8;margin-bottom:2px;">'+ev.name+'</div>'
       +'<div style="font-size:11px;color:#64748b;">'+ev.units+' · Katy, TX</div>'
-      +'<div style="font-size:10px;color:#94a3b8;margin-top:3px;">📦 Ships: '+ev.ship+' → 🎯 Arrives: '+ev.date+'</div>'
+      +'<div style="font-size:10px;color:#64748b;margin-top:3px;">📦 Ships: '+ev.ship+' → 🎯 Arrives: '+ev.date+'</div>'
       +'<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;display:inline-block;margin-top:5px;'+bdc+'">'+bdt+'</span>'
       +'</div>';
   });
@@ -864,23 +864,23 @@ function shipRenderUpcoming(){
   var fut=SHIP_DATA.filter(function(s){return shipPd(s.date).getTime()>=t0;})
     .sort(function(a,b){return a.date.localeCompare(b.date);});
   var html='';
-  if(!fut.length){ul.innerHTML='<div style="color:#94a3b8;font-size:13px;padding:8px 0;">No upcoming deliveries.</div>';return;}
+  if(!fut.length){ul.innerHTML='<div style="color:#64748b;font-size:13px;padding:8px 0;">No upcoming deliveries.</div>';return;}
   fut.forEach(function(ev){
     var dt=shipPd(ev.date);
     var diff=Math.round((dt.getTime()-t0)/86400000);
     var bc=ev.status==='shipped'?'background:#dcfce7;color:#15803d':(diff<=7?'background:#fef9c3;color:#a16207':'background:#dbeafe;color:#1d4ed8');
     var bt=ev.status==='shipped'?'Arrived':(diff===0?'Today':(diff<=7?'This Week':diff+'d'));
-    var pc=ev.project==='H3'?'#a855f7':'#2563eb';
+    var pc=ev.project==='H3'?'#1a6bc4':'#2563eb';
     html+='<div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,.04);">'
       +'<div style="background:#f0f7ff;border-radius:8px;padding:5px 9px;text-align:center;min-width:48px;flex-shrink:0;border:1px solid #dbeafe;">'
         +'<div style="font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;">'+SHIP_SMONS[dt.getMonth()]+'</div>'
         +'<div style="font-size:18px;font-weight:800;line-height:1.1;color:'+pc+'">'+dt.getDate()+'</div>'
       +'</div>'
       +'<div style="flex:1;min-width:0;">'
-        +'<div style="font-size:10px;font-weight:700;color:#94a3b8;">'+ev.project+' — PO '+ev.po+' · Katy, TX</div>'
-        +'<div style="font-size:13px;font-weight:700;color:#0f172a;margin:2px 0;">'+ev.name+'</div>'
+        +'<div style="font-size:10px;font-weight:700;color:#64748b;">'+ev.project+' — PO '+ev.po+' · Katy, TX</div>'
+        +'<div style="font-size:13px;font-weight:700;color:#f0f4f8;margin:2px 0;">'+ev.name+'</div>'
         +'<div style="font-size:11px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+ev.units+'</div>'
-        +'<div style="font-size:10px;color:#94a3b8;margin-top:2px;">📦 '+ev.ship+' → 🎯 '+ev.date+'</div>'
+        +'<div style="font-size:10px;color:#64748b;margin-top:2px;">📦 '+ev.ship+' → 🎯 '+ev.date+'</div>'
       +'</div>'
       +'<span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;flex-shrink:0;'+bc+'">'+bt+'</span>'
       +'</div>';
@@ -923,7 +923,7 @@ document.addEventListener('DOMContentLoaded', function(){
             <div style="font-size:12px;color:#64748b;margin-top:2px;">TDG Yard · Auto-refreshes every 30 seconds</div>
           </div>
           <div style="display:flex;gap:8px;align-items:center;">
-            <button onclick="loadYardMap()" style="padding:6px 14px;background:#1e2d45;border:1px solid #2d3f57;border-radius:8px;color:#94a3b8;font-size:12px;cursor:pointer;">↻ Refresh</button>
+            <button onclick="loadYardMap()" style="padding:6px 14px;background:#1e2d45;border:1px solid #e2e8f0;border-radius:8px;color:#64748b;font-size:12px;cursor:pointer;">↻ Refresh</button>
             <button onclick="exportLocationPDF()" style="padding:6px 14px;background:#1e3a2f;border:1px solid #16a34a;border-radius:8px;color:#16a34a;font-size:12px;cursor:pointer;">⬇ Export PDF</button>
           </div>
         </div>
@@ -933,7 +933,7 @@ document.addEventListener('DOMContentLoaded', function(){
         </div>
         <div id="ym-summary" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;"></div>
         <div id="ym-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;max-width:700px;"></div>
-        <div id="ym-updated" style="font-size:11px;color:#94a3b8;margin-top:12px;text-align:center;"></div>
+        <div id="ym-updated" style="font-size:11px;color:#64748b;margin-top:12px;text-align:center;"></div>
       </div>
     </div>
 
@@ -942,16 +942,16 @@ document.addEventListener('DOMContentLoaded', function(){
       <!-- Header: lead name or admin filter -->
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
         <div>
-          <div style="font-size:16px;font-weight:800;color:#e2e8f0;">👥 My Team</div>
+          <div style="font-size:16px;font-weight:800;color:#0f172a;">👥 My Team</div>
           <div id="myteam-subtitle" style="font-size:12px;color:#64748b;margin-top:2px;">Tap a card to check them into the safety meeting</div>
         </div>
         <span style="flex:1;"></span>
         <div id="myteam-lead-filter" style="display:none;">
-          <select id="myteam-lead-sel" onchange="loadMyTeam()" style="padding:5px 10px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:12px;">
+          <select id="myteam-lead-sel" onchange="loadMyTeam()" style="padding:5px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#ffffff;color:#0f172a;font-size:12px;">
             <option value="">All Teams</option>
           </select>
         </div>
-        <button onclick="loadMyTeam()" style="padding:5px 12px;border:1px solid #334155;background:#1e293b;color:#94a3b8;border-radius:8px;font-size:12px;cursor:pointer;">↺ Refresh</button>
+        <button onclick="loadMyTeam()" style="padding:5px 12px;border:1px solid #e2e8f0;background:#ffffff;color:#64748b;border-radius:8px;font-size:12px;cursor:pointer;">↺ Refresh</button>
       </div>
       <!-- Team count -->
       <div id="myteam-count" style="font-size:13px;color:#64748b;margin-bottom:12px;"></div>
@@ -959,7 +959,7 @@ document.addEventListener('DOMContentLoaded', function(){
       <div id="myteam-grid" class="workers-grid" style="margin-bottom:20px;"></div>
       <!-- Absent/Late report form -->
       <div id="myteam-attform" style="display:none;background:#1a1d27;border:1px solid #2a2d3e;border-radius:12px;padding:18px;margin-top:8px;">
-        <div style="font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:12px;">📋 Report for: <span id="myteam-att-worker" style="color:#4f8ef7;"></span></div>
+        <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:12px;">📋 Report for: <span id="myteam-att-worker" style="color:#4f8ef7;"></span></div>
         <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
           <button onclick="setTeamAttType('late')" id="myteam-btn-late" style="flex:1;padding:9px;border-radius:8px;border:2px solid #f59e0b;background:#fffbeb;color:#92400e;font-weight:700;font-size:13px;cursor:pointer;">🕐 Late</button>
           <button onclick="setTeamAttType('absent')" id="myteam-btn-absent" style="flex:1;padding:9px;border-radius:8px;border:2px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:700;font-size:13px;cursor:pointer;">❌ Absent</button>
@@ -967,18 +967,18 @@ document.addEventListener('DOMContentLoaded', function(){
         </div>
         <div id="myteam-late-time-wrap" style="display:none;margin-bottom:10px;">
           <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Expected Arrival Time</label>
-          <input type="time" id="myteam-late-time" style="padding:8px 10px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:13px;width:100%;">
+          <input type="time" id="myteam-late-time" style="padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#ffffff;color:#0f172a;font-size:13px;width:100%;">
         </div>
         <div id="myteam-return-wrap" style="display:none;margin-bottom:10px;">
           <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Return Date</label>
-          <input type="date" id="myteam-return-date" style="padding:8px 10px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:13px;width:100%;">
+          <input type="date" id="myteam-return-date" style="padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#ffffff;color:#0f172a;font-size:13px;width:100%;">
         </div>
         <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Reason <span style="color:#ef4444;">*</span></label>
-        <textarea id="myteam-att-reason" rows="2" style="width:100%;padding:8px 10px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:13px;resize:vertical;margin-bottom:12px;" placeholder="Reason…"></textarea>
+        <textarea id="myteam-att-reason" rows="2" style="width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#ffffff;color:#0f172a;font-size:13px;resize:vertical;margin-bottom:12px;" placeholder="Reason…"></textarea>
         <input type="hidden" id="myteam-att-type" value="late">
         <div style="display:flex;gap:8px;">
           <button onclick="submitTeamAtt()" style="flex:1;padding:10px;background:#1d4ed8;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer;font-size:14px;">📤 Submit</button>
-          <button onclick="closeTeamAttForm()" style="padding:10px 14px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;cursor:pointer;">Cancel</button>
+          <button onclick="closeTeamAttForm()" style="padding:10px 14px;background:#ffffff;border:1px solid #e2e8f0;border-radius:8px;color:#64748b;cursor:pointer;">Cancel</button>
         </div>
         <div id="myteam-att-status" style="margin-top:8px;font-size:12px;text-align:center;"></div>
       </div>
@@ -1007,7 +1007,7 @@ document.addEventListener('DOMContentLoaded', function(){
         <div class="att-sub">Your supervisor will be notified automatically.</div>
         <div class="att-field">
           <div class="att-label">Your Name</div>
-          <div class="att-input" id="lateWorkerDisplay" style="padding:10px 12px;background:#f8fafc;color:#1e293b;font-weight:600;border-radius:8px;border:1px solid #e2e8f0;"></div>
+          <div class="att-input" id="lateWorkerDisplay" style="padding:10px 12px;background:#f8fafc;color:#ffffff;font-weight:600;border-radius:8px;border:1px solid #e2e8f0;"></div>
           <input type="hidden" id="lateWorker">
         </div>
         <div class="att-field">
@@ -1028,7 +1028,7 @@ document.addEventListener('DOMContentLoaded', function(){
         <div class="att-sub">Report a full-day absence or request time off.</div>
         <div class="att-field">
           <div class="att-label">Your Name</div>
-          <div class="att-input" id="absWorkerDisplay" style="padding:10px 12px;background:#f8fafc;color:#1e293b;font-weight:600;border-radius:8px;border:1px solid #e2e8f0;"></div>
+          <div class="att-input" id="absWorkerDisplay" style="padding:10px 12px;background:#f8fafc;color:#ffffff;font-weight:600;border-radius:8px;border:1px solid #e2e8f0;"></div>
           <input type="hidden" id="absWorker">
         </div>
         <div class="att-field">
@@ -1043,7 +1043,7 @@ document.addEventListener('DOMContentLoaded', function(){
           <input class="att-input" type="date" id="absDate">
         </div>
         <div class="att-field" id="returnDateWrap" style="display:none;">
-          <div class="att-label">Back to Work On <span style="font-weight:400;color:#94a3b8;text-transform:none;letter-spacing:0;">(this day is NOT marked absent — it's when they return)</span></div>
+          <div class="att-label">Back to Work On <span style="font-weight:400;color:#64748b;text-transform:none;letter-spacing:0;">(this day is NOT marked absent — it's when they return)</span></div>
           <input class="att-input" type="date" id="absReturn">
         </div>
         <div class="att-field">
@@ -1086,7 +1086,7 @@ document.addEventListener('DOMContentLoaded', function(){
             </select>
             <input class="att-input" type="date" id="attFrom" onchange="loadAttendance()" style="width:130px;padding:5px 8px;font-size:12px;" placeholder="From">
             <input class="att-input" type="date" id="attTo" onchange="loadAttendance()" style="width:130px;padding:5px 8px;font-size:12px;" placeholder="To">
-            <button class="tool-btn" onclick="exportAttPDF()" style="height:32px;border-color:#a855f7;color:#a855f7;">⬇ Export PDF</button>
+            <button class="tool-btn" onclick="exportAttPDF()" style="height:32px;border-color:#1a6bc4;color:#1a6bc4;">⬇ Export PDF</button>
           </div>
           <div id="attRecentBody"><div class="att-empty">Loading…</div></div>
         </div>
@@ -1103,7 +1103,7 @@ document.addEventListener('DOMContentLoaded', function(){
 <!-- Manual Late Entry Modal (Admin/Boss only) -->
 <div id="manualLateModal" style="display:none;position:fixed;inset:0;background:#00000088;z-index:500;align-items:center;justify-content:center;">
   <div style="background:#fff;border-radius:14px;padding:28px;width:90%;max-width:420px;box-shadow:0 8px 32px rgba(0,0,0,.2);">
-    <div style="font-size:16px;font-weight:800;color:#1e293b;margin-bottom:4px;">✏️ Manual Late Entry</div>
+    <div style="font-size:16px;font-weight:800;color:#ffffff;margin-bottom:4px;">✏️ Manual Late Entry</div>
     <div style="font-size:12px;color:#64748b;margin-bottom:18px;">Record a late arrival on behalf of a worker.</div>
     <div style="margin-bottom:12px;">
       <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;margin-bottom:4px;">Worker Name *</div>
@@ -1133,7 +1133,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
 <div id="manualAbsentModal" style="display:none;position:fixed;inset:0;background:#00000088;z-index:500;align-items:center;justify-content:center;">
   <div style="background:#fff;border-radius:14px;padding:28px;width:90%;max-width:440px;box-shadow:0 8px 32px rgba(0,0,0,.2);">
-    <div style="font-size:16px;font-weight:800;color:#1e293b;margin-bottom:4px;">❌ Manual Absent Entry</div>
+    <div style="font-size:16px;font-weight:800;color:#ffffff;margin-bottom:4px;">❌ Manual Absent Entry</div>
     <div style="font-size:12px;color:#64748b;margin-bottom:18px;">Record an absence on behalf of a worker.</div>
     <div style="margin-bottom:12px;">
       <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;margin-bottom:4px;">Worker *</div>
@@ -1250,7 +1250,7 @@ function applyTabVisibility(){
 
 function showMain(){
   showAdminManualBtn();
-  applyTabVisibility();populateAttWorkers();document.getElementById('mainContent').style.display='block';(function(){var el=document.getElementById('userPill');var r=localStorage.getItem('mbrRole')||'';var cap=r?r.charAt(0).toUpperCase()+r.slice(1):'';el.innerHTML='<span style="font-weight:700;">'+curUser+(cap?' &middot; '+cap:'')+'</span>';el.style.display='inline-flex';el.style.gap='10px';el.style.alignItems='center';el.innerHTML+='<button onclick="localStorage.removeItem(\'mbrAuth\');localStorage.removeItem(\'mbrRole\');location.href=\'/login\';" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#94a3b8;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✕</button>';})();loadSafetyMeeting();if(isSupervisor()) setTimeout(checkTodayAlerts,1200);}
+  applyTabVisibility();populateAttWorkers();document.getElementById('mainContent').style.display='block';(function(){var el=document.getElementById('userPill');var r=localStorage.getItem('mbrRole')||'';var cap=r?r.charAt(0).toUpperCase()+r.slice(1):'';el.innerHTML='<span style="font-weight:700;">'+curUser+(cap?' &middot; '+cap:'')+'</span>';el.style.display='inline-flex';el.style.gap='10px';el.style.alignItems='center';el.innerHTML+='<button onclick="localStorage.removeItem(\'mbrAuth\');localStorage.removeItem(\'mbrRole\');location.href=\'/login\';" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);color:#64748b;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✕</button>';})();loadSafetyMeeting();if(isSupervisor()) setTimeout(checkTodayAlerts,1200);}
 function doLogout(){localStorage.removeItem('mbrAuth');localStorage.removeItem('mbrRole');curUser=null;location.href='/login';}
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
@@ -1281,7 +1281,7 @@ function loadYardMap(){
       summ.innerHTML =
         '<div style="background:#f1f5f9;border-radius:8px;padding:8px 14px;font-size:12px;"><strong style="font-size:16px;display:block;">'+total+'</strong>On Field</div>'+
         '<div style="background:#f0fdf4;border-radius:8px;padding:8px 14px;font-size:12px;"><strong style="font-size:16px;display:block;color:#16a34a;">'+occ+'</strong>Units Occupied</div>'+
-        '<div style="background:#fafafa;border-radius:8px;padding:8px 14px;font-size:12px;"><strong style="font-size:16px;display:block;color:#94a3b8;">'+(28-occ)+'</strong>Units Empty</div>';
+        '<div style="background:#fafafa;border-radius:8px;padding:8px 14px;font-size:12px;"><strong style="font-size:16px;display:block;color:#64748b;">'+(28-occ)+'</strong>Units Empty</div>';
       var html = '';
       UNITS.forEach(function(unit){
         var workers = byUnit[unit]||[];
@@ -1350,7 +1350,7 @@ function renderWorkerCards(){
   if(!sorted.length){grid.innerHTML='<div class="no-data" style="grid-column:1/-1">No results.</div>';return;}
   grid.innerHTML=sorted.map(function(w){
     var p=smPresent[w.name],isP=!!p;
-    if(editMode){return '<div class="worker-card edit-card"><div class="wc-name" style="font-size:12px;font-weight:700;color:#94a3b8;margin-bottom:8px;text-align:center;">'+escH(w.name)+'</div><div class="edit-btns"><button class="eb eb-edit" onclick="openRename(\''+escJ(w.id)+'\',\''+escJ(w.name)+'\')">✏️ Rename</button><button class="eb eb-del" onclick="deleteWorker(\''+escJ(w.id)+'\',\''+escJ(w.name)+'\')">🗑️ Remove</button></div></div>';}
+    if(editMode){return '<div class="worker-card edit-card"><div class="wc-name" style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px;text-align:center;">'+escH(w.name)+'</div><div class="edit-btns"><button class="eb eb-edit" onclick="openRename(\''+escJ(w.id)+'\',\''+escJ(w.name)+'\')">✏️ Rename</button><button class="eb eb-del" onclick="deleteWorker(\''+escJ(w.id)+'\',\''+escJ(w.name)+'\')">🗑️ Remove</button></div></div>';}
     var sigCls=smPhase==='signin'?' signin-mode':'';
     var att=smAttendance[w.name];
     var attBadge='';
@@ -1898,13 +1898,13 @@ async function checkTodayAlerts(){
     var typeBg = {late:'#fef3c7',absent:'#fee2e2',vacation:'#ede9fe'};
     var html = rows.map(function(row, i){
       var icon = typeIcons[row.type]||'📋';
-      var col  = typeColors[row.type]||'#334155';
+      var col  = typeColors[row.type]||'#e2e8f0';
       var bg   = typeBg[row.type]||'#f8fafc';
       var statusTxt = (row.status==='approved') ? '<span style="color:#166534;font-size:10px;font-weight:700;"> ✓ Approved</span>' : (row.type!=='late' ? '<span style="color:#854d0e;font-size:10px;font-weight:700;"> ⏳ Pending</span>' : '');
       return '<div id="att-alert-row-'+i+'" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:'+bg+';border-radius:10px;margin-bottom:8px;">'
         +'<span style="font-size:22px;line-height:1;">'+icon+'</span>'
         +'<div style="flex:1;min-width:0;">'
-        +'<div style="font-weight:700;color:#1e293b;font-size:14px;">'+row.worker_name+statusTxt+'</div>'
+        +'<div style="font-weight:700;color:#ffffff;font-size:14px;">'+row.worker_name+statusTxt+'</div>'
         +'<div style="font-size:12px;color:'+col+';font-weight:600;text-transform:uppercase;margin:2px 0;">'+row.type+(row.type==='late'&&row.arrival_time?' · Arrives '+row.arrival_time:'')+'</div>'
         +'<div style="font-size:12px;color:#475569;">'+(row.reason||'—')+'</div>'
         +'</div>'
@@ -2111,24 +2111,24 @@ function renderTodayPanel(){
   (function(){
       var presentNames = [];
       var html = '<div style="background:var(--card,#fff);border:1px solid #e2e8f0;border-radius:14px;padding:16px 20px;">' +
-        '<div style="font-size:14px;font-weight:800;color:#1e293b;margin-bottom:12px;">📅 Today — ' +
+        '<div style="font-size:14px;font-weight:800;color:#ffffff;margin-bottom:12px;">📅 Today — ' +
         new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}) + '</div>' +
         '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;">';
       // Late
       html += '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px;">' +
         '<div style="font-size:11px;font-weight:700;color:#b45309;text-transform:uppercase;margin-bottom:6px;">🕐 Running Late</div>' +
         (late.length ? late.map(function(r){return '<div style="font-size:12px;color:#92400e;padding:2px 0">'+r.worker_name+(r.arrival_time?' · '+r.arrival_time:'')+'</div>';}).join('') :
-        '<div style="font-size:12px;color:#94a3b8;">None</div>') + '</div>';
+        '<div style="font-size:12px;color:#64748b;">None</div>') + '</div>';
       // Absent
       html += '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px;">' +
         '<div style="font-size:11px;font-weight:700;color:#991b1b;text-transform:uppercase;margin-bottom:6px;">❌ Absent</div>' +
         (absent.length ? absent.map(function(r){return '<div style="font-size:12px;color:#7f1d1d;padding:2px 0">'+r.worker_name+'</div>';}).join('') :
-        '<div style="font-size:12px;color:#94a3b8;">None</div>') + '</div>';
+        '<div style="font-size:12px;color:#64748b;">None</div>') + '</div>';
       // Vacation
       html += '<div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:12px;">' +
         '<div style="font-size:11px;font-weight:700;color:#5b21b6;text-transform:uppercase;margin-bottom:6px;">🏖 Vacation</div>' +
         (vacation.length ? vacation.map(function(r){return '<div style="font-size:12px;color:#4c1d95;padding:2px 0">'+r.worker_name+'</div>';}).join('') :
-        '<div style="font-size:12px;color:#94a3b8;">None</div>') + '</div>';
+        '<div style="font-size:12px;color:#64748b;">None</div>') + '</div>';
       html += '</div></div>';
       panel.innerHTML = html;
     panel.innerHTML = html;
@@ -2205,13 +2205,13 @@ function showCalDay(ds){
   var d = new Date(ds+'T12:00:00');
   document.getElementById('calPopupTitle').textContent = d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
   if(!events.length){
-    document.getElementById('calPopupBody').innerHTML='<div style="font-size:12px;color:#94a3b8;padding:4px 0;">No reports for this day.</div>';
+    document.getElementById('calPopupBody').innerHTML='<div style="font-size:12px;color:#64748b;padding:4px 0;">No reports for this day.</div>';
   } else {
     document.getElementById('calPopupBody').innerHTML = events.map(function(e){
       var badge='<span class="att-badge '+e.type+'" style="font-size:10px;padding:1px 7px;">'+e.type.toUpperCase()+'</span>';
       var extra = e.type==='late' ? ' · Arrival: '+(e.arrival_time||'?') : (e.return_date?' · Return: '+e.return_date:'');
       return '<div class="cal-popup-row">'+badge
-        +'<span style="font-weight:700;color:#1e293b;flex:1">'+e.worker_name+'</span>'
+        +'<span style="font-weight:700;color:#ffffff;flex:1">'+e.worker_name+'</span>'
         +'<span style="color:#64748b;font-size:11px">'+(e.reason||'')+extra+'</span></div>';
     }).join('');
   }
@@ -2260,26 +2260,26 @@ if(curUser){ showMain(); }
 </script>
 <!-- ── Manual Check-In Modal (Boss/Admin) ────────────────────────────── -->
 <div id="manualCheckinModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center;">
-  <div style="background:#0f172a;border:1px solid #d97706;border-radius:14px;padding:24px;max-width:400px;width:93%;box-shadow:0 8px 32px rgba(0,0,0,.6);">
+  <div style="background:#f0f4f8;border:1px solid #d97706;border-radius:14px;padding:24px;max-width:400px;width:93%;box-shadow:0 8px 32px rgba(0,0,0,.6);">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <div style="font-size:15px;font-weight:700;color:#f59e0b;">⏱ Manual Check-In</div>
       <button onclick="closeManualCheckin()" style="background:none;border:none;color:#64748b;font-size:20px;cursor:pointer;line-height:1;">✕</button>
     </div>
-    <p style="font-size:12px;color:#94a3b8;margin:0 0 16px;">Use when a worker arrived late and wasn't checked in through the kiosk.</p>
+    <p style="font-size:12px;color:#64748b;margin:0 0 16px;">Use when a worker arrived late and wasn't checked in through the kiosk.</p>
     <div style="margin-bottom:12px;">
-      <label style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Worker</label>
-      <select id="mcWorker" style="width:100%;padding:9px 12px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:14px;">
+      <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Worker</label>
+      <select id="mcWorker" style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;background:#ffffff;color:#0f172a;font-size:14px;">
         <option value="">— Select worker —</option>
       </select>
     </div>
     <div style="display:flex;gap:10px;margin-bottom:12px;">
       <div style="flex:1;">
-        <label style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Date</label>
-        <input type="date" id="mcDate" style="width:100%;padding:9px 12px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:14px;">
+        <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Date</label>
+        <input type="date" id="mcDate" style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;background:#ffffff;color:#0f172a;font-size:14px;">
       </div>
       <div style="flex:1;">
-        <label style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Arrived at</label>
-        <input type="time" id="mcTime" style="width:100%;padding:9px 12px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:14px;">
+        <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Arrived at</label>
+        <input type="time" id="mcTime" style="width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;background:#ffffff;color:#0f172a;font-size:14px;">
       </div>
     </div>
     <div id="mcStatus" style="font-size:12px;color:#ef4444;margin-bottom:10px;display:none;"></div>
@@ -2289,27 +2289,27 @@ if(curUser){ showMain(); }
 
 <!-- ── Edit Attendance Modal ─────────────────────────────────────────── -->
 <div id="editAttModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center;">
-  <div style="background:#0f172a;border:1px solid #1e3a5f;border-radius:14px;padding:24px;max-width:420px;width:93%;box-shadow:0 8px 32px rgba(0,0,0,.6);">
+  <div style="background:#f0f4f8;border:1px solid #1e3a5f;border-radius:14px;padding:24px;max-width:420px;width:93%;box-shadow:0 8px 32px rgba(0,0,0,.6);">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <span style="font-size:16px;font-weight:800;color:#e2e8f0;">✎ Edit Attendance</span>
-      <button onclick="closeEditAtt()" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;">✕</button>
+      <span style="font-size:16px;font-weight:800;color:#0f172a;">✎ Edit Attendance</span>
+      <button onclick="closeEditAtt()" style="background:none;border:none;color:#64748b;font-size:20px;cursor:pointer;">✕</button>
     </div>
-    <div style="font-size:13px;color:#94a3b8;margin-bottom:12px;">Worker: <strong id="editAttWorker" style="color:#e2e8f0;"></strong></div>
+    <div style="font-size:13px;color:#64748b;margin-bottom:12px;">Worker: <strong id="editAttWorker" style="color:#0f172a;"></strong></div>
     <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Type</label>
-    <select id="editAttType" style="width:100%;padding:8px 10px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:13px;margin-bottom:12px;">
+    <select id="editAttType" style="width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#ffffff;color:#0f172a;font-size:13px;margin-bottom:12px;">
       <option value="late">🕐 Late</option>
       <option value="absent">❌ Absent</option>
       <option value="vacation">🏖 Vacation</option>
     </select>
     <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Reason <span style="color:#ef4444;">*</span></label>
-    <textarea id="editAttReason" rows="3" style="width:100%;padding:8px 10px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:13px;resize:vertical;margin-bottom:12px;" placeholder="Updated reason…"></textarea>
+    <textarea id="editAttReason" rows="3" style="width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#ffffff;color:#0f172a;font-size:13px;resize:vertical;margin-bottom:12px;" placeholder="Updated reason…"></textarea>
     <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Date (leave blank to keep original)</label>
-    <input id="editAttDate" type="date" style="width:100%;padding:8px 10px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:13px;margin-bottom:12px;">
+    <input id="editAttDate" type="date" style="width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#ffffff;color:#0f172a;font-size:13px;margin-bottom:12px;">
     <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Return Date</label>
-    <input id="editAttReturn" type="date" style="width:100%;padding:8px 10px;border:1px solid #334155;border-radius:8px;background:#1e293b;color:#e2e8f0;font-size:13px;margin-bottom:16px;">
+    <input id="editAttReturn" type="date" style="width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;background:#ffffff;color:#0f172a;font-size:13px;margin-bottom:16px;">
     <div style="display:flex;gap:10px;">
       <button onclick="saveEditAtt()" style="flex:1;padding:10px;background:#1d4ed8;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer;font-size:14px;">💾 Save</button>
-      <button onclick="closeEditAtt()" style="padding:10px 18px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;cursor:pointer;font-size:14px;">Cancel</button>
+      <button onclick="closeEditAtt()" style="padding:10px 18px;background:#ffffff;border:1px solid #e2e8f0;border-radius:8px;color:#64748b;cursor:pointer;font-size:14px;">Cancel</button>
     </div>
     <div id="editAttStatus" style="margin-top:8px;font-size:12px;color:#ef4444;text-align:center;"></div>
   </div>
@@ -2317,10 +2317,10 @@ if(curUser){ showMain(); }
 
 <!-- ── Daily Alert Popup (leads/boss/admin) ───────────────────────────────── -->
 <div id="attAlertModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9998;align-items:center;justify-content:center;">
-  <div style="background:#0f172a;border:1px solid #1e3a5f;border-radius:14px;padding:24px;max-width:440px;width:93%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.6);">
+  <div style="background:#f0f4f8;border:1px solid #1e3a5f;border-radius:14px;padding:24px;max-width:440px;width:93%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.6);">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <span style="font-size:16px;font-weight:800;color:#e2e8f0;">📋 Today's Attendance Alerts</span>
-      <button onclick="document.getElementById('attAlertModal').style.display='none';markAllRead();" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;">✕</button>
+      <span style="font-size:16px;font-weight:800;color:#0f172a;">📋 Today's Attendance Alerts</span>
+      <button onclick="document.getElementById('attAlertModal').style.display='none';markAllRead();" style="background:none;border:none;color:#64748b;font-size:20px;cursor:pointer;">✕</button>
     </div>
     <div id="attAlertBody"></div>
     <button onclick="document.getElementById('attAlertModal').style.display='none';switchTab('daysoff',document.getElementById('tab-btn-daysoff'));loadAttendance();" style="width:100%;margin-top:16px;padding:10px;background:#1e3a5f;border:1px solid #2563eb;border-radius:8px;color:#93c5fd;font-weight:700;cursor:pointer;font-size:13px;">View Full Attendance Log →</button>
