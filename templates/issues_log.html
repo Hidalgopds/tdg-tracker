@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNiIgZmlsbD0iIzFhNmJjNCIvPjx0ZXh0IHg9IjE2IiB5PSIyMyIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LXNpemU9IjIwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSI+QjwvdGV4dD48L3N2Zz4=">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Issues Log — TDG / MBR Texas</title>
+<title>Issues Log — TDG / BSynch</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{background:#f0f4f8;color:#f0f4f8;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
@@ -423,7 +424,7 @@ footer{color:#64748b !important;border-top-color:#0f172a !important;}
 
 <div class="top-bar">
   <a href="/" class="back-btn">◀ Home</a>
-  <h1>⚠ Issues Log &nbsp;<span>TDG / MBR Texas</span></h1>
+  <h1>⚠ Issues Log &nbsp;<span>TDG / BSynch</span></h1>
   <span id="lastRefresh" style="font-size:11px;color:#0f172a"></span>
   <button class="create-btn" onclick="openCreateModal()" style="height:32px;padding:0 14px;background:#7f1d1d;border:1px solid #ef4444;border-radius:7px;color:#fca5a5;font-size:12px;font-weight:700;cursor:pointer">＋ Create Issue</button>
   <button class="email-btn" onclick="sendEmail()" style="height:32px;padding:0 14px;background:#1e3a5f;border:1px solid #3b82f6;border-radius:7px;color:#60a5fa;font-size:12px;font-weight:700;cursor:pointer">✉ Email Report</button>
@@ -707,7 +708,7 @@ function printIssue(evt, id){
     + '<div class="section">Resolution / Notes</div>'
     + '<p style="margin:0 0 16px;line-height:1.6">'+(issue.resolution||'Not yet resolved.')+'</p>'
     + photoHtml
-    + '<footer>TDG / MBR Texas — Issue Tracking System &nbsp;|&nbsp; ID: '+issue.id+'</footer>'
+    + '<footer>TDG / BSynch — Issue Tracking System &nbsp;|&nbsp; ID: '+issue.id+'</footer>'
     + '</body></html>';
   var w = window.open('','_blank','width=780,height=900');
   w.document.write(html);
@@ -922,7 +923,7 @@ function sendEmail(){
   var mon    = filtered.filter(function(i){ return i.status==='Monitoring'; }).length;
   var res    = filtered.filter(function(i){ return i.status==='Resolved'; }).length;
 
-  var body = 'TDG / MBR Texas — Issues Report%0D%0A';
+  var body = 'TDG / BSynch — Issues Report%0D%0A';
   body += 'Generated: '+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})+'%0D%0A';
   if(unit) body += 'Unit: '+unit+'%0D%0A';
   body += '%0D%0A';
