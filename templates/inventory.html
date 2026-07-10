@@ -421,11 +421,12 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
     </div>
   </div>
   </div>
-  <div class="header-search">
-    <div class="search-wrap">
+  <div class="header-search" style="display:flex;align-items:center;gap:8px;">
+    <div class="search-wrap" style="flex:1;">
       <span class="si">🔍</span>
       <input class="search-input" id="srch" type="text" placeholder="Search items..." oninput="doFilter()">
     </div>
+    <button class="fact-new-btn" id="factNewBtn" style="flex-shrink:0;height:36px;padding:0 12px;font-size:12px;">🧾 Facturas</button>
   </div>
 </div>
 <script>(function(){
@@ -679,15 +680,11 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 
 <!-- DISPATCH TAB -->
 <div id="dispatch-tab-content" style="display:none;">
-  <div class="fact-wrap">
-    <div class="fact-topbar">
-      <div>
-        <div class="fact-title">📋 Facturas recibidas</div>
-        <div class="fact-sub">Fotos de packing slips y facturas de materiales</div>
-      </div>
-      <button class="fact-new-btn" id="factNewBtn">+ Nueva factura</button>
-    </div>
-    <div class="fact-list" id="factList"></div>
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:280px;gap:12px;padding:32px 16px;text-align:center;">
+    <div style="font-size:48px;">📋</div>
+    <div style="font-size:16px;font-weight:700;color:var(--text);">Facturas</div>
+    <div style="font-size:13px;color:var(--muted);">Usa el botón <strong>🧾 Facturas</strong> en la barra de búsqueda para ver y subir facturas.</div>
+    <button class="fact-new-btn" onclick="openModal('factListModal')" style="margin-top:4px;">🧾 Ver Facturas</button>
   </div>
 </div>
 
@@ -1823,7 +1820,7 @@ function switchInvTab(t){
   if(t==='queries'){if(!_qAllReqs.length)initQueryTab();else runQuery();}
   if(t==='units'&&!umLoaded)loadProjectUnits();
   if(t==='locations'&&_LOC_DATA.length===0)loadLocations();
-  if(t==='dispatch')renderFacts();
+  if(t==='dispatch'){renderFacts();openModal('factListModal');}
 }
 
 // ── State ──────────────────────────────────────────────────────────────────
@@ -2210,7 +2207,7 @@ function resetFactForm(){
 
 // Open modal
 document.getElementById('factNewBtn').addEventListener('click',function(){
-  resetFactForm();openModal('factModal');
+  renderFacts();openModal('factListModal');
 });
 
 // File pick
@@ -2366,6 +2363,22 @@ var _factOrigSwitch=switchInvTab;
         <button type="submit" class="btn-s" style="flex:1;background:var(--accent);color:#fff;">Guardar factura</button>
       </div>
     </form>
+  </div>
+</div>
+
+
+<!-- ══ FACTURA LIST MODAL ══════════════════════════════════════════ -->
+<div class="modal-bg" id="factListModal">
+  <div class="modal" style="border-radius:16px 16px 0 0;max-height:85vh;">
+    <div class="mhandle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:0 16px 12px;">
+      <div class="mtitle" style="margin:0;padding:0;">📋 Facturas</div>
+      <div style="display:flex;gap:8px;">
+        <button class="fact-new-btn" style="font-size:12px;height:30px;padding:0 12px;" onclick="closeModal('factListModal');resetFactForm();openModal('factModal');">+ Nueva</button>
+        <button onclick="closeModal('factListModal')" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;line-height:1;">✕</button>
+      </div>
+    </div>
+    <div class="fact-list" id="factList" style="padding:0 16px 24px;overflow-y:auto;max-height:65vh;"></div>
   </div>
 </div>
 
