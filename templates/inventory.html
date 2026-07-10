@@ -855,7 +855,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 </div></div>
 
 <script>
-var ITEMS=[],REQS=[],activeCat='All',srchQ='',edUser=null,curPinUser=null,pinBuf='',setNewPin=false,pin1st='';
+var ITEMS=[],REQS=[],activeCat='All',srchQ='',activeLoc='',edUser=null,curPinUser=null,pinBuf='',setNewPin=false,pin1st='';
 var CURRENT_INBOX_TAB='pending';
 var _sigReqId=null;
 var _sigCtx=null,_sigCanvas=null,_sigDrawing=false;
@@ -965,7 +965,7 @@ function mkCard(it){
     '</div>'+
     '<div class="ic-edit">'+
       '<input class="qty-inp" id="q-'+it.id+'" type="number" min="0" value="'+qty+'" title="On Hand">'+
-      '<input class="qty-inp" id="sq-'+it.id+'" type="number" min="0" placeholder="Safe" title="Safe qty" value="'+(safeQ||'')+"'>"+
+      '<input class="qty-inp" id="sq-'+it.id+'" type="number" min="0" placeholder="Safe" title="Safe qty" value="'+(safeQ||'')+'">'+
       '<input class="loc-inp" id="loc-'+it.id+'" type="text" placeholder="Location (e.g. A-01)" title="Location" value="'+(it.location_code||'')+'">'+
       '<button class="ic-save" onclick="saveQty(\''+it.id+'\')">Save</button>'+
       '<button class="ic-del" onclick="delItem(\''+it.id+'\',\''+esc(it.name).replace(/'/g,"\\'")+ '\')" title="Delete">🗑️</button>'+
@@ -1065,13 +1065,6 @@ function skuBackfill(){
     else toast(d.error||'Error','error');
     if(btn)btn.disabled=false;
   }).catch(function(){toast('Error','error');if(btn)btn.disabled=false;});
-}
-
-// Load locations when tab is activated
-var _origSwitchInvTab=switchInvTab;
-function switchInvTab(t){
-  _origSwitchInvTab(t);
-  if(t==='locations'&&_LOC_DATA.length===0)loadLocations();
 }
 
 
@@ -1805,6 +1798,7 @@ function switchInvTab(t){
   var qEl=document.getElementById('queries-tab-content');if(qEl)qEl.style.display=t==='queries'?'block':'none';
   if(t==='queries'){if(!_qAllReqs.length)initQueryTab();else runQuery();}
   if(t==='units'&&!umLoaded)loadProjectUnits();
+  if(t==='locations'&&_LOC_DATA.length===0)loadLocations();
 }
 
 // ── State ──────────────────────────────────────────────────────────────────
