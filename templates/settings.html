@@ -874,7 +874,7 @@ function timeAgo(iso){
     <div class="field">
       <label>Contractor Company</label>
       <select id="um-company" style="width:100%;">
-        <option value="MBR Texas">MBR Texas</option>
+        <option value="MBR Texas">BSynch</option>
         <option value="J&amp;F Sandblasting">J&amp;F Sandblasting</option>
         <option value="RV Solutions">RV Solutions</option>
         <option value="C.U.R">C.U.R</option>
@@ -1110,7 +1110,7 @@ function renderUsers(){
     var em=u.email?'<a href="mailto:'+u.email+'" style="color:var(--accent);font-size:11px">'+esc(u.email)+'</a>':'<em style="color:var(--muted);font-size:11px">no email</em>';
     var ph=u.phone?'<span style="font-size:11px;color:var(--muted)"> · '+esc(u.phone)+'</span>':'';
     return '<tr>'+
-      '<td><strong>'+esc(u.name)+'</strong><br>'+em+ph+(u.led_by?'<br><span style="font-size:10px;color:var(--muted);">Led by: '+esc(u.led_by)+'</span>':'')+'<br><span style="font-size:10px;'+(u.company&&u.company!=='MBR Texas'?'background:rgba(14,165,233,.15);color:#38bdf8;':'background:rgba(100,116,139,.1);color:var(--muted);')+'padding:1px 7px;border-radius:10px;">'+esc(u.company||'MBR Texas')+'</span></td>'+
+      '<td><strong>'+esc(u.name)+'</strong><br>'+em+ph+(u.led_by?'<br><span style="font-size:10px;color:var(--muted);">Led by: '+esc(u.led_by)+'</span>':'')+'<br><span style="font-size:10px;'+(u.company&&u.company!=='MBR Texas'?'background:rgba(14,165,233,.15);color:#38bdf8;':'background:rgba(100,116,139,.1);color:var(--muted);')+'padding:1px 7px;border-radius:10px;">'+esc(u.company==='MBR Texas'||!u.company?'BSynch':u.company)+'</span></td>'+
       '<td><span class="badge '+bc+'">'+(u.role||'—')+'</span></td>'+
 
       (window._bossReadOnly?'<td><em style="color:var(--muted);font-size:11px">view only</em></td>':'<td><button class="btn btn-ghost btn-sm" onclick="openUserModalByName(\''+nk+'\')">'+'Edit</button> '+

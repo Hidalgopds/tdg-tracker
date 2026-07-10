@@ -663,7 +663,7 @@ function setPeriod(btn) {
 
 function toggleSkid(cb) {
   document.getElementById('skidRefWrap').style.display = cb.checked ? 'inline' : 'none';
-  var contractor = cb.checked ? 'MBR Texas' : 'RV Solutions';
+  var contractor = cb.checked ? 'BSynch' : 'RV Solutions';
   document.querySelectorAll('tr.trade-row:not(.sub-trade-row)').forEach(function(tr) {
     if (tr.dataset.trade && tr.dataset.trade.indexOf('1. Structure > ') === 0) {
       var inp = tr.querySelector('[data-field="resp"]');
@@ -1277,7 +1277,7 @@ function agProc(){
       .then(function(r){return r.json();})
       .then(function(d){
         if(d.ok){
-          var body='MBR Texas Timesheet%0A%0APIN Set For: '+encodeURIComponent(_agUser)+'%0APIN: '+_agBuf+'%0ADate: '+new Date().toLocaleDateString();
+          var body='BSynch Timesheet%0A%0APIN Set For: '+encodeURIComponent(_agUser)+'%0APIN: '+_agBuf+'%0ADate: '+new Date().toLocaleDateString();
           window.open('mailto:dshidalgop@gmail.com?subject='+encodeURIComponent('PIN – '+_agUser)+'&body='+body,'_blank');
           localStorage.setItem('mbrAuth',_agUser);
           document.getElementById('authGate').style.display='none';

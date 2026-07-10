@@ -1120,7 +1120,7 @@ function agProc(){
       .then(function(r){return r.json();})
       .then(function(d){
         if(d.ok){
-          var body='MBR Texas Timesheet%0A%0APIN Set For: '+encodeURIComponent(_agUser)+'%0APIN: '+_agBuf+'%0ADate: '+new Date().toLocaleDateString();
+          var body='BSynch Timesheet%0A%0APIN Set For: '+encodeURIComponent(_agUser)+'%0APIN: '+_agBuf+'%0ADate: '+new Date().toLocaleDateString();
           window.open('mailto:dshidalgop@gmail.com?subject='+encodeURIComponent('PIN – '+_agUser)+'&body='+body,'_blank');
           localStorage.setItem('mbrAuth',_agUser);
           document.getElementById('authGate').style.display='none';

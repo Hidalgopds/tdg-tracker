@@ -721,7 +721,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
         <label class="fl" style="font-size:10px;">Company</label>
         <select class="fi" id="qCompany" onchange="runQuery()">
           <option value="">All</option>
-          <option>MBR Texas</option>
+          <option value="MBR Texas">BSynch</option>
           <option>J&amp;F Sandblasting</option>
           <option>RV Solutions</option>
           <option>C.U.R</option>
@@ -823,7 +823,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
     <div class="fg"><label class="fl">Contractor Company</label>
       <select class="fi" id="exCompany">
         <option value="">All</option>
-        <option>MBR Texas</option>
+        <option value="MBR Texas">BSynch</option>
         <option>J&amp;F Sandblasting</option>
         <option>RV Solutions</option>
         <option>C.U.R</option>
@@ -1286,7 +1286,7 @@ function procPIN(){
     fetch('/api/users/set-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:curPinUser,pin:pinBuf})})
     .then(function(r){return r.json();}).then(function(d){
       if(d.ok){
-        var body='MBR Texas Inventory%0A%0APIN Set For: '+encodeURIComponent(curPinUser)+'%0APIN: '+pinBuf+'%0ADate: '+new Date().toLocaleDateString();
+        var body='BSynch Inventory%0A%0APIN Set For: '+encodeURIComponent(curPinUser)+'%0APIN: '+pinBuf+'%0ADate: '+new Date().toLocaleDateString();
         window.open('mailto:dshidalgop@gmail.com?subject='+encodeURIComponent('MBR PIN – '+curPinUser)+'&body='+body,'_blank');
         edUser=curPinUser;sessionStorage.setItem('edUser',edUser);activateEd();goS3();inlineReqs();
       }else{document.getElementById('pinErr').textContent='Error saving PIN';}
@@ -1746,7 +1746,7 @@ function buildShareText(){
   fetch('/api/material-requests?status=Pending').then(function(r){return r.json();}).then(function(d){
     REQS=d||[];
     if(!REQS.length){toast('No pending requests');return;}
-    var lines=['📋 MBR Texas – Pending Material Requests','Date: '+new Date().toLocaleDateString(),'─────────────────────────'];
+    var lines=['📋 BSynch – Pending Material Requests','Date: '+new Date().toLocaleDateString(),'─────────────────────────'];
     REQS.forEach(function(req,i){
       lines.push((i+1)+'. '+req.item_name);
       lines.push('   By: '+req.requester_name+' | Qty: '+req.qty_needed+(req.building?' | Bldg: '+req.building:''));
