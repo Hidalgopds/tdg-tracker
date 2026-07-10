@@ -2152,6 +2152,67 @@ async function deleteMaterial(id){
   <a href="/issues-log" class="gnav-link"><span class="gi">⚠️</span>Issues</a>
   <a href="/settings" class="gnav-link"><span class="gi">⚙️</span>Settings</a>
 </nav>
+
+<!-- ══ FACTURA MODAL ══════════════════════════════════════════════ -->
+<div class="modal-bg" id="factModal">
+  <div class="modal" style="border-radius:16px 16px 0 0;padding-bottom:24px;">
+    <div class="mhandle"></div>
+    <div class="mtitle">📄 Subir Factura</div>
+
+    <form id="factForm" style="padding:0 16px;">
+      <label class="fact-field-label">Foto de la factura <span style="color:var(--red)">*</span></label>
+      <label class="fact-upload-zone" id="factUploadZone">
+        <input type="file" id="factFoto" accept="image/*" capture="environment" style="display:none">
+        <span id="factUploadText">📷 Toca para tomar foto o elegir imagen</span>
+      </label>
+      <img id="factPreview" style="display:none;width:100%;max-height:200px;object-fit:contain;border-radius:8px;border:1px solid var(--border);margin:8px 0;">
+
+      <div id="factOcrBox" style="margin:8px 0;">
+        <button type="button" class="fact-ocr-btn" id="factOcrBtn" disabled>👁 Leer texto de la factura (OCR)</button>
+        <div class="fact-ocr-status" id="factOcrStatus" style="display:none;"></div>
+      </div>
+
+      <div id="factOcrField" style="display:none;margin-bottom:8px;">
+        <label class="fact-field-label">Texto detectado (edita si hace falta)</label>
+        <textarea id="factOcrText" class="fact-textarea" rows="3" placeholder="Aquí aparece el texto leído..."></textarea>
+      </div>
+
+      <label class="fact-field-label">Número de factura</label>
+      <input type="text" id="factNumero" class="fact-input" placeholder="Ej. F-001234">
+
+      <label class="fact-field-label">Proveedor</label>
+      <input type="text" id="factProveedor" class="fact-input" placeholder="Home Depot, Grainger, etc.">
+
+      <label class="fact-field-label">Monto total</label>
+      <input type="text" id="factMonto" class="fact-input" placeholder="$1,250.00">
+
+      <label class="fact-field-label">Items / Descripción</label>
+      <textarea id="factSpecs" class="fact-textarea" rows="3" placeholder="Materiales recibidos..."></textarea>
+
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button type="button" class="btn-s" style="flex:1;background:#f1f5f9;color:var(--text);" onclick="closeModal('factModal');resetFactForm();">Cancelar</button>
+        <button type="submit" class="btn-s" style="flex:1;background:var(--accent);color:#fff;">Guardar factura</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<!-- ══ FACTURA LIST MODAL ══════════════════════════════════════════ -->
+<div class="modal-bg" id="factListModal">
+  <div class="modal" style="border-radius:16px 16px 0 0;max-height:85vh;">
+    <div class="mhandle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:0 16px 12px;">
+      <div class="mtitle" style="margin:0;padding:0;">📋 Facturas</div>
+      <div style="display:flex;gap:8px;">
+        <button class="fact-new-btn" style="font-size:12px;height:30px;padding:0 12px;" onclick="closeModal('factListModal');resetFactForm();openModal('factModal');">+ Nueva</button>
+        <button onclick="closeModal('factListModal')" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;line-height:1;">✕</button>
+      </div>
+    </div>
+    <div class="fact-list" id="factList" style="padding:0 16px 24px;overflow-y:auto;max-height:65vh;"></div>
+  </div>
+</div>
+
 <script>
 (function(){var p=location.pathname;document.querySelectorAll('.gnav-link').forEach(function(a){var h=a.getAttribute('href');if(h==='/'?p===h:p===h||p.startsWith(h))a.classList.add('gna');});})();
 (function(){var r=localStorage.getItem('mbrRole')||'worker';var lv={admin:5,boss:4,inventory:3,lead:2,worker:1}[r]||1;var rules={'/log':2,'/dashboard':4,'/inventory':2,'/issues-log':2,'/settings':4};document.querySelectorAll('.gnav-link').forEach(function(a){var h=a.getAttribute('href');if(rules[h]&&lv<rules[h]){a.href='/home';a.style.opacity='0.45';}});})();
@@ -2321,66 +2382,5 @@ document.getElementById('factForm').addEventListener('submit',function(e){
 // Render on dispatch tab open (hooked into switchInvTab)
 var _factOrigSwitch=switchInvTab;
 </script>
-
-<!-- ══ FACTURA MODAL ══════════════════════════════════════════════ -->
-<div class="modal-bg" id="factModal">
-  <div class="modal" style="border-radius:16px 16px 0 0;padding-bottom:24px;">
-    <div class="mhandle"></div>
-    <div class="mtitle">📄 Subir Factura</div>
-
-    <form id="factForm" style="padding:0 16px;">
-      <label class="fact-field-label">Foto de la factura <span style="color:var(--red)">*</span></label>
-      <label class="fact-upload-zone" id="factUploadZone">
-        <input type="file" id="factFoto" accept="image/*" capture="environment" style="display:none">
-        <span id="factUploadText">📷 Toca para tomar foto o elegir imagen</span>
-      </label>
-      <img id="factPreview" style="display:none;width:100%;max-height:200px;object-fit:contain;border-radius:8px;border:1px solid var(--border);margin:8px 0;">
-
-      <div id="factOcrBox" style="margin:8px 0;">
-        <button type="button" class="fact-ocr-btn" id="factOcrBtn" disabled>👁 Leer texto de la factura (OCR)</button>
-        <div class="fact-ocr-status" id="factOcrStatus" style="display:none;"></div>
-      </div>
-
-      <div id="factOcrField" style="display:none;margin-bottom:8px;">
-        <label class="fact-field-label">Texto detectado (edita si hace falta)</label>
-        <textarea id="factOcrText" class="fact-textarea" rows="3" placeholder="Aquí aparece el texto leído..."></textarea>
-      </div>
-
-      <label class="fact-field-label">Número de factura</label>
-      <input type="text" id="factNumero" class="fact-input" placeholder="Ej. F-001234">
-
-      <label class="fact-field-label">Proveedor</label>
-      <input type="text" id="factProveedor" class="fact-input" placeholder="Home Depot, Grainger, etc.">
-
-      <label class="fact-field-label">Monto total</label>
-      <input type="text" id="factMonto" class="fact-input" placeholder="$1,250.00">
-
-      <label class="fact-field-label">Items / Descripción</label>
-      <textarea id="factSpecs" class="fact-textarea" rows="3" placeholder="Materiales recibidos..."></textarea>
-
-      <div style="display:flex;gap:10px;margin-top:16px;">
-        <button type="button" class="btn-s" style="flex:1;background:#f1f5f9;color:var(--text);" onclick="closeModal('factModal');resetFactForm();">Cancelar</button>
-        <button type="submit" class="btn-s" style="flex:1;background:var(--accent);color:#fff;">Guardar factura</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-
-<!-- ══ FACTURA LIST MODAL ══════════════════════════════════════════ -->
-<div class="modal-bg" id="factListModal">
-  <div class="modal" style="border-radius:16px 16px 0 0;max-height:85vh;">
-    <div class="mhandle"></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:0 16px 12px;">
-      <div class="mtitle" style="margin:0;padding:0;">📋 Facturas</div>
-      <div style="display:flex;gap:8px;">
-        <button class="fact-new-btn" style="font-size:12px;height:30px;padding:0 12px;" onclick="closeModal('factListModal');resetFactForm();openModal('factModal');">+ Nueva</button>
-        <button onclick="closeModal('factListModal')" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;line-height:1;">✕</button>
-      </div>
-    </div>
-    <div class="fact-list" id="factList" style="padding:0 16px 24px;overflow-y:auto;max-height:65vh;"></div>
-  </div>
-</div>
-
 </body>
 </html>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
