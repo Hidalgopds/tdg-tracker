@@ -854,6 +854,11 @@ var _sigReqId=null;
 var _sigCtx=null,_sigCanvas=null,_sigDrawing=false;
 var _ROLE=localStorage.getItem('mbrRole')||'worker';
 var _LVL={admin:5,boss:4,inventory:3,dispatcher:3,lead:2,worker:1,contractor:2}[_ROLE]||1;
+// Show Dispatch tab for dispatcher/admin/boss; Locations stays hidden always
+if(_ROLE==='dispatcher'||_LVL>=4){
+  var _dtab=document.getElementById('itab-dispatch');
+  if(_dtab)_dtab.style.display='';
+}
 
 // ── My Profile ──────────────────────────────────────────────────────────────
 function openProfile(){
