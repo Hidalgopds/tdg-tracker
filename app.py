@@ -1934,6 +1934,177 @@ def email_low_stock():
 
 
 
+# ══════════════════════════════════════════════════════════════════
+#  PURCHASE ORDERS  (Albaranes / Receiving)
+# ══════════════════════════════════════════════════════════════════
+
+@app.route("/api/po", methods=["GET"])
+def list_pos():
+    """List purchase orders — optional ?status= filter."""
+    status = request.args.get("status","")
+    q = f"&status=eq.{status}" if status else ""
+    url = f"{SUPABASE_URL}/rest/v1/purchase_orders?order=created_at.desc&limit=200{q}"
+    r = requests.get(url, headers=sb_headers())
+    if not r.ok:
+        return jsonify({"ok": False, "pos": [], "error": r.text}), 500
+    return jsonify({"ok": True, "pos": r.json()})
+
+
+@app.route("/api/po", methods=["POST"])
+def create_po():
+    """Create a new purchase order."""
+    data = request.json or {}
+    required = ["po_number"]
+    for f in required:
+        if not data.get(f):
+            return jsonify({"error": f"Missing {f}"}), 400
+    payload = {
+        "po_number":     data["po_number"].strip().upper(),
+        "supplier":      data.get("supplier","").strip() or None,
+        "expected_date": data.get("expected_date") or None,
+        "status":        "pending",
+        "items":         data.get("items", []),
+        "notes":         data.get("notes","").strip() or None,
+        "created_by":    data.get("created_by",""),
+    }
+    r = requests.post(
+        f"{SUPABASE_URL}/rest/v1/purchase_orders",
+        json=payload,
+        headers={**sb_headers(), "Prefer": "return=representation"}
+    )
+    if r.ok:
+        return jsonify({"ok": True, "po": r.json()[0] if r.json() else {}})
+    return jsonify({"error": r.text}), 400
+
+
+@app.route("/api/po/<po_id>", methods=["GET"])
+def get_po(po_id):
+    url = f"{SUPABASE_URL}/rest/v1/purchase_orders?id=eq.{po_id}&limit=1"
+    r = requests.get(url, headers=sb_headers())
+    if not r.ok or not r.json():
+        return jsonify({"error": "Not found"}), 404
+    return jsonify({"ok": True, "po": r.json()[0]})
+
+
+@app.route("/api/po/<po_id>", methods=["PATCH"])
+def update_po(po_id):
+    """Update PO fields — items, notes, status, photos, etc."""
+    data = request.json or {}
+    allowed = {"po_number","supplier","expected_date","status","items",
+               "notes","discrepancy_notes","photos","received_by","received_at"}
+    payload = {k: v for k, v in data.items() if k in allowed}
+    if not payload:
+        return jsonify({"error": "Nothing to update"}), 400
+    payload["updated_at"] = "now()"
+    r = requests.patch(
+        f"{SUPABASE_URL}/rest/v1/purchase_orders?id=eq.{po_id}",
+        json=payload,
+        headers={**sb_headers(), "Prefer": "return=representation"}
+    )
+    if r.ok:
+        return jsonify({"ok": True})
+    return jsonify({"error": r.text}), 400
+
+
+@app.route("/api/po/<po_id>/receive", methods=["POST"])
+def receive_po(po_id):
+    """
+    Accept a received PO:
+    - Update qty_received on each item in the PO
+    - Increment inventory_items.qty_on_hand for each item
+    - Set PO status to received/partial
+    - Record received_by + photos + notes
+    """
+    data = request.json or {}
+    received_by = data.get("received_by","")
+    items       = data.get("items", [])       # [{item_id, qty_received}]
+    photos      = data.get("photos", [])
+    disc_notes  = data.get("discrepancy_notes","")
+
+    if not items:
+        return jsonify({"error": "No items provided"}), 400
+
+    # Fetch current PO
+    r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/purchase_orders?id=eq.{po_id}&limit=1",
+        headers=sb_headers()
+    )
+    if not r.ok or not r.json():
+        return jsonify({"error": "PO not found"}), 404
+    po = r.json()[0]
+    po_items = po.get("items", [])
+
+    # Build a lookup of received quantities {item_id: qty_received}
+    recv_map = {str(it.get("item_id","")): float(it.get("qty_received",0)) for it in items}
+
+    # Update each PO item's qty_received
+    fully_received = True
+    for pi in po_items:
+        iid = str(pi.get("item_id",""))
+        if iid in recv_map:
+            pi["qty_received"] = recv_map[iid]
+        expected = float(pi.get("qty_expected", 0))
+        received = float(pi.get("qty_received", 0))
+        if received < expected:
+            fully_received = False
+
+    # Increment inventory qty_on_hand for each item
+    errors = []
+    for iid, qty in recv_map.items():
+        if not iid or qty <= 0:
+            continue
+        # Get current qty
+        ir = requests.get(
+            f"{SUPABASE_URL}/rest/v1/inventory_items?id=eq.{iid}&select=qty_on_hand,name&limit=1",
+            headers=sb_headers()
+        )
+        if not ir.ok or not ir.json():
+            errors.append(f"Item {iid} not found")
+            continue
+        cur = ir.json()[0]
+        new_qty = (cur.get("qty_on_hand") or 0) + qty
+        pr = requests.patch(
+            f"{SUPABASE_URL}/rest/v1/inventory_items?id=eq.{iid}",
+            json={"qty_on_hand": new_qty, "last_restocked_at": "now()", "updated_at": "now()"},
+            headers={**sb_headers(), "Prefer": "return=minimal"}
+        )
+        if not pr.ok:
+            errors.append(f"Failed to update {cur.get('name',iid)}: {pr.text}")
+
+    # Update PO record
+    from datetime import datetime
+    new_status = "received" if fully_received else "partial"
+    patch_payload = {
+        "status":             new_status,
+        "items":              po_items,
+        "photos":             photos,
+        "discrepancy_notes":  disc_notes or None,
+        "received_by":        received_by,
+        "received_at":        datetime.utcnow().isoformat() + "Z",
+        "updated_at":         "now()"
+    }
+    requests.patch(
+        f"{SUPABASE_URL}/rest/v1/purchase_orders?id=eq.{po_id}",
+        json=patch_payload,
+        headers={**sb_headers(), "Prefer": "return=minimal"}
+    )
+
+    # In-app notification
+    try:
+        requests.post(
+            f"{SUPABASE_URL}/rest/v1/notifications",
+            json={"title": f"📦 PO Received: {po.get('po_number',po_id)}",
+                  "body": f"{new_status.upper()} — received by {received_by}. {len(errors)} error(s).",
+                  "target": "supervisor", "created_by": received_by},
+            headers={**sb_headers(), "Prefer": "return=minimal"}, timeout=5
+        )
+    except Exception:
+        pass
+
+    return jsonify({"ok": True, "status": new_status, "errors": errors})
+
+
+
 @app.route("/api/inventory/locations", methods=["GET"])
 def get_inventory_locations():
     """Return items grouped by location_code."""

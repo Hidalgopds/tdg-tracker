@@ -479,6 +479,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <button class="inv-tab active" id="itab-inv" onclick="switchInvTab('inv')">&#x1F4E6; Inventory</button>
   <button class="inv-tab" id="itab-units" onclick="switchInvTab('units')">&#x1F3D7; Unit Materials</button>
   <button class="inv-tab" id="itab-locations" onclick="switchInvTab('locations')" style="display:none;">&#x1F4CD; Locations</button>
+  <button class="inv-tab" id="itab-receiving" onclick="switchInvTab('receiving')" style="display:none;">&#x1F4E6; Receiving</button>
   <button class="inv-tab" id="itab-dispatch" onclick="switchInvTab('dispatch')" style="display:none;">&#x1F4CB; Dispatch</button>
   <button class="inv-tab" id="itab-queries" onclick="switchInvTab('queries')">&#x1F50D; Material Queries</button>
 </div>
@@ -682,6 +683,109 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
     <div id="locLoading" style="text-align:center;padding:48px;color:var(--muted);font-size:13px;">Loading locations...</div>
   </div>
 </div>
+
+<!-- RECEIVING TAB (Albaranes / Purchase Orders) -->
+<div id="receiving-tab-content" style="display:none;padding:14px 16px;">
+
+  <!-- Header row -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px;flex-wrap:wrap;">
+    <div style="font-size:15px;font-weight:700;color:var(--text);">📦 Purchase Orders</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <select id="poStatusFilter" onchange="loadPOs()" style="height:32px;padding:0 8px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:13px;">
+        <option value="">All</option>
+        <option value="pending">Pending</option>
+        <option value="partial">Partial</option>
+        <option value="received">Received</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+      <button class="btn-p" onclick="openModal('newPoModal')" style="height:32px;padding:0 14px;font-size:13px;">+ New PO</button>
+    </div>
+  </div>
+
+  <!-- PO List -->
+  <div id="poList"><div style="color:var(--muted);text-align:center;padding:32px;">Loading...</div></div>
+</div>
+
+<!-- ── NEW PO MODAL ──────────────────────────────────────────── -->
+<div class="modal-bg" id="newPoModal">
+<div class="modal" style="max-width:520px;">
+  <div class="mhandle"></div>
+  <div class="mtitle">📦 New Purchase Order</div>
+
+  <form id="newPoForm" onsubmit="submitNewPO(event)">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+      <div>
+        <label style="font-size:12px;color:var(--muted);">PO Number *</label>
+        <input id="po_number" required placeholder="e.g. PO-2026-001" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:14px;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);">Supplier</label>
+        <input id="po_supplier" placeholder="Supplier name" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:14px;box-sizing:border-box;">
+      </div>
+    </div>
+    <div style="margin-bottom:10px;">
+      <label style="font-size:12px;color:var(--muted);">Expected Date</label>
+      <input id="po_date" type="date" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:14px;box-sizing:border-box;">
+    </div>
+    <div style="margin-bottom:10px;">
+      <label style="font-size:12px;color:var(--muted);">Notes</label>
+      <textarea id="po_notes" rows="2" placeholder="Optional notes..." style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:14px;box-sizing:border-box;resize:vertical;"></textarea>
+    </div>
+
+    <!-- Items -->
+    <div style="margin-bottom:8px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <label style="font-size:12px;color:var(--muted);">Items</label>
+        <button type="button" onclick="addPoItemRow()" style="font-size:12px;color:var(--primary);background:none;border:none;cursor:pointer;">+ Add Item</button>
+      </div>
+      <div id="poItemRows" style="margin-top:6px;display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button type="submit" class="btn-p" style="flex:1;">Create PO</button>
+      <button type="button" class="btn-s" onclick="closeModal('newPoModal')" style="flex:1;">Cancel</button>
+    </div>
+  </form>
+</div></div>
+
+<!-- ── RECEIVE PO MODAL ──────────────────────────────────────── -->
+<div class="modal-bg" id="receivePoModal">
+<div class="modal" style="max-width:560px;">
+  <div class="mhandle"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <div class="mtitle" style="margin:0;">📥 Receive PO <span id="rcvPoNum" style="color:var(--primary);"></span></div>
+    <span id="rcvPoStatus" style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:5px;background:rgba(251,146,60,.15);color:#fb923c;"></span>
+  </div>
+
+  <!-- Items to receive -->
+  <div id="rcvItems" style="margin-bottom:14px;display:flex;flex-direction:column;gap:6px;"></div>
+
+  <!-- Photos -->
+  <div style="margin-bottom:10px;">
+    <label style="font-size:12px;color:var(--muted);">📷 Photos (delivery + condition)</label>
+    <div id="rcvPhotoZone" onclick="document.getElementById('rcvPhotoInput').click()"
+      style="margin-top:6px;border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;color:var(--muted);font-size:13px;">
+      Tap to add photos
+    </div>
+    <input id="rcvPhotoInput" type="file" accept="image/*" multiple style="display:none;" onchange="handleRcvPhotos(event)">
+    <div id="rcvPhotoPreview" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;"></div>
+  </div>
+
+  <!-- Discrepancy notes -->
+  <div style="margin-bottom:14px;">
+    <label style="font-size:12px;color:var(--muted);">Discrepancy / Condition Notes</label>
+    <textarea id="rcvDiscNotes" rows="2" placeholder="e.g. 3 units arrived damaged, missing 5 connectors..."
+      style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:14px;box-sizing:border-box;resize:vertical;"></textarea>
+  </div>
+
+  <div style="display:flex;gap:8px;">
+    <button class="btn-p" onclick="submitReceivePO()" style="flex:1;background:#15803d;">✅ Accept Receipt → Update Stock</button>
+    <button class="btn-s" onclick="closeModal('receivePoModal')" style="flex:1;">Close</button>
+  </div>
+
+  <p style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center;">Accepting will automatically add received quantities to inventory.</p>
+</div></div>
+
 
 <!-- DISPATCH TAB -->
 <div id="dispatch-tab-content" style="display:none;">
@@ -891,6 +995,11 @@ var _LVL={admin:5,boss:4,inventory:3,dispatcher:3,lead:2,worker:1,contractor:2}[
 if(_ROLE==='dispatcher'||_LVL>=4){
   var _dtab=document.getElementById('itab-dispatch');
   if(_dtab)_dtab.style.display='';
+}
+// Show Receiving tab for dispatcher/admin/boss
+if(_ROLE==='dispatcher'||_LVL>=4){
+  var _rcvtab=document.getElementById('itab-receiving');
+  if(_rcvtab)_rcvtab.style.display='';
 }
 // Show Locations tab for inventory/admin/boss (not dispatcher or workers)
 if(_LVL>=3&&_ROLE!=='dispatcher'){
@@ -1514,6 +1623,210 @@ function sendLowStockEmail(){
       if(btn)btn.textContent='📧 Send Alert Email';
     }).catch(function(){toast('Send failed','error');if(btn)btn.textContent='📧 Send Alert Email';});
 }
+// ══ RECEIVING / PURCHASE ORDERS ══════════════════════════════════════════════
+var _currentPoId = null;
+var _rcvPhotos   = [];
+
+function loadPOs(){
+  var statusFilter = (document.getElementById('poStatusFilter')||{}).value || '';
+  var url = '/api/po' + (statusFilter ? '?status=' + statusFilter : '');
+  fetch(url).then(function(r){return r.json();}).then(function(d){
+    var el = document.getElementById('poList');
+    if(!el) return;
+    var pos = d.pos || [];
+    if(!pos.length){
+      el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:32px;">No purchase orders found.</div>';
+      return;
+    }
+    var html = '<div style="display:flex;flex-direction:column;gap:8px;">';
+    pos.forEach(function(po){
+      var items = po.items || [];
+      var statusColor = {pending:'#fb923c',partial:'#facc15',received:'#4ade80',cancelled:'#94a3b8'}[po.status]||'#94a3b8';
+      var canReceive = (po.status === 'pending' || po.status === 'partial');
+      html += '<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;">';
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">';
+      html += '<div>';
+      html += '<div style="font-weight:700;font-size:15px;color:var(--text);">' + esc(po.po_number) + '</div>';
+      if(po.supplier) html += '<div style="font-size:12px;color:var(--muted);">🏪 ' + esc(po.supplier) + '</div>';
+      if(po.expected_date) html += '<div style="font-size:12px;color:var(--muted);">📅 Expected: ' + po.expected_date + '</div>';
+      html += '</div>';
+      html += '<div style="display:flex;align-items:center;gap:8px;">';
+      html += '<span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:5px;background:' + statusColor + '22;color:' + statusColor + ';">' + po.status.toUpperCase() + '</span>';
+      if(canReceive) html += '<button onclick="openReceivePO("' + po.id + '")" class="btn-p" style="height:28px;padding:0 10px;font-size:12px;">📥 Receive</button>';
+      else html += '<button onclick="openReceivePO("' + po.id + '")" class="btn-s" style="height:28px;padding:0 10px;font-size:12px;">View</button>';
+      html += '</div></div>';
+      // Items summary
+      if(items.length){
+        html += '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">';
+        items.forEach(function(it){
+          var rcv = it.qty_received != null ? it.qty_received : '—';
+          html += '<span style="font-size:11px;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:2px 6px;color:var(--muted);">' + esc(it.item_name||'') + ' <strong style="color:var(--text);">' + rcv + '/' + (it.qty_expected||0) + '</strong></span>';
+        });
+        html += '</div>';
+      }
+      if(po.notes) html += '<div style="margin-top:6px;font-size:12px;color:var(--muted);">' + esc(po.notes) + '</div>';
+      if(po.discrepancy_notes) html += '<div style="margin-top:4px;font-size:12px;color:#f87171;">⚠ ' + esc(po.discrepancy_notes) + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+    el.innerHTML = html;
+  }).catch(function(){ document.getElementById('poList').innerHTML = '<div style="color:#f87171;text-align:center;padding:24px;">Failed to load POs</div>'; });
+}
+
+// ── PO item rows in new PO form ──────────────────────────────
+var _poItemIdx = 0;
+function addPoItemRow(item){
+  var idx = _poItemIdx++;
+  var iid   = (item && item.item_id)   || '';
+  var iname = (item && item.item_name) || '';
+  var iqty  = (item && item.qty_expected) || '';
+  var icost = (item && item.unit_cost) || '';
+  // build name options from ITEMS
+  var opts = '<option value="">— Select item —</option>';
+  (ITEMS||[]).forEach(function(it){
+    opts += '<option value="' + it.id + '"' + (it.id===iid?' selected':'') + '>' + esc(it.name) + ' (' + esc(it.category||'') + ')</option>';
+  });
+  var row = document.createElement('div');
+  row.id = 'porow-' + idx;
+  row.style.cssText = 'display:grid;grid-template-columns:2fr 80px 80px 28px;gap:6px;align-items:center;';
+  row.innerHTML =
+    '<select class="po-item-sel" data-idx="' + idx + '" style="padding:6px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:13px;">' + opts + '</select>' +
+    '<input type="number" min="0" step="0.01" placeholder="Qty" value="' + iqty + '" class="po-item-qty" data-idx="' + idx + '" style="padding:6px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:13px;text-align:center;">' +
+    '<input type="number" min="0" step="0.01" placeholder="$/unit" value="' + icost + '" class="po-item-cost" data-idx="' + idx + '" style="padding:6px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:13px;text-align:center;">' +
+    '<button type="button" onclick="document.getElementById("porow-"+idx).remove()" style="background:none;border:none;color:#f87171;font-size:16px;cursor:pointer;">×</button>';
+  document.getElementById('poItemRows').appendChild(row);
+}
+
+function submitNewPO(e){
+  e.preventDefault();
+  var poNum  = (document.getElementById('po_number').value||'').trim();
+  var supplier = (document.getElementById('po_supplier').value||'').trim();
+  var date   = document.getElementById('po_date').value || null;
+  var notes  = (document.getElementById('po_notes').value||'').trim();
+  // collect items
+  var items = [];
+  document.querySelectorAll('.po-item-sel').forEach(function(sel){
+    var idx = sel.dataset.idx;
+    var iid   = sel.value;
+    if(!iid) return;
+    var inv   = (ITEMS||[]).find(function(x){return x.id===iid;});
+    var qty   = parseFloat(document.querySelector('.po-item-qty[data-idx="'+idx+'"]').value)||0;
+    var cost  = parseFloat(document.querySelector('.po-item-cost[data-idx="'+idx+'"]').value)||0;
+    items.push({item_id:iid, item_name:inv?inv.name:iid, category:inv?inv.category:'', unit:inv?inv.unit:'EA', qty_expected:qty, qty_received:null, unit_cost:cost||null});
+  });
+  var user = localStorage.getItem('mbrAuth')||'';
+  fetch('/api/po',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({po_number:poNum,supplier:supplier||null,expected_date:date,notes:notes||null,items:items,created_by:user})})
+  .then(function(r){return r.json();}).then(function(d){
+    if(d.ok){
+      toast('PO created ✓');
+      closeModal('newPoModal');
+      document.getElementById('newPoForm').reset();
+      document.getElementById('poItemRows').innerHTML='';
+      _poItemIdx=0;
+      loadPOs();
+    } else toast(d.error||'Error','error');
+  });
+}
+
+// ── Open receive modal ────────────────────────────────────────
+function openReceivePO(poId){
+  _currentPoId = poId;
+  _rcvPhotos   = [];
+  document.getElementById('rcvPhotoPreview').innerHTML='';
+  document.getElementById('rcvDiscNotes').value='';
+  fetch('/api/po/'+poId).then(function(r){return r.json();}).then(function(d){
+    if(!d.ok){toast('PO not found','error');return;}
+    var po = d.po;
+    document.getElementById('rcvPoNum').textContent = po.po_number;
+    document.getElementById('rcvPoStatus').textContent = (po.status||'').toUpperCase();
+    var canEdit = (po.status==='pending'||po.status==='partial');
+    // Build item rows
+    var items = po.items || [];
+    var html = '';
+    items.forEach(function(it, i){
+      var prev = it.qty_received != null ? it.qty_received : it.qty_expected;
+      html += '<div style="display:grid;grid-template-columns:1fr 90px 90px;gap:8px;align-items:center;padding:8px;background:var(--bg);border-radius:7px;">';
+      html += '<div><div style="font-weight:600;font-size:14px;color:var(--text);">' + esc(it.item_name||'') + '</div>';
+      html += '<div style="font-size:11px;color:var(--muted);">Expected: ' + (it.qty_expected||0) + ' ' + esc(it.unit||'EA') + '</div></div>';
+      html += '<div style="text-align:center;font-size:11px;color:var(--muted);">Received<br>';
+      if(canEdit){
+        html += '<input type="number" min="0" step="0.01" value="' + (prev||0) + '" id="rcvqty-' + i + '" style="width:70px;padding:4px;border:1px solid var(--border);border-radius:5px;background:var(--card);color:var(--text);font-size:14px;text-align:center;">';
+      } else {
+        html += '<strong style="font-size:16px;color:var(--text);">' + (it.qty_received != null ? it.qty_received : '—') + '</strong>';
+      }
+      html += '</div>';
+      // Discrepancy indicator
+      var disc = (it.qty_received != null && it.qty_received < it.qty_expected);
+      html += '<div style="text-align:center;font-size:12px;">' + (disc ? '<span style="color:#f87171;">⚠ Short</span>' : '<span style="color:#4ade80;">✓</span>') + '</div>';
+      html += '</div>';
+    });
+    document.getElementById('rcvItems').innerHTML = html || '<div style="color:var(--muted);text-align:center;padding:16px;">No items on this PO.</div>';
+    // Photos from existing PO
+    (po.photos||[]).forEach(function(src){
+      var img = document.createElement('img');
+      img.src = src; img.style.cssText='width:64px;height:64px;object-fit:cover;border-radius:6px;cursor:pointer;';
+      img.onclick = function(){var w=window.open();if(w)w.document.write('<img src="'+src+'" style="max-width:100%">');};
+      document.getElementById('rcvPhotoPreview').appendChild(img);
+      _rcvPhotos.push(src);
+    });
+    // Hide accept button if already received
+    document.querySelector('#receivePoModal .btn-p').style.display = canEdit ? '' : 'none';
+    openModal('receivePoModal');
+  });
+}
+
+function handleRcvPhotos(e){
+  var files = Array.from(e.target.files||[]);
+  var preview = document.getElementById('rcvPhotoPreview');
+  files.forEach(function(f){
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      _rcvPhotos.push(ev.target.result);
+      var img = document.createElement('img');
+      img.src = ev.target.result;
+      img.style.cssText='width:64px;height:64px;object-fit:cover;border-radius:6px;cursor:pointer;';
+      img.onclick=function(){var w=window.open();if(w)w.document.write('<img src="'+ev.target.result+'" style="max-width:100%">');};
+      preview.appendChild(img);
+    };
+    reader.readAsDataURL(f);
+  });
+  e.target.value='';
+}
+
+function submitReceivePO(){
+  if(!_currentPoId){toast('No PO selected','error');return;}
+  // Collect received qtys
+  var items=[];
+  document.querySelectorAll('[id^="rcvqty-"]').forEach(function(inp){
+    var i=parseInt(inp.id.replace('rcvqty-',''));
+    items.push({item_id:_rcvItemIds[i],qty_received:parseFloat(inp.value)||0});
+  });
+  // We need item_ids — fetch from current PO cached data
+  fetch('/api/po/'+_currentPoId).then(function(r){return r.json();}).then(function(d){
+    var poItems = d.po.items||[];
+    var rcvItems=poItems.map(function(it,i){
+      var inp=document.getElementById('rcvqty-'+i);
+      return {item_id:it.item_id, qty_received:inp?parseFloat(inp.value)||0:(it.qty_received||0)};
+    });
+    var disc=(document.getElementById('rcvDiscNotes').value||'').trim();
+    var user=localStorage.getItem('mbrAuth')||'Dispatcher';
+    return fetch('/api/po/'+_currentPoId+'/receive',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({items:rcvItems,photos:_rcvPhotos,discrepancy_notes:disc,received_by:user})});
+  }).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){
+      toast('Receipt accepted — stock updated ✓','success');
+      closeModal('receivePoModal');
+      loadPOs();
+      setTimeout(loadInv,800);
+      setTimeout(loadLowStock,1200);
+    }else toast(d.error||'Error','error');
+  }).catch(function(e){toast('Error: '+e.message,'error');});
+}
+var _rcvItemIds=[];
+// ═════════════════════════════════════════════════════════════════════════════
+
+
 // ── Material Queries tab ────────────────────────────────────────────────────
 var _qAllReqs=[], _qJobNames=[];
 function initQueryTab(){
@@ -1832,18 +2145,20 @@ document.addEventListener('click',function(e){if(!e.target.closest('.acwrap'))do
 
 // ── Tab switching ──────────────────────────────────────────────────────────
 function switchInvTab(t){
-  ['inv','units','locations','dispatch','queries'].forEach(function(id){
+  ['inv','units','locations','receiving','dispatch','queries'].forEach(function(id){
     var btn=document.getElementById('itab-'+id);
     if(btn)btn.classList.toggle('active',t===id);
   });
   document.getElementById('inv-tab-content').style.display=t==='inv'?'':'none';
   document.getElementById('um-tab-content').style.display=t==='units'?'block':'none';
   var locEl=document.getElementById('loc-tab-content');if(locEl)locEl.style.display=t==='locations'?'block':'none';
+  var rcvEl=document.getElementById('receiving-tab-content');if(rcvEl)rcvEl.style.display=t==='receiving'?'block':'none';
   var disEl=document.getElementById('dispatch-tab-content');if(disEl)disEl.style.display=t==='dispatch'?'block':'none';
   var qEl=document.getElementById('queries-tab-content');if(qEl)qEl.style.display=t==='queries'?'block':'none';
   if(t==='queries'){if(!_qAllReqs.length)initQueryTab();else runQuery();}
   if(t==='units'&&!umLoaded)loadProjectUnits();
   if(t==='locations'&&_LOC_DATA.length===0)loadLocations();
+  if(t==='receiving')loadPOs();
   if(t==='dispatch'){renderFacts();openModal('factListModal');}
 }
 
