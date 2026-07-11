@@ -739,6 +739,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
       <div id="poItemRows" style="margin-top:6px;display:flex;flex-direction:column;gap:6px;"></div>
     </div>
 
+    <div id="poFormErr" style="display:none;background:rgba(248,113,113,.15);border:1px solid #f87171;border-radius:7px;padding:8px 12px;font-size:13px;color:#f87171;margin-bottom:8px;"></div>
     <div style="display:flex;gap:8px;margin-top:12px;">
       <button type="submit" class="btn-p" style="flex:1;">Create PO</button>
       <button type="button" class="btn-s" onclick="closeModal('newPoModal')" style="flex:1;">Cancel</button>
@@ -1691,7 +1692,7 @@ function addPoItemRow(item){
     '<select class="po-item-sel" data-idx="' + idx + '" style="flex:1;min-width:140px;padding:6px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:13px;">' + opts + '</select>' +
     '<input type="number" min="0" step="0.01" placeholder="Qty" value="' + iqty + '" class="po-item-qty" data-idx="' + idx + '" style="width:72px;padding:6px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:13px;text-align:center;">' +
     '<input type="number" min="0" step="0.01" placeholder="$/unit" value="' + icost + '" class="po-item-cost" data-idx="' + idx + '" style="width:72px;padding:6px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:13px;text-align:center;">' +
-    '<button type="button" onclick="document.getElementById("porow-"+idx).remove()" style="background:none;border:none;color:#f87171;font-size:16px;cursor:pointer;">×</button>';
+    '<button type="button" onclick="document.getElementById(\"porow-\"+idx).remove()" title="Remove item" style="background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);border-radius:5px;color:#f87171;font-size:12px;cursor:pointer;padding:4px 8px;">✕ Remove</button>';
   document.getElementById('poItemRows').appendChild(row);
 }
 
@@ -1713,6 +1714,8 @@ function submitNewPO(e){
     items.push({item_id:iid, item_name:inv?inv.name:iid, category:inv?inv.category:'', unit:inv?inv.unit:'EA', qty_expected:qty, qty_received:null, unit_cost:cost||null});
   });
   var user = localStorage.getItem('mbrAuth')||'';
+  var poErrEl=document.getElementById('poFormErr');
+  if(poErrEl)poErrEl.style.display='none';
   fetch('/api/po',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({po_number:poNum,supplier:supplier||null,expected_date:date,notes:notes||null,items:items,created_by:user})})
   .then(function(r){return r.json();}).then(function(d){
@@ -1723,7 +1726,15 @@ function submitNewPO(e){
       document.getElementById('poItemRows').innerHTML='';
       _poItemIdx=0;
       loadPOs();
-    } else toast(d.error||'Error','error');
+    } else {
+      var msg=d.error||'Error creating PO';
+      console.error('PO create error:',msg);
+      if(poErrEl){poErrEl.textContent='⚠ '+msg;poErrEl.style.display='block';}
+      else toast(msg,'error');
+    }
+  }).catch(function(err){
+    console.error('PO fetch error:',err);
+    if(poErrEl){poErrEl.textContent='⚠ Network error — check console';poErrEl.style.display='block';}
   });
 }
 
