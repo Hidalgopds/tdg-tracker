@@ -1991,7 +1991,7 @@ function renderFacts(){
       (f.monto?'<div class="fact-card__row">💵 '+esc(f.monto)+'</div>':'')+
       (f.specs?'<div class="fact-card__specs">'+esc(f.specs)+'</div>':'')+
       '<div class="fact-card__meta"><span>'+esc(f.uploader)+' · '+new Date(f.date).toLocaleDateString('es-US')+'</span>'+
-      '<button class="fact-card__del" onclick="deleteFact(''+f.id+'')">Eliminar</button></div>';
+      '<button class="fact-card__del" onclick="deleteFact(\'+'+f.id+'+\')">Eliminar</button></div>';
     card.append(img,body);el.appendChild(card);
   });
 }
