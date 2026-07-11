@@ -1938,6 +1938,11 @@ def email_low_stock():
 #  PURCHASE ORDERS  (Albaranes / Receiving)
 # ══════════════════════════════════════════════════════════════════
 
+@app.route("/api/po-test", methods=["POST","GET"])
+def po_test():
+    """Debug: confirm Flask receives POSTs"""
+    return {"ok": True, "method": request.method, "got": (request.json or {})}
+
 @app.route("/api/po", methods=["GET"])
 def list_pos():
     """List purchase orders — optional ?status= filter."""
