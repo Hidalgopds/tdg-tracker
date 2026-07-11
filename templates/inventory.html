@@ -394,6 +394,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 <script>
@@ -497,6 +498,14 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <button onclick="openLowStockModal()" style="height:28px;padding:0 12px;background:rgba(251,146,60,.2);border:1px solid rgba(251,146,60,.5);border-radius:6px;color:#fb923c;font-size:12px;font-weight:700;cursor:pointer;">View &amp; Email Alert →</button>
 </div>
 
+<!-- ITEM TOOLBAR -->
+<div id="invToolbar" style="display:none;align-items:center;justify-content:flex-end;gap:6px;padding:8px 16px 4px;">
+  <button onclick="openNewItemModal()" class="btn-p" style="height:32px;padding:0 14px;font-size:12px;" title="Add a single new material item">+ Add Item</button>
+  <button onclick="document.getElementById('xlsxImportInput').click()" class="btn-s" style="height:32px;padding:0 14px;font-size:12px;" title="Import multiple items from an Excel file">📥 Import Excel</button>
+  <input id="xlsxImportInput" type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleXlsxImport(event)">
+  <button onclick="printItemLabels()" class="btn-s" style="height:32px;padding:0 14px;font-size:12px;" title="Print QR labels for all items — 4 per page">🖨 Print Labels</button>
+</div>
+
 <!-- GRID -->
 <div class="inv-grid" id="invGrid"></div>
 <div class="empty" id="emptyEl" style="display:none"><div style="font-size:36px">📦</div><div style="margin-top:8px">No items found</div></div>
@@ -516,7 +525,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   </div>
 </div>
 
-id="loc-tab-content" style="display:none;">
+<div id="loc-tab-content" style="display:none;">
   <div style="padding:16px;">
     <!-- Toolbar -->
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
@@ -684,8 +693,10 @@ id="loc-tab-content" style="display:none;">
       style="height:30px;border:1px solid var(--border);border-radius:6px;padding:0 6px;font-size:12px;background:var(--card);color:var(--text);flex:1;min-width:110px;">
     <input id="qDateTo" type="date" onchange="runQuery()"
       style="height:30px;border:1px solid var(--border);border-radius:6px;padding:0 6px;font-size:12px;background:var(--card);color:var(--text);flex:1;min-width:110px;">
-    <button onclick="exportQueryCSV()" class="btn-s" style="height:30px;padding:0 12px;font-size:12px;white-space:nowrap;display:flex;align-items:center;gap:4px;">⬇ Export CSV</button>
-    <button onclick="buildShareText()" class="btn-s" style="height:30px;padding:0 12px;font-size:12px;white-space:nowrap;display:flex;align-items:center;gap:4px;">📋 Share Report</button>
+  </div>
+  <div style="display:flex;gap:6px;margin-top:6px;">
+    <button onclick="exportQueryCSV()" class="btn-s" style="height:30px;padding:0 14px;font-size:12px;display:flex;align-items:center;gap:4px;" title="Download all filtered results as CSV">⬇ Export CSV</button>
+    <button onclick="buildShareText()" class="btn-s" style="height:30px;padding:0 14px;font-size:12px;display:flex;align-items:center;gap:4px;" title="Shareable text summary of results">📋 Share Report</button>
   </div>
   <div id="qResultCount" style="font-size:11px;color:var(--muted);margin-bottom:6px;"></div>
   <div id="queryResults"></div>
@@ -765,6 +776,73 @@ id="loc-tab-content" style="display:none;">
   <div style="display:flex;gap:8px;">
     <button onclick="saveSupplier()" class="btn-p" style="flex:1;" id="suppSaveBtn">Save Supplier</button>
     <button onclick="closeModal('newSupplierModal')" class="btn-s" style="flex:1;">Cancel</button>
+  </div>
+</div></div>
+
+<!-- NEW ITEM MODAL -->
+<div class="modal-bg" id="newItemModal">
+<div class="modal" style="max-width:460px;">
+  <div class="mhandle"></div>
+  <div class="mtitle" id="newItemModalTitle">📦 Add New Item</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+    <div style="grid-column:1/-1;">
+      <label style="font-size:11px;color:var(--muted);">Item Name *</label>
+      <input id="niName" class="fi" placeholder="e.g. 2&quot; Lock Ring" style="margin-top:3px;">
+    </div>
+    <div>
+      <label style="font-size:11px;color:var(--muted);">Category</label>
+      <select id="niCat" class="fi" style="margin-top:3px;height:36px;">
+        <option>General</option><option>Cable Tray</option><option>Coatings</option>
+        <option>Conduit</option><option>Drainage</option><option>Electrical</option>
+        <option>Fasteners</option><option>Hardware</option><option>Insulation</option>
+        <option>Roofing</option><option>Sealant</option><option>Trim</option><option>Wall Panels</option>
+      </select>
+    </div>
+    <div>
+      <label style="font-size:11px;color:var(--muted);">Unit</label>
+      <select id="niUnit" class="fi" style="margin-top:3px;height:36px;">
+        <option value="EA">EA (each)</option><option value="FT">FT (feet)</option>
+        <option value="LF">LF (linear ft)</option><option value="SF">SF (sq ft)</option>
+        <option value="GAL">GAL (gallon)</option><option value="BOX">BOX</option>
+        <option value="ROLL">ROLL</option><option value="BAG">BAG</option>
+        <option value="SET">SET</option><option value="PC">PC (piece)</option>
+      </select>
+    </div>
+    <div>
+      <label style="font-size:11px;color:var(--muted);">Qty On Hand</label>
+      <input id="niQty" class="fi" type="number" min="0" value="0" style="margin-top:3px;">
+    </div>
+    <div>
+      <label style="font-size:11px;color:var(--muted);">Safe Stock Level</label>
+      <input id="niSafe" class="fi" type="number" min="0" placeholder="Alert below this" style="margin-top:3px;">
+    </div>
+    <div>
+      <label style="font-size:11px;color:var(--muted);">Location Code</label>
+      <input id="niLoc" class="fi" placeholder="e.g. A-01" style="margin-top:3px;">
+    </div>
+    <div style="grid-column:1/-1;">
+      <label style="font-size:11px;color:var(--muted);">Notes</label>
+      <input id="niNotes" class="fi" placeholder="Optional notes" style="margin-top:3px;">
+    </div>
+  </div>
+  <div id="niErr" style="display:none;color:#ef4444;font-size:12px;margin-bottom:8px;padding:6px 10px;background:rgba(239,68,68,.08);border-radius:6px;"></div>
+  <div style="display:flex;gap:8px;">
+    <button onclick="saveNewItem()" class="btn-p" style="flex:1;">Save Item</button>
+    <button onclick="closeModal('newItemModal')" class="btn-s" style="flex:1;">Cancel</button>
+  </div>
+</div></div>
+
+<!-- EXCEL IMPORT PREVIEW MODAL -->
+<div class="modal-bg" id="xlsxPreviewModal">
+<div class="modal" style="max-width:560px;max-height:80vh;overflow:hidden;display:flex;flex-direction:column;">
+  <div class="mhandle"></div>
+  <div class="mtitle">📥 Import Preview</div>
+  <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Review items before importing. Required columns: <strong>name</strong>. Optional: category, unit, qty_on_hand, safe_qty, location_code, notes.</div>
+  <div id="xlsxPreviewBody" style="overflow-y:auto;flex:1;"></div>
+  <div id="xlsxImportErr" style="display:none;color:#ef4444;font-size:12px;padding:6px 10px;background:rgba(239,68,68,.08);border-radius:6px;margin-top:8px;"></div>
+  <div style="display:flex;gap:8px;margin-top:12px;">
+    <button onclick="confirmXlsxImport()" class="btn-p" style="flex:1;" id="xlsxConfirmBtn">Import All</button>
+    <button onclick="closeModal('xlsxPreviewModal')" class="btn-s" style="flex:1;">Cancel</button>
   </div>
 </div></div>
 
@@ -1045,6 +1123,8 @@ function renderGrid(){
   document.getElementById('emptyEl').style.display=f.length?'none':'block';
   g.innerHTML='';
   if(edUser)g.classList.add('editor-active');else g.classList.remove('editor-active');
+  var toolbar=document.getElementById('invToolbar');
+  if(toolbar)toolbar.style.display=edUser?'flex':'none';
   f.forEach(function(it){g.appendChild(mkCard(it));});
 }
 
@@ -1639,6 +1719,9 @@ function loadPOs(){
       if(po.status==='received'||po.status==='partial'){
         html += '<button onclick="openAllocatePO(\'' + po.id + '\')" class="btn-p" style="height:28px;padding:0 10px;font-size:12px;background:#7c3aed;">📋 Allocate to Job</button>';
       }
+      if(po.status==='pending'||po.status==='partial'){
+        html += '<button onclick="closePO(\'' + po.id + '\')" class="btn-s" style="height:28px;padding:0 10px;font-size:12px;color:#94a3b8;border-color:#e2e8f0;" title="Mark this PO as closed even if not fully received">✕ Close PO</button>';
+      }
       if(!canReceive && po.status!=='received' && po.status!=='partial'){
         html += '<button onclick="openReceivePO(\'' + po.id + '\')" class="btn-s" style="height:28px;padding:0 10px;font-size:12px;">View</button>';
       }
@@ -1866,6 +1949,161 @@ function submitReceivePO(){
 }
 var _rcvItemIds=[];
 var _poDocData=null;
+var _xlsxParsed=[];
+
+function closePO(poId){
+  if(!confirm('Mark this PO as closed? You can still receive partial items already logged.'))return;
+  fetch('/api/po/'+poId,{method:'PATCH',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({status:'closed'})})
+  .then(function(r){return r.json();}).then(function(d){
+    if(d.ok||d.id){toast('PO closed ✓');loadPOs();}
+    else toast(d.error||'Error','error');
+  });
+}
+
+function openNewItemModal(){
+  if(!edUser){toast('Editor access required','error');return;}
+  document.getElementById('niName').value='';
+  document.getElementById('niCat').value='General';
+  document.getElementById('niUnit').value='EA';
+  document.getElementById('niQty').value='0';
+  document.getElementById('niSafe').value='';
+  document.getElementById('niLoc').value='';
+  document.getElementById('niNotes').value='';
+  var e=document.getElementById('niErr');if(e)e.style.display='none';
+  openModal('newItemModal');
+}
+function saveNewItem(){
+  var name=(document.getElementById('niName').value||'').trim();
+  var errEl=document.getElementById('niErr');
+  if(!name){if(errEl){errEl.textContent='⚠ Item name required';errEl.style.display='block';}return;}
+  var payload={
+    name:name,
+    category:document.getElementById('niCat').value||'General',
+    unit:document.getElementById('niUnit').value||'EA',
+    qty_on_hand:parseFloat(document.getElementById('niQty').value)||0,
+    safe_qty:parseInt(document.getElementById('niSafe').value)||0,
+    location_code:(document.getElementById('niLoc').value||'').trim()||null,
+    notes:(document.getElementById('niNotes').value||'').trim()||null,
+    editor:edUser,
+    created_by:localStorage.getItem('mbrAuth')||edUser
+  };
+  fetch('/api/inventory',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+  .then(function(r){return r.json();}).then(function(d){
+    if(d.error){if(errEl){errEl.textContent='⚠ '+d.error;errEl.style.display='block';}return;}
+    toast('Item added ✓');closeModal('newItemModal');loadInv();
+  }).catch(function(e){if(errEl){errEl.textContent='⚠ '+e.message;errEl.style.display='block';}});
+}
+
+function handleXlsxImport(e){
+  if(!edUser){toast('Editor access required','error');return;}
+  var f=e.target.files&&e.target.files[0];
+  if(!f)return;
+  e.target.value='';
+  var ext=f.name.split('.').pop().toLowerCase();
+  if(ext==='csv'){
+    var reader=new FileReader();
+    reader.onload=function(ev){parseCSVImport(ev.target.result);};
+    reader.readAsText(f);
+  } else {
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      try{
+        var wb=XLSX.read(ev.target.result,{type:'array'});
+        var ws=wb.Sheets[wb.SheetNames[0]];
+        var rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+        showXlsxPreview(rows);
+      }catch(err){toast('Could not read file: '+err.message,'error');}
+    };
+    reader.readAsArrayBuffer(f);
+  }
+}
+function parseCSVImport(text){
+  var lines=text.trim().split(String.fromCharCode(10));
+  if(!lines.length)return;
+  var headers=lines[0].split(',').map(function(h){return h.trim().replace(/^"|"$/g,'').toLowerCase();});
+  var rows=[];
+  for(var i=1;i<lines.length;i++){
+    var cells=lines[i].split(',');
+    var row={};
+    headers.forEach(function(h,idx){row[h]=(cells[idx]||'').trim().replace(/^"|"$/g,'');});
+    if(row.name)rows.push(row);
+  }
+  showXlsxPreview(rows);
+}
+function showXlsxPreview(rows){
+  _xlsxParsed=rows.filter(function(r){return (r.name||r.Name||r.NAME||'').trim();}).map(function(r){
+    return {
+      name:(r.name||r.Name||r.NAME||'').trim(),
+      category:(r.category||r.Category||'General').trim()||'General',
+      unit:(r.unit||r.Unit||'EA').trim()||'EA',
+      qty_on_hand:parseFloat(r.qty_on_hand||r.qty||r.Qty||0)||0,
+      safe_qty:parseInt(r.safe_qty||r.safe||0)||0,
+      location_code:(r.location_code||r.location||r.Location||'').trim()||null,
+      notes:(r.notes||r.Notes||'').trim()||null
+    };
+  });
+  if(!_xlsxParsed.length){toast('No valid rows found (need a "name" column)','error');return;}
+  var body=document.getElementById('xlsxPreviewBody');
+  var html='<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+  html+='<thead><tr style="background:var(--card);"><th style="padding:6px;text-align:left;">Name</th><th style="padding:6px;">Cat</th><th style="padding:6px;">Unit</th><th style="padding:6px;">Qty</th><th style="padding:6px;">Safe</th><th style="padding:6px;">Loc</th></tr></thead><tbody>';
+  _xlsxParsed.forEach(function(r){
+    html+='<tr style="border-bottom:1px solid var(--border);"><td style="padding:6px;">'+esc(r.name)+'</td><td style="padding:6px;text-align:center;">'+esc(r.category)+'</td><td style="padding:6px;text-align:center;">'+esc(r.unit)+'</td><td style="padding:6px;text-align:center;">'+r.qty_on_hand+'</td><td style="padding:6px;text-align:center;">'+(r.safe_qty||'')+'</td><td style="padding:6px;text-align:center;">'+(r.location_code||'')+'</td></tr>';
+  });
+  html+='</tbody></table>';
+  body.innerHTML=html;
+  document.getElementById('xlsxConfirmBtn').textContent='Import '+_xlsxParsed.length+' Items';
+  var errEl=document.getElementById('xlsxImportErr');if(errEl)errEl.style.display='none';
+  openModal('xlsxPreviewModal');
+}
+function confirmXlsxImport(){
+  if(!_xlsxParsed.length)return;
+  var btn=document.getElementById('xlsxConfirmBtn');
+  btn.textContent='Importing...';btn.disabled=true;
+  var done=0,errs=0;
+  var editor=edUser,createdBy=localStorage.getItem('mbrAuth')||edUser;
+  function next(i){
+    if(i>=_xlsxParsed.length){
+      btn.disabled=false;
+      toast('Imported '+done+' items'+(errs?' ('+errs+' errors)':'')+(errs?' — check console':' ✓'));
+      closeModal('xlsxPreviewModal');loadInv();return;
+    }
+    var payload=Object.assign({},_xlsxParsed[i],{editor:editor,created_by:createdBy});
+    fetch('/api/inventory',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(function(r){return r.json();}).then(function(d){d.error?errs++:done++;next(i+1);})
+    .catch(function(){errs++;next(i+1);});
+  }
+  next(0);
+}
+
+function printItemLabels(){
+  var items=ITEMS.filter(function(it){
+    var q=(document.getElementById('searchInp')||{}).value||'';
+    return !q||(it.name||'').toLowerCase().includes(q.toLowerCase());
+  });
+  if(!items.length){toast('No items to print','error');return;}
+  var w=window.open('','_blank','width=850,height=1100');
+  if(!w)return;
+  var qrScript='<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>';
+  var labelsHTML=items.map(function(it,i){
+    var id='qr'+i;
+    return '<div class="label"><div id="'+id+'"></div><div class="lname">'+esc(it.name)+'</div>'+(it.sku?'<div class="lsku">'+esc(it.sku)+'</div>':'')+
+      (it.location_code?'<div class="lloc">'+esc(it.location_code)+'</div>':'')+
+      '<script>new QRCode(document.getElementById("'+id+'"),{text:"'+esc((it.sku||it.id||it.name).replace(/"/g,""))+'",width:90,height:90,correctLevel:QRCode.CorrectLevel.M});<\/script>'+'</div>';
+  }).join('');
+  var html='<!DOCTYPE html><html><head><title>Item Labels</title>'+qrScript+'<style>'+
+    'body{margin:0;padding:16px;background:#fff;font-family:Arial,sans-serif;}'+
+    '.page{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}'+
+    '.label{border:1px solid #cbd5e1;border-radius:8px;padding:12px;display:flex;flex-direction:column;align-items:center;text-align:center;page-break-inside:avoid;break-inside:avoid;}'+
+    '.lname{font-size:13px;font-weight:700;margin-top:8px;word-break:break-word;max-width:140px;}'+
+    '.lsku{font-size:10px;color:#64748b;margin-top:2px;}'+
+    '.lloc{font-size:10px;color:#3b82f6;margin-top:2px;}'+
+    '@media print{body{padding:0;}.page{gap:8px;}.label{border:1px solid #000;}}'+
+    '</style></head><body><div class="page">'+labelsHTML+'</div>'+
+    '<script>window.onload=function(){setTimeout(function(){window.print();},800);};<\/script>'+
+    '</body></html>';
+  w.document.write(html);w.document.close();
+}
 
 function handlePoDoc(e){
   var f=e.target.files&&e.target.files[0];
