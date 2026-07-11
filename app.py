@@ -1838,6 +1838,34 @@ def update_inventory_item(item_id):
     url = f"{SUPABASE_URL}/rest/v1/inventory_items?id=eq.{item_id}"
     r = requests.patch(url, headers={**sb_headers(), "Prefer": "return=representation"}, json=payload)
     if r.ok:
+        # ── Safety stock notification ─────────────────────────────────
+        try:
+            new_qty   = payload.get("qty_on_hand")
+            new_safe  = payload.get("safe_qty")
+            # Fetch current item to get all values if not in payload
+            item_r = requests.get(
+                f"{SUPABASE_URL}/rest/v1/inventory_items?id=eq.{item_id}&select=name,qty_on_hand,safe_qty&limit=1",
+                headers=sb_headers(), timeout=5
+            )
+            if item_r.ok and item_r.json():
+                item = item_r.json()[0]
+                cur_qty  = new_qty  if new_qty  is not None else (item.get("qty_on_hand") or 0)
+                cur_safe = new_safe if new_safe is not None else (item.get("safe_qty") or 0)
+                item_name = item.get("name", "Item")
+                if cur_safe > 0 and cur_qty <= cur_safe:
+                    status_word = "OUT" if cur_qty <= 0 else "LOW"
+                    notif_title = f"⚠️ Inventory {status_word}: {item_name}"
+                    notif_body  = f"On hand: {cur_qty} | Safe level: {cur_safe}. Restock needed."
+                    requests.post(
+                        f"{SUPABASE_URL}/rest/v1/notifications",
+                        json={"title": notif_title, "body": notif_body,
+                              "target": "supervisor", "created_by": "system"},
+                        headers={**sb_headers(), "Prefer": "return=minimal"},
+                        timeout=5
+                    )
+        except Exception:
+            pass
+        # ─────────────────────────────────────────────────────────────
         return jsonify({"ok": True})
     return jsonify({"error": r.text}), 400
 

@@ -492,6 +492,12 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <button class="share-btn" onclick="buildShareText()">📋 Share All</button>
 </div>
 
+<!-- LOW STOCK BANNER -->
+<div id="lowBanner" style="display:none;align-items:center;justify-content:space-between;gap:8px;padding:8px 16px;background:rgba(251,146,60,.12);border-bottom:1px solid rgba(251,146,60,.3);">
+  <span style="font-size:13px;font-weight:700;color:#fb923c;">⚠️ <span id="lowBannerCount">0</span> item(s) below safe stock level</span>
+  <button onclick="openLowStockModal()" style="height:28px;padding:0 12px;background:rgba(251,146,60,.2);border:1px solid rgba(251,146,60,.5);border-radius:6px;color:#fb923c;font-size:12px;font-weight:700;cursor:pointer;">View &amp; Email Alert →</button>
+</div>
+
 <!-- GRID -->
 <div class="inv-grid" id="invGrid"></div>
 <div class="empty" id="emptyEl" style="display:none"><div style="font-size:36px">📦</div><div style="margin-top:8px">No items found</div></div>
@@ -1463,6 +1469,13 @@ function loadLowStock(){
       cnt.textContent=items.length;
       btn.style.display=(_LVL>=3&&items.length>0)?'':'none';
     }
+    // Update low stock banner
+    var banner=document.getElementById('lowBanner');
+    var bannerCnt=document.getElementById('lowBannerCount');
+    if(banner&&bannerCnt){
+      bannerCnt.textContent=items.length;
+      banner.style.display=items.length>0?'flex':'none';
+    }
   }).catch(function(){});
 }
 function openLowStockModal(){
@@ -1770,8 +1783,20 @@ function saveQty(id){
   var payload={qty_on_hand:v,editor:edUser,updated_by:localStorage.getItem('mbrAuth')||edUser};
   if(sqEl)payload.safe_qty=sqv;
   if(locEl)payload.location_code=(locEl.value||'').trim().toUpperCase()||null;
+  var _sqSaved=sqv;var _vSaved=v;
   fetch('/api/inventory/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
-  .then(function(r){return r.json();}).then(function(d){if(d.ok){toast('Saved!');loadInv();}else toast(d.error||'Error','error');});
+  .then(function(r){return r.json();}).then(function(d){
+    if(d.ok){
+      if(_sqSaved>0&&_vSaved<=_sqSaved){
+        var msg=_vSaved<=0?'❌ OUT OF STOCK: '+id:'⚠️ Below safe level — restock needed';
+        // find item name from ITEMS
+        var found=ITEMS.find(function(x){return x.id==id;});
+        var lbl=found?found.name:id;
+        toast((_vSaved<=0?'❌ OUT: ':'⚠️ Low stock: ')+lbl,'warn');
+      }else{toast('Saved!');}
+      loadInv();setTimeout(loadLowStock,600);
+    }else toast(d.error||'Error','error');
+  });
 }
 function saveCat(id){
   if(!edUser){toast('Editor access required','error');return;}
