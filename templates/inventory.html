@@ -472,7 +472,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 
 <!-- TAB BAR -->
 <div class="inv-tabs">
-  <button class="inv-tab active" id="itab-inv" onclick="switchInvTab('inv')">&#x1F4E6; Inventory</button>
+  <button class="inv-tab active" id="itab-inv" onclick="switchInvTab('inv')">📦 Material Master</button>
   <button class="inv-tab" id="itab-units" onclick="switchInvTab('units')">🏪 Suppliers</button>
   <button class="inv-tab" id="itab-receiving" onclick="switchInvTab('receiving')" style="display:none;">&#x1F4E6; Receiving</button>
   <button class="inv-tab" id="itab-dispatch" onclick="switchInvTab('dispatch')" style="display:none;">&#x1F4CB; Dispatch</button>
@@ -505,6 +505,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
     style="flex:1;min-width:0;height:26px;padding:0 8px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:#0f172a;font-size:12px;outline:none;">
   <button onclick="exportItemsCSV()" style="flex-shrink:0;width:auto;height:26px;padding:0 8px;font-size:10px;white-space:nowrap;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;color:#475569;cursor:pointer;margin:0;">⬇ CSV</button>
   <button onclick="printItemLabels()" style="flex-shrink:0;width:auto;height:26px;padding:0 8px;font-size:10px;white-space:nowrap;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;color:#475569;cursor:pointer;margin:0;">🖨 Labels</button>
+  <button id="reqQuickBtn" onclick="openReqModal()" style="flex-shrink:0;width:auto;height:26px;padding:0 10px;font-size:10px;font-weight:700;white-space:nowrap;border:none;border-radius:6px;background:#f97316;color:#fff;cursor:pointer;margin:0;">+ Request</button>
 </div>
 
 <!-- GRID -->
@@ -3187,7 +3188,7 @@ async function deleteMaterial(id){
   <a href="/log" class="gnav-link"><span class="gi">📋</span>Log</a>
   <a href="/dashboard" class="gnav-link"><span class="gi">📊</span>Dashboard</a>
   <a href="/timesheet" class="gnav-link"><span class="gi">🕐</span>Timesheet</a>
-  <a href="/inventory" class="gnav-link"><span class="gi">📦</span>Inventory</a>
+  <a href="/inventory" class="gnav-link"><span class="gi">📦</span>MM</a>
   <a href="/issues-log" class="gnav-link"><span class="gi">⚠️</span>Issues</a>
   <a href="/settings" class="gnav-link"><span class="gi">⚙️</span>Settings</a>
 </nav>
