@@ -1017,6 +1017,50 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <button class="btn-s" onclick="closeModal('shareModal')">Close</button>
 </div></div>
 
+
+<!-- Dispatch Detail Modal -->
+<div class="modal-bg" id="dispatchDetailModal" onclick="if(event.target===this)closeModal('dispatchDetailModal')">
+<div class="modal" style="max-width:520px;">
+  <div class="mhandle"></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+    <div class="mtitle" style="margin:0;">📋 Dispatch Detail</div>
+    <button onclick="closeModal('dispatchDetailModal')" style="background:none;border:none;font-size:18px;cursor:pointer;color:#94a3b8;padding:0 4px;">✕</button>
+  </div>
+
+  <!-- REQ # + Status -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+    <div style="font-size:18px;font-weight:700;color:#0f172a;" id="ddReqNum">—</div>
+    <span id="ddStatus" class="sbadge"></span>
+  </div>
+
+  <!-- Info grid -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#f8fafc;border-radius:10px;padding:12px;margin-bottom:14px;font-size:12px;">
+    <div><div style="color:#94a3b8;margin-bottom:2px;">Requester</div><div style="color:#0f172a;font-weight:600;" id="ddRequester">—</div></div>
+    <div><div style="color:#94a3b8;margin-bottom:2px;">Company</div><div style="color:#0f172a;font-weight:600;" id="ddCompany">—</div></div>
+    <div><div style="color:#94a3b8;margin-bottom:2px;">Job</div><div style="color:#0f172a;font-weight:600;" id="ddJob">—</div></div>
+    <div><div style="color:#94a3b8;margin-bottom:2px;">Request Date</div><div style="color:#0f172a;font-weight:600;" id="ddDate">—</div></div>
+    <div><div style="color:#94a3b8;margin-bottom:2px;">Approved By</div><div style="color:#0f172a;font-weight:600;" id="ddApprovedBy">—</div></div>
+    <div><div style="color:#94a3b8;margin-bottom:2px;">Approved At</div><div style="color:#0f172a;" id="ddApprovedAt">—</div></div>
+    <div><div style="color:#94a3b8;margin-bottom:2px;">Delivered By</div><div style="color:#0f172a;font-weight:600;" id="ddDeliveredBy">—</div></div>
+    <div><div style="color:#94a3b8;margin-bottom:2px;">Delivered At</div><div style="color:#0f172a;" id="ddDeliveredAt">—</div></div>
+  </div>
+
+  <!-- Signed by (highlighted) -->
+  <div style="background:#e0f2fe;border:1px solid #7dd3fc;border-radius:10px;padding:12px;margin-bottom:14px;">
+    <div style="font-size:10px;color:#0369a1;font-weight:700;letter-spacing:0.5px;margin-bottom:4px;">✍️ SIGNED / PICKED UP BY</div>
+    <div style="font-size:16px;font-weight:700;color:#0c4a6e;" id="ddPickupBy">—</div>
+  </div>
+
+  <!-- Materials list -->
+  <div style="font-size:11px;color:#94a3b8;font-weight:700;letter-spacing:0.5px;margin-bottom:6px;">MATERIALS</div>
+  <div id="ddMaterials" style="background:#f8fafc;border-radius:8px;padding:8px;margin-bottom:16px;max-height:180px;overflow-y:auto;font-size:13px;"></div>
+
+  <!-- Actions -->
+  <div style="display:flex;gap:8px;">
+    <button onclick="printDispatchReceipt(_ddCurrentReq)" class="btn-p" style="flex:1;font-size:13px;">🖨 Print Receipt</button>
+    <button onclick="closeModal('dispatchDetailModal')" class="btn-s" style="width:auto;padding:0 16px;font-size:13px;">Close</button>
+  </div>
+</div></div>
 <!-- My Profile Modal -->
 <div class="modal-bg" id="profileModal">
 <div class="modal" style="max-width:400px;">
@@ -2051,7 +2095,7 @@ function showXlsxPreview(rows){
   var html='<table style="width:100%;border-collapse:collapse;font-size:12px;">';
   html+='<thead><tr style="background:var(--card);"><th style="padding:6px;text-align:left;">Name</th><th style="padding:6px;">Cat</th><th style="padding:6px;">Unit</th><th style="padding:6px;">Qty</th><th style="padding:6px;">Safe</th><th style="padding:6px;">Loc</th></tr></thead><tbody>';
   _xlsxParsed.forEach(function(r){
-    html+='<tr style="border-bottom:1px solid var(--border);"><td style="padding:6px;">'+esc(r.name)+'</td><td style="padding:6px;text-align:center;">'+esc(r.category)+'</td><td style="padding:6px;text-align:center;">'+esc(r.unit)+'</td><td style="padding:6px;text-align:center;">'+r.qty_on_hand+'</td><td style="padding:6px;text-align:center;">'+(r.safe_qty||'')+'</td><td style="padding:6px;text-align:center;">'+(r.location_code||'')+'</td></tr>';
+    html+='<tr onclick="openDispatchDetail(r)" style="cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.1s;" onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'\'">'<td style="padding:6px;">'+esc(r.name)+'</td><td style="padding:6px;text-align:center;">'+esc(r.category)+'</td><td style="padding:6px;text-align:center;">'+esc(r.unit)+'</td><td style="padding:6px;text-align:center;">'+r.qty_on_hand+'</td><td style="padding:6px;text-align:center;">'+(r.safe_qty||'')+'</td><td style="padding:6px;text-align:center;">'+(r.location_code||'')+'</td></tr>';
   });
   html+='</tbody></table>';
   body.innerHTML=html;
@@ -2117,6 +2161,36 @@ function handlePoDoc(e){
   reader.onload=function(ev){_poDocData={name:f.name,type:f.type,data:ev.target.result};};
   reader.readAsDataURL(f);
   e.target.value='';
+}
+
+var _ddCurrentReq=null;
+function openDispatchDetail(req){
+  _ddCurrentReq=req;
+  var cls={approved:'sb-appr',pending:'sb-pend',delivered:'sb-delv',rejected:'sb-rej'};
+  var rn='REQ-'+(req.id?String(req.id).replace(/-/g,'').substring(0,8).toUpperCase():'????');
+  document.getElementById('ddReqNum').textContent=rn;
+  var sb=document.getElementById('ddStatus');
+  sb.textContent=req.status||'';
+  sb.className='sbadge '+(cls[req.status]||'sb-pend');
+  document.getElementById('ddRequester').textContent=req.requester_name||'—';
+  document.getElementById('ddCompany').textContent=req.contractor_company||'—';
+  document.getElementById('ddJob').textContent=req.job_name||req.building||'—';
+  document.getElementById('ddDate').textContent=req.created_at?req.created_at.split('T')[0]:'—';
+  document.getElementById('ddApprovedBy').textContent=req.approved_by||'—';
+  document.getElementById('ddApprovedAt').textContent=req.approved_at?req.approved_at.split('T')[0]:'—';
+  document.getElementById('ddDeliveredBy').textContent=req.delivered_by||'—';
+  document.getElementById('ddDeliveredAt').textContent=req.delivered_at?req.delivered_at.split('T')[0]:'—';
+  document.getElementById('ddPickupBy').textContent=req.pickup_by||req.signed_by||'Not recorded';
+  var mats=[];
+  if(req.materials_json){try{mats=JSON.parse(req.materials_json);}catch(e){}}
+  if(!mats.length)mats=[{item_name:req.item_name||'',qty_needed:req.qty_needed||0}];
+  var matHtml=mats.map(function(m){
+    return '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #e2e8f0;">'+
+      '<span>'+safeHtml(m.item_name||'')+'</span>'+
+      '<span style="color:#64748b;font-weight:600;">x'+Number(m.qty_needed||0)+'</span></div>';
+  }).join('');
+  document.getElementById('ddMaterials').innerHTML=matHtml||'<span style="color:#94a3b8;">No materials listed</span>';
+  openModal('dispatchDetailModal');
 }
 
 function printDispatchReceipt(req){
