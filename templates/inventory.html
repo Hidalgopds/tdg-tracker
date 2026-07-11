@@ -477,11 +477,9 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 <!-- TAB BAR -->
 <div class="inv-tabs">
   <button class="inv-tab active" id="itab-inv" onclick="switchInvTab('inv')">&#x1F4E6; Inventory</button>
-  <button class="inv-tab" id="itab-units" onclick="switchInvTab('units')">&#x1F3D7; Unit Materials</button>
-  <button class="inv-tab" id="itab-locations" onclick="switchInvTab('locations')" style="display:none;">&#x1F4CD; Locations</button>
+  <button class="inv-tab" id="itab-units" onclick="switchInvTab('units')">&#x1F3D7; Job Tracking</button>
   <button class="inv-tab" id="itab-receiving" onclick="switchInvTab('receiving')" style="display:none;">&#x1F4E6; Receiving</button>
   <button class="inv-tab" id="itab-dispatch" onclick="switchInvTab('dispatch')" style="display:none;">&#x1F4CB; Dispatch</button>
-  <button class="inv-tab" id="itab-queries" onclick="switchInvTab('queries')">&#x1F50D; Material Queries</button>
 </div>
 <div id="inv-tab-content">
 <!-- CATEGORY CHIPS -->
@@ -787,13 +785,64 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 
 
 <!-- DISPATCH TAB -->
-<div id="dispatch-tab-content" style="display:none;">
-  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:280px;gap:12px;padding:32px 16px;text-align:center;">
-    <div style="font-size:48px;">📋</div>
-    <div style="font-size:16px;font-weight:700;color:var(--text);">Facturas</div>
-    <div style="font-size:13px;color:var(--muted);">Usa el botón <strong>🧾 Facturas</strong> en la barra de búsqueda para ver y subir facturas.</div>
-    <button class="fact-new-btn" onclick="openModal('factListModal')" style="margin-top:4px;">🧾 Ver Facturas</button>
+<div id="dispatch-tab-content" style="display:none;padding:12px 0;">
+  <!-- Top action bar -->
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+    <div style="font-size:15px;font-weight:700;color:var(--text);">📋 Dispatch &amp; Requests</div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="openRequests()" class="btn-p" style="height:32px;padding:0 12px;font-size:12px;">📬 Inbox</button>
+      <button onclick="openModal('factListModal')" class="btn-s" style="height:32px;padding:0 12px;font-size:12px;">🧾 Invoices</button>
+    </div>
   </div>
+  <!-- Request filter (moved from Material Queries tab) -->
+  <div style="background:#f8fafc;border:1px solid var(--border);color:#0f172a;border-radius:10px;padding:14px;margin-bottom:12px;">
+    <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:10px;letter-spacing:.5px;">FILTER REQUESTS</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+      <div class="fg">
+        <label class="fl" style="font-size:10px;">Status</label>
+        <select class="fi" id="qStatus" onchange="runQuery()">
+          <option value="">All</option>
+          <option value="Pending">Pending</option>
+          <option value="Approved">Approved</option>
+          <option value="Delivered">Delivered</option>
+          <option value="Rejected">Rejected</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl" style="font-size:10px;">Company</label>
+        <select class="fi" id="qCompany" onchange="runQuery()">
+          <option value="">All</option>
+          <option value="MBR Texas">BSynch</option>
+          <option>J&amp;F Sandblasting</option>
+          <option>RV Solutions</option>
+          <option>C.U.R. Roofing</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg" style="margin-bottom:10px;">
+      <label class="fl" style="font-size:10px;">Job Name</label>
+      <input class="fi" id="qJob" placeholder="Filter by job..." oninput="runQuery()" list="qJobSuggestions" style="height:34px;">
+      <datalist id="qJobSuggestions"></datalist>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="fg">
+        <label class="fl" style="font-size:10px;">Date From</label>
+        <input class="fi" id="qDateFrom" type="date" onchange="runQuery()" style="height:34px;">
+      </div>
+      <div class="fg">
+        <label class="fl" style="font-size:10px;">Date To</label>
+        <input class="fi" id="qDateTo" type="date" onchange="runQuery()" style="height:34px;">
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+    <div id="qResultCount" style="font-size:12px;color:var(--muted);"></div>
+    <div style="display:flex;gap:6px;">
+      <button onclick="exportQueryCSV()" class="btn-s" style="height:28px;padding:0 10px;font-size:11px;">⬇ Export CSV</button>
+      <button onclick="buildShareText()" class="btn-s" style="height:28px;padding:0 10px;font-size:11px;">📋 Share</button>
+    </div>
+  </div>
+  <div id="queryResults"></div>
 </div>
 
 <!-- ALLOCATE TO JOB MODAL -->
@@ -843,8 +892,8 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <button class="btn-s" style="margin-top:12px;" onclick="closeModal('lowStockModal')">Close</button>
 </div></div>
 
-<!-- QUERIES TAB -->
-<div id="queries-tab-content" style="display:none;padding:12px 0;">
+<!-- QUERIES TAB (merged into Dispatch) -->
+<div id="queries-tab-content" style="display:none;">
   <div style="background:#f8fafc;border:1px solid var(--border);color:#0f172a;border-radius:10px;padding:14px;margin-bottom:12px;">
     <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:10px;letter-spacing:.5px;">FILTER REQUESTS</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
@@ -1033,11 +1082,7 @@ if(_ROLE==='dispatcher'||_LVL>=4){
   var _rcvtab=document.getElementById('itab-receiving');
   if(_rcvtab)_rcvtab.style.display='';
 }
-// Show Locations tab for inventory/admin/boss (not dispatcher or workers)
-if(_LVL>=3&&_ROLE!=='dispatcher'){
-  var _ltab=document.getElementById('itab-locations');
-  if(_ltab)_ltab.style.display='';
-}
+// Locations tab hidden (accessible via backend only)
 
 // ── My Profile ──────────────────────────────────────────────────────────────
 function openProfile(){
@@ -2316,21 +2361,17 @@ document.addEventListener('click',function(e){if(!e.target.closest('.acwrap'))do
 
 // ── Tab switching ──────────────────────────────────────────────────────────
 function switchInvTab(t){
-  ['inv','units','locations','receiving','dispatch','queries'].forEach(function(id){
+  ['inv','units','receiving','dispatch'].forEach(function(id){
     var btn=document.getElementById('itab-'+id);
     if(btn)btn.classList.toggle('active',t===id);
   });
   document.getElementById('inv-tab-content').style.display=t==='inv'?'':'none';
   document.getElementById('um-tab-content').style.display=t==='units'?'block':'none';
-  var locEl=document.getElementById('loc-tab-content');if(locEl)locEl.style.display=t==='locations'?'block':'none';
   var rcvEl=document.getElementById('receiving-tab-content');if(rcvEl)rcvEl.style.display=t==='receiving'?'block':'none';
   var disEl=document.getElementById('dispatch-tab-content');if(disEl)disEl.style.display=t==='dispatch'?'block':'none';
-  var qEl=document.getElementById('queries-tab-content');if(qEl)qEl.style.display=t==='queries'?'block':'none';
-  if(t==='queries'){if(!_qAllReqs.length)initQueryTab();else runQuery();}
+  if(t==='dispatch'){if(!_qAllReqs.length)initQueryTab();else runQuery();}
   if(t==='units'&&!umLoaded)loadProjectUnits();
-  if(t==='locations'&&_LOC_DATA.length===0)loadLocations();
   if(t==='receiving')loadPOs();
-  if(t==='dispatch'){renderFacts();openModal('factListModal');}
 }
 
 // ── State ──────────────────────────────────────────────────────────────────
