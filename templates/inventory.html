@@ -949,6 +949,50 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 </div></div>
 
 <!-- SIGNATURE MODAL -->
+<!-- Material Request Modal -->
+<div class="modal-bg" id="reqModal" onclick="if(event.target===this)closeModal('reqModal')">
+<div class="modal">
+  <div class="mhandle"></div>
+  <div class="mtitle">📋 Request Materials</div>
+
+  <input type="hidden" id="rqItemId">
+
+  <div class="fg" style="margin-bottom:10px;">
+    <label class="fl">Your Name</label>
+    <input class="fi" id="rqName" type="text" placeholder="Your name" readonly style="background:#f8fafc;color:#64748b;">
+  </div>
+
+  <div class="fg" id="rqCompanyFg" style="display:none;margin-bottom:10px;">
+    <label class="fl">Company</label>
+    <input class="fi" id="rqCompany" type="text" placeholder="Your company name">
+  </div>
+
+  <div class="fg" style="margin-bottom:10px;">
+    <label class="fl">Job / Unit <span id="rqJobRequired" style="font-size:10px;color:#94a3b8;">(optional)</span></label>
+    <input class="fi" id="rqJob" type="text" placeholder="e.g. Unit 05.26.002">
+  </div>
+
+  <div class="fg" style="margin-bottom:10px;">
+    <label class="fl">Deliver To (Building / Area)</label>
+    <input class="fi" id="rqBldgAll" type="text" placeholder="e.g. Section B, Trailer, Gate">
+  </div>
+
+  <!-- Material Lines -->
+  <div style="font-size:11px;color:#64748b;font-weight:700;letter-spacing:0.5px;margin-bottom:6px;">MATERIALS</div>
+  <div id="dupWarn" style="display:none;background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;padding:6px 10px;font-size:11px;color:#92400e;margin-bottom:8px;"></div>
+  <div id="matLines"></div>
+  <div id="acList" style="display:none;position:absolute;z-index:9999;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);max-height:180px;overflow-y:auto;font-size:13px;"></div>
+  <button type="button" onclick="addMatLine()" style="width:100%;height:32px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:6px;color:#64748b;font-size:12px;cursor:pointer;margin-bottom:10px;">+ Add Another Material</button>
+
+  <div class="fg" style="margin-bottom:14px;">
+    <label class="fl">Notes (optional)</label>
+    <textarea class="fi fta" id="rqNotes" placeholder="Any special instructions..." style="min-height:60px;resize:none;"></textarea>
+  </div>
+
+  <button class="btn-p" onclick="submitReq()" style="font-size:14px;height:42px;">📤 Submit Request</button>
+  <button class="btn-s" onclick="closeModal('reqModal')" style="margin-top:8px;">Cancel</button>
+</div></div>
+
 <div class="modal-bg" id="sigModal">
 <div class="modal">
   <div class="mhandle"></div>
