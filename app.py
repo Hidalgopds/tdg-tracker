@@ -1967,14 +1967,22 @@ def create_po():
         "notes":         data.get("notes","").strip() or None,
         "created_by":    data.get("created_by",""),
     }
-    r = requests.post(
-        f"{SUPABASE_URL}/rest/v1/purchase_orders",
-        json=payload,
-        headers={**sb_headers(), "Prefer": "return=representation"}
-    )
+    try:
+        r = requests.post(
+            f"{SUPABASE_URL}/rest/v1/purchase_orders",
+            json=payload,
+            headers={**sb_headers(), "Prefer": "return=representation"},
+            timeout=10
+        )
+    except Exception as e:
+        return jsonify({"error": f"Request failed: {str(e)}"}), 500
     if r.ok:
-        return jsonify({"ok": True, "po": r.json()[0] if r.json() else {}})
-    return jsonify({"error": r.text}), 400
+        try:
+            rows = r.json()
+            return jsonify({"ok": True, "po": rows[0] if rows else {}})
+        except Exception:
+            return jsonify({"ok": True, "po": {}})
+    return jsonify({"error": f"Supabase {r.status_code}: {r.text[:300]}"}), 400
 
 
 @app.route("/api/po/<po_id>", methods=["GET"])
