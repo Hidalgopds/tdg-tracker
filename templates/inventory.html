@@ -499,14 +499,11 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <input id="xlsxImportInput" type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleXlsxImport(event)">
 </div>
 <!-- ITEM SEARCH + ACTIONS BAR -->
-<div style="display:flex;align-items:center;gap:6px;padding:8px 14px 6px;">
-  <div style="flex:1;position:relative;">
-    <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:12px;pointer-events:none;">🔍</span>
-    <input type="text" id="srch" placeholder="Search items..." oninput="doFilter()"
-      style="width:100%;box-sizing:border-box;height:34px;padding:0 10px 0 28px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:13px;">
-  </div>
-  <button onclick="exportItemsCSV()" class="btn-s" style="height:34px;padding:0 12px;font-size:12px;white-space:nowrap;" title="Export inventory to CSV">⬇ CSV</button>
-  <button onclick="printItemLabels()" class="btn-s" style="height:34px;padding:0 12px;font-size:12px;white-space:nowrap;" title="Print QR labels 4 per page">🖨 Labels</button>
+<div style="display:flex;align-items:center;gap:8px;padding:8px 14px 6px;">
+  <input type="text" id="srch" placeholder="🔍  Search items..." oninput="doFilter()"
+    style="flex:1;height:36px;padding:0 12px;border:1.5px solid #cbd5e1;border-radius:8px;background:#ffffff;color:#0f172a;font-size:14px;outline:none;min-width:0;">
+  <button onclick="exportItemsCSV()" class="btn-s" style="height:36px;padding:0 10px;font-size:11px;white-space:nowrap;flex-shrink:0;">⬇ CSV</button>
+  <button onclick="printItemLabels()" class="btn-s" style="height:36px;padding:0 10px;font-size:11px;white-space:nowrap;flex-shrink:0;">🖨 Labels</button>
 </div>
 
 <!-- GRID -->
