@@ -442,7 +442,6 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
     +'<button onclick="localStorage.removeItem(\'mbrAuth\');localStorage.removeItem(\'mbrRole\');location.href=\'/login\';" style="padding:4px 10px;background:#1e2d45;border:1px solid #2d3f57;border-radius:7px;color:#94a3b8;font-size:11px;cursor:pointer;white-space:nowrap;flex-shrink:0;">Sign Out</button>';
 })();</script>
 <script>
-<script>
 (function(){
   var _a=localStorage.getItem('mbrAuth')||'';
   if(!_a)return;
@@ -1964,6 +1963,168 @@ async function saveNewUnit(){
   }catch(e){alert('Network error.');}
 }
 
+
+
+// ══ FACTURAS ══════════════════════════════════════════════════════
+var FACT_KEY='inv_facturas';
+
+function loadFacts(){try{return JSON.parse(localStorage.getItem(FACT_KEY))||[];}catch(e){return[];}}
+function saveFacts(list){localStorage.setItem(FACT_KEY,JSON.stringify(list));}
+
+function renderFacts(){
+  var list=loadFacts();
+  var el=document.getElementById('factList');
+  if(!el)return;
+  if(!list.length){
+    el.innerHTML='<div class="fact-empty">📭 Aún no hay facturas.<br>Toca "+ Nueva factura" para agregar la primera.</div>';
+    return;
+  }
+  el.innerHTML='';
+  list.forEach(function(f){
+    var card=document.createElement('div');card.className='fact-card';
+    var img=document.createElement('img');img.className='fact-card__img';img.src=f.foto;
+    img.onclick=function(){var w=window.open();if(w)w.document.write('<img src="'+f.foto+'" style="max-width:100%">');};
+    var body=document.createElement('div');body.className='fact-card__body';
+    body.innerHTML=
+      '<div class="fact-card__num">'+(f.numero?'Factura '+esc(f.numero):'Sin número')+'</div>'+
+      (f.proveedor?'<div class="fact-card__row">🏪 '+esc(f.proveedor)+'</div>':'')+
+      (f.monto?'<div class="fact-card__row">💵 '+esc(f.monto)+'</div>':'')+
+      (f.specs?'<div class="fact-card__specs">'+esc(f.specs)+'</div>':'')+
+      '<div class="fact-card__meta"><span>'+esc(f.uploader)+' · '+new Date(f.date).toLocaleDateString('es-US')+'</span>'+
+      '<button class="fact-card__del" onclick="deleteFact(''+f.id+'')">Eliminar</button></div>';
+    card.append(img,body);el.appendChild(card);
+  });
+}
+
+function deleteFact(id){
+  if(!confirm('¿Eliminar esta factura?'))return;
+  saveFacts(loadFacts().filter(function(x){return x.id!==id;}));
+  renderFacts();
+}
+
+function resetFactForm(){
+  var form=document.getElementById('factForm');if(form)form.reset();
+  var prev=document.getElementById('factPreview');if(prev)prev.style.display='none';
+  var ocrBtn=document.getElementById('factOcrBtn');if(ocrBtn)ocrBtn.disabled=true;
+  var ocrSt=document.getElementById('factOcrStatus');
+  if(ocrSt){ocrSt.style.display='none';ocrSt.className='fact-ocr-status';}
+  var ocrFld=document.getElementById('factOcrField');if(ocrFld)ocrFld.style.display='none';
+  var ocrTxt=document.getElementById('factOcrText');if(ocrTxt)ocrTxt.value='';
+  var upTxt=document.getElementById('factUploadText');if(upTxt)upTxt.textContent='📷 Toca para tomar foto o elegir imagen';
+}
+
+function resetFactStatus(){
+  var s=document.getElementById('factOcrStatus');
+  if(s){s.style.display='none';s.className='fact-ocr-status';s.textContent='';}
+  var fld=document.getElementById('factOcrField');if(fld)fld.style.display='none';
+  var txt=document.getElementById('factOcrText');if(txt)txt.value='';
+}
+
+function showOcrStatus(msg,cls){
+  var s=document.getElementById('factOcrStatus');
+  if(!s)return;
+  s.style.display='block';s.className='fact-ocr-status'+(cls?' '+cls:'');s.textContent=msg;
+}
+
+function autofillFact(text){
+  var n=document.getElementById('factNumero');
+  if(n&&!n.value.trim()){
+    var m=text.match(/(?:factura|invoice|folio|n[°º.]?|no\.?|#)\s*[:#]?\s*([A-Z0-9\-]{3,})/i);
+    if(m)n.value=m[1];
+  }
+  var mo=document.getElementById('factMonto');
+  if(mo&&!mo.value.trim()){
+    var montos=text.match(/[$€£]\s?\d[\d.,]*/g);
+    if(montos&&montos.length){
+      var mayor=montos.reduce(function(a,b){
+        var v=function(s){return parseFloat(s.replace(/[^\d.]/g,''))||0;};
+        return v(b)>v(a)?b:a;
+      });
+      mo.value=mayor.replace(/\s/g,'');
+    }
+  }
+  var sp=document.getElementById('factSpecs');
+  if(sp&&!sp.value.trim())sp.value=text.trim();
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+  var factBtn=document.getElementById('factNewBtn');
+  if(factBtn)factBtn.addEventListener('click',function(){renderFacts();openModal('factListModal');});
+
+  var uz=document.getElementById('factUploadZone');
+  if(uz)uz.addEventListener('click',function(){var f=document.getElementById('factFoto');if(f)f.click();});
+
+  var foto=document.getElementById('factFoto');
+  if(foto)foto.addEventListener('change',function(){
+    var file=this.files[0];
+    resetFactStatus();
+    if(!file){
+      var prev=document.getElementById('factPreview');if(prev)prev.style.display='none';
+      var oBtn=document.getElementById('factOcrBtn');if(oBtn)oBtn.disabled=true;
+      return;
+    }
+    var upTxt=document.getElementById('factUploadText');
+    if(upTxt)upTxt.textContent='✅ '+file.name;
+    var reader=new FileReader();
+    reader.onload=function(e){
+      var img=document.getElementById('factPreview');
+      if(img){img.src=e.target.result;img.style.display='block';}
+    };
+    reader.readAsDataURL(file);
+    var oBtn=document.getElementById('factOcrBtn');if(oBtn)oBtn.disabled=false;
+  });
+
+  var ocrBtn=document.getElementById('factOcrBtn');
+  if(ocrBtn)ocrBtn.addEventListener('click',function(){
+    var fotoEl=document.getElementById('factFoto');
+    var file=fotoEl?fotoEl.files[0]:null;
+    if(!file)return;
+    if(typeof Tesseract==='undefined'){
+      showOcrStatus('No se pudo cargar el motor OCR. Revisa tu conexión.','error');return;
+    }
+    var self=this;self.disabled=true;
+    showOcrStatus('Leyendo la factura... 0%','');
+    Tesseract.recognize(file,'spa+eng',{
+      logger:function(m){
+        if(m.status==='recognizing text')
+          showOcrStatus('Leyendo la factura... '+Math.round(m.progress*100)+'%','');
+      }
+    }).then(function(r){
+      var texto=(r.data.text||'').trim();
+      var ocrTxt=document.getElementById('factOcrText');if(ocrTxt)ocrTxt.value=texto;
+      var ocrFld=document.getElementById('factOcrField');if(ocrFld)ocrFld.style.display='block';
+      if(texto){autofillFact(texto);showOcrStatus('✅ Texto leído. Revisa y edita los campos.','done');}
+      else showOcrStatus('⚠ No se detectó texto. Prueba con una foto más clara.','error');
+    }).catch(function(){
+      showOcrStatus('Error al leer la imagen. Intenta de nuevo.','error');
+    }).finally(function(){self.disabled=false;});
+  });
+
+  var factForm=document.getElementById('factForm');
+  if(factForm)factForm.addEventListener('submit',function(e){
+    e.preventDefault();
+    var fotoEl=document.getElementById('factFoto');
+    var file=fotoEl?fotoEl.files[0]:null;
+    if(!file){toast('Selecciona la foto de la factura','warn');return;}
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      var nueva={
+        id:Date.now().toString(),
+        foto:ev.target.result,
+        numero:((document.getElementById('factNumero')||{}).value||'').trim(),
+        proveedor:((document.getElementById('factProveedor')||{}).value||'').trim(),
+        monto:((document.getElementById('factMonto')||{}).value||'').trim(),
+        specs:((document.getElementById('factSpecs')||{}).value||'').trim(),
+        uploader:localStorage.getItem('mbrAuth')||'Unknown',
+        date:new Date().toISOString()
+      };
+      var list=loadFacts();list.unshift(nueva);saveFacts(list);
+      closeModal('factModal');resetFactForm();renderFacts();
+      toast('Factura guardada','ok');
+    };
+    reader.readAsDataURL(file);
+  });
+});
 async function renameUnit(id,oldName){
   var n=prompt('Rename "'+oldName+'" to:',oldName);
   if(!n||n===oldName)return;
@@ -2215,172 +2376,6 @@ async function deleteMaterial(id){
 
 <script>
 (function(){var p=location.pathname;document.querySelectorAll('.gnav-link').forEach(function(a){var h=a.getAttribute('href');if(h==='/'?p===h:p===h||p.startsWith(h))a.classList.add('gna');});})();
-(function(){var r=localStorage.getItem('mbrRole')||'worker';var lv={admin:5,boss:4,inventory:3,lead:2,worker:1}[r]||1;var rules={'/log':2,'/dashboard':4,'/inventory':2,'/issues-log':2,'/settings':4};document.querySelectorAll('.gnav-link').forEach(function(a){var h=a.getAttribute('href');if(rules[h]&&lv<rules[h]){a.href='/home';a.style.opacity='0.45';}});})();
-
-
-// ══ FACTURAS ══════════════════════════════════════════════════════
-var FACT_KEY='inv_facturas';
-
-function loadFacts(){try{return JSON.parse(localStorage.getItem(FACT_KEY))||[];}catch{return[];}}
-function saveFacts(list){localStorage.setItem(FACT_KEY,JSON.stringify(list));}
-
-function renderFacts(){
-  var list=loadFacts();
-  var el=document.getElementById('factList');
-  if(!el)return;
-  if(!list.length){
-    el.innerHTML='<div class="fact-empty">📭 Aún no hay facturas.<br>Toca "+ Nueva factura" para agregar la primera.</div>';
-    return;
-  }
-  el.innerHTML='';
-  list.forEach(function(f){
-    var card=document.createElement('div');card.className='fact-card';
-    var img=document.createElement('img');img.className='fact-card__img';img.src=f.foto;
-    img.onclick=function(){var w=window.open();if(w)w.document.write('<img src="'+f.foto+'" style="max-width:100%">');}; 
-    var body=document.createElement('div');body.className='fact-card__body';
-    body.innerHTML=
-      '<div class="fact-card__num">'+(f.numero?'Factura '+esc(f.numero):'Sin número')+'</div>'+
-      (f.proveedor?'<div class="fact-card__row">🏪 '+esc(f.proveedor)+'</div>':'')+
-      (f.monto?'<div class="fact-card__row">💵 '+esc(f.monto)+'</div>':'')+
-      (f.specs?'<div class="fact-card__specs">'+esc(f.specs)+'</div>':'')+
-      '<div class="fact-card__meta"><span>'+esc(f.uploader)+' · '+new Date(f.date).toLocaleDateString('es-US')+'</span>'+
-      '<button class="fact-card__del" onclick="deleteFact(''+f.id+'')">Eliminar</button></div>';
-    card.append(img,body);el.appendChild(card);
-  });
-}
-
-function deleteFact(id){
-  if(!confirm('¿Eliminar esta factura?'))return;
-  saveFacts(loadFacts().filter(function(x){return x.id!==id;}));
-  renderFacts();
-}
-
-function resetFactForm(){
-  document.getElementById('factForm').reset();
-  document.getElementById('factPreview').style.display='none';
-  document.getElementById('factOcrBtn').disabled=true;
-  document.getElementById('factOcrStatus').style.display='none';
-  document.getElementById('factOcrStatus').className='fact-ocr-status';
-  document.getElementById('factOcrField').style.display='none';
-  document.getElementById('factOcrText').value='';
-  document.getElementById('factUploadText').textContent='📷 Toca para tomar foto o elegir imagen';
-}
-
-// Open modal
-document.getElementById('factNewBtn').addEventListener('click',function(){
-  renderFacts();openModal('factListModal');
-});
-
-// File pick
-document.getElementById('factUploadZone').addEventListener('click',function(){
-  document.getElementById('factFoto').click();
-});
-document.getElementById('factFoto').addEventListener('change',function(){
-  var file=this.files[0];
-  resetFactStatus();
-  if(!file){document.getElementById('factPreview').style.display='none';document.getElementById('factOcrBtn').disabled=true;return;}
-  document.getElementById('factUploadText').textContent='✅ '+file.name;
-  var reader=new FileReader();
-  reader.onload=function(e){
-    var img=document.getElementById('factPreview');
-    img.src=e.target.result;img.style.display='block';
-  };
-  reader.readAsDataURL(file);
-  document.getElementById('factOcrBtn').disabled=false;
-});
-
-function resetFactStatus(){
-  var s=document.getElementById('factOcrStatus');
-  s.style.display='none';s.className='fact-ocr-status';s.textContent='';
-  document.getElementById('factOcrField').style.display='none';
-  document.getElementById('factOcrText').value='';
-}
-
-// OCR
-document.getElementById('factOcrBtn').addEventListener('click',function(){
-  var file=document.getElementById('factFoto').files[0];
-  if(!file)return;
-  if(typeof Tesseract==='undefined'){
-    showOcrStatus('No se pudo cargar el motor OCR. Revisa tu conexión.','error');return;
-  }
-  document.getElementById('factOcrBtn').disabled=true;
-  showOcrStatus('Leyendo la factura... 0%','');
-  Tesseract.recognize(file,'spa+eng',{
-    logger:function(m){
-      if(m.status==='recognizing text'){
-        showOcrStatus('Leyendo la factura... '+Math.round(m.progress*100)+'%','');
-      }
-    }
-  }).then(function(r){
-    var texto=(r.data.text||'').trim();
-    document.getElementById('factOcrText').value=texto;
-    document.getElementById('factOcrField').style.display='block';
-    if(texto){
-      autofillFact(texto);
-      showOcrStatus('✅ Texto leído. Revisa y edita los campos.','done');
-    } else {
-      showOcrStatus('⚠ No se detectó texto. Prueba con una foto más clara.','error');
-    }
-  }).catch(function(){
-    showOcrStatus('Error al leer la imagen. Intenta de nuevo.','error');
-  }).finally(function(){
-    document.getElementById('factOcrBtn').disabled=false;
-  });
-});
-
-function showOcrStatus(msg,cls){
-  var s=document.getElementById('factOcrStatus');
-  s.style.display='block';s.className='fact-ocr-status'+(cls?' '+cls:'');s.textContent=msg;
-}
-
-function autofillFact(text){
-  var n=document.getElementById('factNumero');
-  if(!n.value.trim()){
-    var m=text.match(/(?:factura|invoice|folio|n[°º.]?|no\.?|#)\s*[:#]?\s*([A-Z0-9\-]{3,})/i);
-    if(m)n.value=m[1];
-  }
-  var mo=document.getElementById('factMonto');
-  if(!mo.value.trim()){
-    var montos=text.match(/[$€£]\s?\d[\d.,]*/g);
-    if(montos&&montos.length){
-      var mayor=montos.reduce(function(a,b){
-        var v=function(s){return parseFloat(s.replace(/[^\d.]/g,''))||0;};
-        return v(b)>v(a)?b:a;
-      });
-      mo.value=mayor.replace(/\s/g,'');
-    }
-  }
-  var sp=document.getElementById('factSpecs');
-  if(!sp.value.trim())sp.value=text.trim();
-}
-
-// Save
-document.getElementById('factForm').addEventListener('submit',function(e){
-  e.preventDefault();
-  var file=document.getElementById('factFoto').files[0];
-  if(!file){toast('Selecciona la foto de la factura','warn');return;}
-  var reader=new FileReader();
-  reader.onload=function(ev){
-    var nueva={
-      id:Date.now().toString(),
-      foto:ev.target.result,
-      numero:document.getElementById('factNumero').value.trim(),
-      proveedor:document.getElementById('factProveedor').value.trim(),
-      monto:document.getElementById('factMonto').value.trim(),
-      specs:document.getElementById('factSpecs').value.trim(),
-      uploader:localStorage.getItem('mbrAuth')||'Unknown',
-      date:new Date().toISOString()
-    };
-    var list=loadFacts();list.unshift(nueva);saveFacts(list);
-    closeModal('factModal');resetFactForm();
-    renderFacts();
-    toast('Factura guardada','ok');
-  };
-  reader.readAsDataURL(file);
-});
-
-// Render on dispatch tab open (hooked into switchInvTab)
-var _factOrigSwitch=switchInvTab;
-</script>
+(function(){var r=localStorage.getItem('mbrRole')||'worker';var lv={admin:5,boss:4,inventory:3,lead:2,worker:1}[r]||1;var rules={'/log':2,'/dashboard':4,'/inventory':2,'/issues-log':2,'/settings':4};document.querySelectorAll('.gnav-link').forEach(function(a){var h=a.getAttribute('href');if(rules[h]&&lv<rules[h]){a.href='/home';a.style.opacity='0.45';}});})();</script>
 </body>
 </html>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
