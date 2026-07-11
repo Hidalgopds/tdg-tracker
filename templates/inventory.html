@@ -1687,16 +1687,16 @@ function loadPOs(){
       // Action buttons
       html += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
       if(canReceive){
-        html += '<button onclick="openEditPO(\"' + po.id + '\")" class="btn-s" style="height:28px;padding:0 10px;font-size:12px;">✏️ Edit</button>';
-        html += '<button onclick="openReceivePO(\"' + po.id + '\")" class="btn-p" style="height:28px;padding:0 10px;font-size:12px;">📥 Receive</button>';
+        html += '<button onclick="openEditPO(\'' + po.id + '\')" class="btn-s" style="height:28px;padding:0 10px;font-size:12px;">✏️ Edit</button>';
+        html += '<button onclick="openReceivePO(\'' + po.id + '\')" class="btn-p" style="height:28px;padding:0 10px;font-size:12px;">📥 Receive</button>';
       }
       if(po.status==='received'||po.status==='partial'){
-        html += '<button onclick="openAllocatePO(\"' + po.id + '\")" class="btn-p" style="height:28px;padding:0 10px;font-size:12px;background:#7c3aed;">📋 Allocate to Job</button>';
+        html += '<button onclick="openAllocatePO(\'' + po.id + '\')" class="btn-p" style="height:28px;padding:0 10px;font-size:12px;background:#7c3aed;">📋 Allocate to Job</button>';
       }
       if(!canReceive && po.status!=='received' && po.status!=='partial'){
-        html += '<button onclick="openReceivePO(\"' + po.id + '\")" class="btn-s" style="height:28px;padding:0 10px;font-size:12px;">View</button>';
+        html += '<button onclick="openReceivePO(\'' + po.id + '\')" class="btn-s" style="height:28px;padding:0 10px;font-size:12px;">View</button>';
       }
-      html += '</div></div>';
+      html += '</div></div></div>';
       // Items summary
       if(items.length){
         html += '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">';
