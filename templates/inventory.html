@@ -99,7 +99,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .sb-appr{background:rgba(34,197,94,.15);color:var(--green);}
 .sb-rej{background:rgba(239,68,68,.1);color:var(--red);}
 .sb-deliv{background:rgba(14,165,233,.15);color:#38bdf8;}
-.req-bell-btn{position:relative;display:none;align-items:center;justify-content:center;background:none;border:1px solid var(--border);border-radius:8px;width:36px;height:34px;cursor:pointer;font-size:16px;color:var(--muted);}
+.req-bell-btn{position:relative;display:flex;align-items:center;justify-content:center;background:none;border:1px solid var(--border);border-radius:8px;width:36px;height:34px;cursor:pointer;font-size:16px;color:var(--muted);}
 .req-bell-btn.has-pending{border-color:rgba(245,158,11,.4);color:var(--amber);}
 .req-bell-badge{position:absolute;top:-5px;right:-5px;background:#ef4444;color:#fff;font-size:9px;font-weight:800;border-radius:10px;padding:1px 5px;min-width:16px;height:16px;line-height:14px;text-align:center;display:none;}
 .rq-tab-bar{display:flex;border-bottom:1px solid var(--border);margin-bottom:12px;gap:0;}
@@ -422,7 +422,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
     </div>
   </div>
   </div>
-  <div class="header-search" style="display:flex;align-items:center;gap:8px;">
+  <div class="header-search" id="headerSearch" style="display:flex;align-items:center;gap:8px;">
     <div class="search-wrap" style="flex:1;">
       <span class="si">🔍</span>
       <input class="search-input" id="srch" type="text" placeholder="Search items..." oninput="doFilter()">
@@ -2689,6 +2689,7 @@ function switchInvTab(t){
   if(t==='units'&&!umLoaded)loadProjectUnits();
   if(t==='receiving')loadPOs();
   if(t==='units')loadSuppliers();
+  var hs=document.getElementById('headerSearch');if(hs)hs.style.display=t==='inv'?'flex':'none';
 }
 
 // ── State ──────────────────────────────────────────────────────────────────
