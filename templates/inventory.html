@@ -710,7 +710,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 <div class="modal-bg" id="newPoModal">
 <div class="modal" style="max-width:520px;">
   <div class="mhandle"></div>
-  <div class="mtitle">📦 New Purchase Order</div>
+  <div class="mtitle" id="newPoModalTitle">📦 New Purchase Order</div>
 
   <form id="newPoForm" onsubmit="submitNewPO(event)">
     <div style="margin-bottom:10px;">
@@ -741,7 +741,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 
     <div id="poFormErr" style="display:none;background:rgba(248,113,113,.15);border:1px solid #f87171;border-radius:7px;padding:8px 12px;font-size:13px;color:#f87171;margin-bottom:8px;"></div>
     <div style="display:flex;gap:8px;margin-top:12px;">
-      <button type="submit" class="btn-p" style="flex:1;">Create PO</button>
+      <button type="submit" id="poSubmitBtn" class="btn-p" style="flex:1;">Create PO</button>
       <button type="button" class="btn-s" onclick="closeModal('newPoModal')" style="flex:1;">Cancel</button>
     </div>
   </form>
@@ -795,6 +795,39 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
     <button class="fact-new-btn" onclick="openModal('factListModal')" style="margin-top:4px;">🧾 Ver Facturas</button>
   </div>
 </div>
+
+<!-- ALLOCATE TO JOB MODAL -->
+<div class="modal-bg" id="allocatePoModal">
+<div class="modal" style="max-width:520px;">
+  <div class="mhandle"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <div class="mtitle" style="margin:0;">📋 Allocate to Job</div>
+    <span id="allocPoNum" style="font-size:13px;font-weight:700;color:var(--primary);"></span>
+  </div>
+
+  <div style="margin-bottom:12px;">
+    <label style="font-size:12px;color:var(--muted);font-weight:600;">Job / Unit *</label>
+    <input id="allocJobName" class="fi" type="text" placeholder="e.g. TDG-Unit-05 / Data Center Bldg 7" style="margin-top:4px;">
+  </div>
+
+  <div style="margin-bottom:4px;">
+    <label style="font-size:12px;color:var(--muted);font-weight:600;">Items to Allocate</label>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Enter qty to pull from inventory for this job</div>
+  </div>
+  <div id="allocItems" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;"></div>
+
+  <div style="margin-bottom:14px;">
+    <label style="font-size:12px;color:var(--muted);">Notes (optional)</label>
+    <textarea id="allocNotes" rows="2" class="fi" placeholder="Allocation notes..." style="margin-top:4px;"></textarea>
+  </div>
+
+  <div id="allocErr" style="display:none;color:#ef4444;font-size:12px;margin-bottom:10px;padding:8px;background:rgba(239,68,68,.08);border-radius:6px;"></div>
+
+  <div style="display:flex;gap:8px;">
+    <button onclick="submitAllocatePO()" class="btn-p" style="flex:1;background:#7c3aed;">📋 Confirm Allocation</button>
+    <button onclick="closeModal('allocatePoModal')" class="btn-s" style="flex:1;">Cancel</button>
+  </div>
+</div></div>
 
 <!-- LOW STOCK MODAL -->
 <div class="modal-bg" id="lowStockModal">
@@ -1651,8 +1684,18 @@ function loadPOs(){
       html += '</div>';
       html += '<div style="display:flex;align-items:center;gap:8px;">';
       html += '<span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:5px;background:' + statusColor + '22;color:' + statusColor + ';">' + po.status.toUpperCase() + '</span>';
-      if(canReceive) html += '<button onclick="openReceivePO("' + po.id + '")" class="btn-p" style="height:28px;padding:0 10px;font-size:12px;">📥 Receive</button>';
-      else html += '<button onclick="openReceivePO("' + po.id + '")" class="btn-s" style="height:28px;padding:0 10px;font-size:12px;">View</button>';
+      // Action buttons
+      html += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
+      if(canReceive){
+        html += '<button onclick="openEditPO(\"' + po.id + '\")" class="btn-s" style="height:28px;padding:0 10px;font-size:12px;">✏️ Edit</button>';
+        html += '<button onclick="openReceivePO(\"' + po.id + '\")" class="btn-p" style="height:28px;padding:0 10px;font-size:12px;">📥 Receive</button>';
+      }
+      if(po.status==='received'||po.status==='partial'){
+        html += '<button onclick="openAllocatePO(\"' + po.id + '\")" class="btn-p" style="height:28px;padding:0 10px;font-size:12px;background:#7c3aed;">📋 Allocate to Job</button>';
+      }
+      if(!canReceive && po.status!=='received' && po.status!=='partial'){
+        html += '<button onclick="openReceivePO(\"' + po.id + '\")" class="btn-s" style="height:28px;padding:0 10px;font-size:12px;">View</button>';
+      }
       html += '</div></div>';
       // Items summary
       if(items.length){
@@ -1665,6 +1708,21 @@ function loadPOs(){
       }
       if(po.notes) html += '<div style="margin-top:6px;font-size:12px;color:var(--muted);">' + esc(po.notes) + '</div>';
       if(po.discrepancy_notes) html += '<div style="margin-top:4px;font-size:12px;color:#f87171;">⚠ ' + esc(po.discrepancy_notes) + '</div>';
+      // Allocations
+      var allocs = po.allocations || [];
+      if(allocs.length){
+        html += '<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:6px;">';
+        html += '<div style="font-size:11px;font-weight:700;color:#7c3aed;margin-bottom:4px;">📋 Allocated to Jobs</div>';
+        allocs.forEach(function(al){
+          var alItems = al.items||[];
+          html += '<div style="font-size:11px;color:var(--muted);margin-bottom:2px;">';
+          html += '<strong style="color:var(--text);">' + esc(al.job_name||'') + '</strong>';
+          if(alItems.length){ html += ' — ' + alItems.map(function(i){return esc(i.item_name||'')+'×'+(i.qty_allocated||0);}).join(', '); }
+          html += '<span style="color:#94a3b8;"> by ' + esc(al.allocated_by||'?') + '</span>';
+          html += '</div>';
+        });
+        html += '</div>';
+      }
       html += '</div>';
     });
     html += '</div>';
@@ -1674,6 +1732,7 @@ function loadPOs(){
 
 // ── PO item rows in new PO form ──────────────────────────────
 var _poItemIdx = 0;
+var _editPoId = null;
 function addPoItemRow(item){
   var idx = _poItemIdx++;
   var iid   = (item && item.item_id)   || '';
@@ -1717,29 +1776,52 @@ function submitNewPO(e){
   var poErrEl=document.getElementById('poFormErr');
   if(poErrEl){poErrEl.style.display='none';poErrEl.textContent='';}
   console.log('[PO] Sending:', {po_number:poNum,supplier:supplier,items:items});
-  fetch('/api/po',{method:'POST',headers:{'Content-Type':'application/json'},
+  var isEdit = !!_editPoId;
+  var fetchUrl = isEdit ? '/api/po/'+_editPoId : '/api/po';
+  var fetchMethod = isEdit ? 'PATCH' : 'POST';
+  fetch(fetchUrl,{method:fetchMethod,headers:{'Content-Type':'application/json'},
     body:JSON.stringify({po_number:poNum,supplier:supplier||null,expected_date:date,notes:notes||null,items:items,created_by:user})})
-  .then(function(r){
-    console.log('[PO] HTTP status:', r.status);
-    return r.json();
-  }).then(function(d){
-    console.log('[PO] Response:', d);
+  .then(function(r){return r.json();}).then(function(d){
     if(d.ok){
-      toast('PO created ✓');
+      toast(isEdit ? 'PO updated ✓' : 'PO created ✓');
       closeModal('newPoModal');
       document.getElementById('newPoForm').reset();
       document.getElementById('poItemRows').innerHTML='';
-      _poItemIdx=0;
+      _poItemIdx=0; _editPoId=null;
+      document.getElementById('newPoModalTitle').textContent='📦 New Purchase Order';
+      document.getElementById('poSubmitBtn').textContent='Create PO';
       loadPOs();
     } else {
-      var msg=d.error||'Error creating PO';
-      console.error('[PO] Error:', msg);
+      var msg=d.error||'Error';
       if(poErrEl){poErrEl.textContent='⚠ '+msg;poErrEl.style.display='block';}
     }
   }).catch(function(err){
-    console.error('[PO] Fetch failed:', err);
     if(poErrEl){poErrEl.textContent='⚠ '+err.message;poErrEl.style.display='block';}
   });
+}
+
+// ── Edit PO ──────────────────────────────────────────────────────────────
+function openEditPO(poId){
+  fetch('/api/po/'+poId).then(function(r){return r.json();}).then(function(d){
+    if(!d.ok){toast('PO not found','error');return;}
+    var po = d.po;
+    _editPoId = poId;
+    // Fill form
+    document.getElementById('po_number').value = po.po_number||'';
+    document.getElementById('po_supplier').value = po.supplier||'';
+    document.getElementById('po_date').value = po.expected_date||'';
+    document.getElementById('po_notes').value = po.notes||'';
+    // Rebuild items
+    document.getElementById('poItemRows').innerHTML='';
+    _poItemIdx=0;
+    (po.items||[]).forEach(function(it){ addPoItemRow(it); });
+    // Update modal title and button
+    document.getElementById('newPoModalTitle').textContent='✏️ Edit PO — '+po.po_number;
+    document.getElementById('poSubmitBtn').textContent='Save Changes';
+    var poErrEl=document.getElementById('poFormErr');
+    if(poErrEl){poErrEl.style.display='none';}
+    openModal('newPoModal');
+  }).catch(function(e){toast('Error: '+e.message,'error');});
 }
 
 // ── Open receive modal ────────────────────────────────────────
@@ -1837,6 +1919,77 @@ function submitReceivePO(){
   }).catch(function(e){toast('Error: '+e.message,'error');});
 }
 var _rcvItemIds=[];
+var _currentAllocPoId = null;
+var _allocPoItems = [];
+
+function openAllocatePO(poId){
+  _currentAllocPoId = poId;
+  _allocPoItems = [];
+  document.getElementById('allocJobName').value='';
+  document.getElementById('allocNotes').value='';
+  document.getElementById('allocItems').innerHTML='<div style="color:var(--muted);font-size:13px;">Loading...</div>';
+  var errEl=document.getElementById('allocErr');
+  if(errEl){errEl.style.display='none';}
+  fetch('/api/po/'+poId).then(function(r){return r.json();}).then(function(d){
+    if(!d.ok){toast('PO not found','error');return;}
+    var po=d.po;
+    document.getElementById('allocPoNum').textContent=po.po_number;
+    var items=(po.items||[]).filter(function(it){return it.item_id && (it.qty_received||0)>0;});
+    _allocPoItems=items;
+    if(!items.length){
+      document.getElementById('allocItems').innerHTML='<div style="color:var(--muted);font-size:13px;padding:8px;">No received items to allocate.</div>';
+    } else {
+      var html='';
+      items.forEach(function(it,i){
+        html+='<div style="display:grid;grid-template-columns:1fr 100px;gap:8px;align-items:center;padding:8px;background:var(--bg);border-radius:7px;">';
+        html+='<div><div style="font-weight:600;font-size:13px;">'+esc(it.item_name||'')+'</div>';
+        html+='<div style="font-size:11px;color:var(--muted);">Received: '+(it.qty_received||0)+' '+esc(it.unit||'EA')+'</div></div>';
+        html+='<div><div style="font-size:11px;color:var(--muted);margin-bottom:2px;">Qty to allocate</div>';
+        html+='<input type="number" min="0" step="0.01" max="'+(it.qty_received||0)+'" value="'+(it.qty_received||0)+'" id="alqty-'+i+'" style="width:90px;padding:4px 6px;border:1px solid var(--border);border-radius:5px;background:var(--card);color:var(--text);"></div>';
+        html+='</div>';
+      });
+      document.getElementById('allocItems').innerHTML=html;
+    }
+    openModal('allocatePoModal');
+  }).catch(function(e){toast('Error: '+e.message,'error');});
+}
+
+function submitAllocatePO(){
+  if(!_currentAllocPoId){return;}
+  var jobName=(document.getElementById('allocJobName').value||'').trim();
+  var notes=(document.getElementById('allocNotes').value||'').trim();
+  var errEl=document.getElementById('allocErr');
+  if(!jobName){
+    if(errEl){errEl.textContent='⚠ Job name is required';errEl.style.display='block';}
+    return;
+  }
+  var items=[];
+  _allocPoItems.forEach(function(it,i){
+    var inp=document.getElementById('alqty-'+i);
+    var qty=inp?parseFloat(inp.value)||0:0;
+    if(qty>0) items.push({item_id:it.item_id,item_name:it.item_name,unit:it.unit||'EA',qty_allocated:qty});
+  });
+  if(!items.length){
+    if(errEl){errEl.textContent='⚠ Enter at least one quantity > 0';errEl.style.display='block';}
+    return;
+  }
+  var user=localStorage.getItem('mbrAuth')||'Dispatcher';
+  fetch('/api/po/'+_currentAllocPoId+'/allocate',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({job_name:jobName,items:items,notes:notes||null,allocated_by:user})
+  }).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){
+      toast('Allocated to '+jobName+' ✓','success');
+      closeModal('allocatePoModal');
+      loadPOs();
+      setTimeout(loadInv,800);
+      setTimeout(loadLowStock,1200);
+    }else{
+      if(errEl){errEl.textContent='⚠ '+(d.error||'Error');errEl.style.display='block';}
+    }
+  }).catch(function(e){
+    if(errEl){errEl.textContent='⚠ '+e.message;errEl.style.display='block';}
+  });
+}
 // ═════════════════════════════════════════════════════════════════════════════
 
 

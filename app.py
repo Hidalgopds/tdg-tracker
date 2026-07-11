@@ -2121,6 +2121,85 @@ def receive_po(po_id):
 
 
 
+@app.route("/api/po/<po_id>/allocate", methods=["POST"])
+def allocate_po(po_id):
+    """Allocate received PO items to a specific job/unit, deduct from inventory."""
+    data = request.get_json(silent=True) or {}
+    job_name = (data.get("job_name") or "").strip()
+    items    = data.get("items") or []
+    notes    = (data.get("notes") or "").strip() or None
+    allocated_by = data.get("allocated_by") or "Dispatcher"
+
+    if not job_name:
+        return jsonify({"error": "Job name required"}), 400
+    if not items:
+        return jsonify({"error": "No items specified"}), 400
+
+    r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/purchase_orders?id=eq.{po_id}&limit=1",
+        headers=sb_headers(), timeout=10
+    )
+    if not r.ok or not r.json():
+        return jsonify({"error": "PO not found"}), 404
+    po = r.json()[0]
+
+    alloc = {
+        "id": str(uuid.uuid4()),
+        "job_name": job_name,
+        "items": items,
+        "notes": notes,
+        "allocated_by": allocated_by,
+        "allocated_at": datetime.now(timezone.utc).isoformat()
+    }
+    existing_allocs = po.get("allocations") or []
+    existing_allocs.append(alloc)
+
+    patch_r = requests.patch(
+        f"{SUPABASE_URL}/rest/v1/purchase_orders?id=eq.{po_id}",
+        json={"allocations": existing_allocs},
+        headers={**sb_headers(), "Prefer": "return=minimal"},
+        timeout=10
+    )
+    if not patch_r.ok:
+        return jsonify({"error": f"Failed to update PO: {patch_r.text[:200]}"}), 400
+
+    for item in items:
+        item_id = item.get("item_id")
+        qty_alloc = float(item.get("qty_allocated") or 0)
+        if not item_id or qty_alloc <= 0:
+            continue
+        try:
+            inv_r = requests.get(
+                f"{SUPABASE_URL}/rest/v1/inventory_items?id=eq.{item_id}&select=qty_on_hand,name,safe_qty&limit=1",
+                headers=sb_headers(), timeout=8
+            )
+            if inv_r.ok and inv_r.json():
+                inv = inv_r.json()[0]
+                new_qty = max(0, float(inv.get("qty_on_hand") or 0) - qty_alloc)
+                requests.patch(
+                    f"{SUPABASE_URL}/rest/v1/inventory_items?id=eq.{item_id}",
+                    json={"qty_on_hand": new_qty},
+                    headers={**sb_headers(), "Prefer": "return=minimal"}, timeout=8
+                )
+                try:
+                    safe = float(inv.get("safe_qty") or 0)
+                    if safe > 0 and new_qty <= safe:
+                        status_word = "OUT" if new_qty <= 0 else "LOW"
+                        requests.post(
+                            f"{SUPABASE_URL}/rest/v1/notifications",
+                            json={"title": f"\u26a0\ufe0f Inventory {status_word}: {inv.get('name',item_id)}",
+                                  "body": f"Allocated to {job_name}. On hand: {new_qty} | Safe: {safe}",
+                                  "target": "supervisor", "created_by": "system"},
+                            headers={**sb_headers(), "Prefer": "return=minimal"}, timeout=5
+                        )
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+    return jsonify({"ok": True, "allocation_id": alloc["id"]})
+
+
 @app.route("/api/inventory/locations", methods=["GET"])
 def get_inventory_locations():
     """Return items grouped by location_code."""
