@@ -47,6 +47,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .ic-loc::before{content:"📍";font-size:8px;}
 .loc-inp{flex:1;min-width:60px;height:28px;background:#f8fafc;border:1px solid var(--border);border-radius:6px;color:#0f172a;font-size:11px;padding:0 6px;font-family:monospace;text-transform:uppercase;}
 .ic-edit{display:none;gap:6px;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;flex-wrap:wrap;}
+.ic-req-btn{display:none;width:100%;margin-top:8px;padding:6px 0;border:1px solid #f97316;border-radius:6px;background:#fff7ed;color:#c2410c;font-size:11px;font-weight:600;cursor:pointer;text-align:center;}
 .editor-active .ic-edit{display:flex;}
 .qty-inp{width:55px;height:30px;background:#f8fafc;border:1px solid var(--border);color:#0f172a;border-radius:6px;color:var(--text);font-size:13px;text-align:center;}
 .ic-save{flex:1;height:30px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;}
@@ -669,6 +670,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
     <div style="font-size:15px;font-weight:700;color:var(--text);">📋 Dispatch &amp; Requests</div>
     <div style="display:flex;gap:8px;">
+      <button onclick="openReqModal()" class="btn-p" style="height:32px;padding:0 12px;font-size:12px;background:#f97316;">+ Request</button>
       <button onclick="openRequests()" class="btn-p" style="height:32px;padding:0 12px;font-size:12px;">📬 Inbox</button>
       <button onclick="openModal('factListModal')" class="btn-s" style="height:32px;padding:0 12px;font-size:12px;">🧾 Invoices</button>
     </div>
@@ -1128,6 +1130,8 @@ function renderGrid(){
   if(edUser)g.classList.add('editor-active');else g.classList.remove('editor-active');
   var toolbar=document.getElementById('invToolbar');
   if(toolbar)toolbar.style.display=edUser?'flex':'none';
+  // Show request buttons only for non-editors
+  document.querySelectorAll('.ic-req-btn').forEach(function(b){b.style.display=edUser?'none':'block';});
   f.forEach(function(it){g.appendChild(mkCard(it));});
 }
 
@@ -1148,6 +1152,7 @@ function mkCard(it){
     (stxt?'<span class="ic-stat '+sc+'">'+stxt+'</span>':'')+
     (lastR?'<div style="font-size:9px;color:var(--muted);margin-top:3px;">Restocked: '+lastR+'</div>':'')+
     '</div>'+
+    '<button class="ic-req-btn" onclick="openReqModal(this)" data-id="'+it.id+'" data-name="'+esc(it.name)+'" data-unit="'+esc(it.unit||'EA')+'" style="display:none;">📋 Request</button>'+
     '<div class="ic-edit">'+
       '<input class="qty-inp" id="q-'+it.id+'" type="number" min="0" value="'+qty+'" title="On Hand">'+
       '<input class="qty-inp" id="sq-'+it.id+'" type="number" min="0" placeholder="Safe" title="Safe qty" value="'+(safeQ||'')+'">'+
@@ -1264,10 +1269,17 @@ function filterByLoc(loc){
 }
 
 // ── Request modal ────────────────────────────────────────────────────────────
-function openReqModal(){
+function openReqModal(btn){
   ['rqNotes','rqJob'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   resetMatLines();
   document.getElementById('rqItemId').value='';
+  // Pre-fill from card button if provided
+  if(btn&&btn.dataset){
+    var ni=document.getElementById('rqItemId');if(ni)ni.value=btn.dataset.id||'';
+    var nm=document.querySelectorAll('.mat-name-inp')[0];if(nm)nm.value=btn.dataset.name||'';
+    var nu=document.querySelectorAll('.mat-unit-inp')[0];if(nu)nu.value=btn.dataset.unit||'EA';
+    if(btn.dataset.name)checkDup(btn.dataset.id,btn.dataset.name);
+  }
   document.getElementById('dupWarn').style.display='none';
   document.getElementById('acList').style.display='none';
   var loggedName=localStorage.getItem('mbrAuth')||'',loggedRole=localStorage.getItem('mbrRole')||'';
