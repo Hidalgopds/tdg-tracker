@@ -512,9 +512,14 @@ function timeAgo(iso){
     </a>
 
     <a class="card card-inv" href="/inventory">
-      <div class="card-icon icon-inv">📦</div>
       <div class="card-body">
-        <h3>MM <span style="font-size:13px;font-weight:400;color:#64748b;">Material Manager</span></h3>
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;">
+          <div class="card-icon icon-inv" style="width:60px;height:60px;font-size:30px;flex-shrink:0;">📦</div>
+          <div>
+            <h3 style="font-size:26px;margin:0;line-height:1;">MM</h3>
+            <div style="font-size:12px;color:#64748b;font-weight:600;margin-top:2px;letter-spacing:0.3px;">Material Manager</div>
+          </div>
+        </div>
         <p>View stock levels, search materials, and submit material requests. Editors can update quantities and approve requests.</p>
       </div>
       <div class="card-footer">
