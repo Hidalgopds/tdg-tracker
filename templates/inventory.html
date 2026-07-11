@@ -422,13 +422,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
     </div>
   </div>
   </div>
-  <div class="header-search" id="headerSearch" style="display:flex;align-items:center;gap:8px;">
-    <div class="search-wrap" style="flex:1;">
-      <span class="si">🔍</span>
-      <input class="search-input" id="srch" type="text" placeholder="Search items..." oninput="doFilter()">
-    </div>
-    <button class="fact-new-btn" id="factNewBtn" style="flex-shrink:0;height:36px;padding:0 12px;font-size:12px;">🧾 Facturas</button>
-  </div>
+  <button class="fact-new-btn" id="factNewBtn" style="display:none;"></button>
 </div>
 <script>(function(){
   var n=localStorage.getItem('mbrAuth')||'';
@@ -504,10 +498,15 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <button onclick="document.getElementById('xlsxImportInput').click()" class="btn-s" style="height:32px;padding:0 14px;font-size:12px;" title="Import multiple items from an Excel file">📥 Import Excel</button>
   <input id="xlsxImportInput" type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleXlsxImport(event)">
 </div>
-<!-- ITEM ACTIONS (always visible) -->
-<div style="display:flex;justify-content:flex-end;gap:6px;padding:6px 16px 4px;">
-  <button onclick="exportItemsCSV()" class="btn-s" style="height:30px;padding:0 12px;font-size:12px;" title="Export current inventory list to Excel-ready CSV">⬇ Export CSV</button>
-  <button onclick="printItemLabels()" class="btn-s" style="height:30px;padding:0 12px;font-size:12px;" title="Print QR labels — 4 per page">🖨 Print Labels</button>
+<!-- ITEM SEARCH + ACTIONS BAR -->
+<div style="display:flex;align-items:center;gap:6px;padding:8px 14px 6px;">
+  <div style="flex:1;position:relative;">
+    <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:12px;pointer-events:none;">🔍</span>
+    <input type="text" id="srch" placeholder="Search items..." oninput="doFilter()"
+      style="width:100%;box-sizing:border-box;height:34px;padding:0 10px 0 28px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:13px;">
+  </div>
+  <button onclick="exportItemsCSV()" class="btn-s" style="height:34px;padding:0 12px;font-size:12px;white-space:nowrap;" title="Export inventory to CSV">⬇ CSV</button>
+  <button onclick="printItemLabels()" class="btn-s" style="height:34px;padding:0 12px;font-size:12px;white-space:nowrap;" title="Print QR labels 4 per page">🖨 Labels</button>
 </div>
 
 <!-- GRID -->
@@ -2689,7 +2688,7 @@ function switchInvTab(t){
   if(t==='units'&&!umLoaded)loadProjectUnits();
   if(t==='receiving')loadPOs();
   if(t==='units')loadSuppliers();
-  var hs=document.getElementById('headerSearch');if(hs)hs.style.display=t==='inv'?'flex':'none';
+
 }
 
 // ── State ──────────────────────────────────────────────────────────────────
