@@ -794,54 +794,33 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
       <button onclick="openModal('factListModal')" class="btn-s" style="height:32px;padding:0 12px;font-size:12px;">🧾 Invoices</button>
     </div>
   </div>
-  <!-- Request filter (moved from Material Queries tab) -->
-  <div style="background:#f8fafc;border:1px solid var(--border);color:#0f172a;border-radius:10px;padding:14px;margin-bottom:12px;">
-    <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:10px;letter-spacing:.5px;">FILTER REQUESTS</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-      <div class="fg">
-        <label class="fl" style="font-size:10px;">Status</label>
-        <select class="fi" id="qStatus" onchange="runQuery()">
-          <option value="">All</option>
-          <option value="Pending">Pending</option>
-          <option value="Approved">Approved</option>
-          <option value="Delivered">Delivered</option>
-          <option value="Rejected">Rejected</option>
-        </select>
-      </div>
-      <div class="fg">
-        <label class="fl" style="font-size:10px;">Company</label>
-        <select class="fi" id="qCompany" onchange="runQuery()">
-          <option value="">All</option>
-          <option value="MBR Texas">BSynch</option>
-          <option>J&amp;F Sandblasting</option>
-          <option>RV Solutions</option>
-          <option>C.U.R. Roofing</option>
-        </select>
-      </div>
-    </div>
-    <div class="fg" style="margin-bottom:10px;">
-      <label class="fl" style="font-size:10px;">Job Name</label>
-      <input class="fi" id="qJob" placeholder="Filter by job..." oninput="runQuery()" list="qJobSuggestions" style="height:34px;">
-      <datalist id="qJobSuggestions"></datalist>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div class="fg">
-        <label class="fl" style="font-size:10px;">Date From</label>
-        <input class="fi" id="qDateFrom" type="date" onchange="runQuery()" style="height:34px;">
-      </div>
-      <div class="fg">
-        <label class="fl" style="font-size:10px;">Date To</label>
-        <input class="fi" id="qDateTo" type="date" onchange="runQuery()" style="height:34px;">
-      </div>
-    </div>
+  <!-- Compact filter bar -->
+  <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px;padding:8px 10px;background:#f8fafc;border:1px solid var(--border);border-radius:8px;">
+    <select id="qStatus" onchange="runQuery()" style="height:30px;border:1px solid var(--border);border-radius:6px;padding:0 8px;font-size:12px;background:var(--card);color:var(--text);flex:1;min-width:100px;">
+      <option value="">All Statuses</option>
+      <option value="Pending">Pending</option>
+      <option value="Approved">Approved</option>
+      <option value="Delivered">Delivered</option>
+      <option value="Rejected">Rejected</option>
+    </select>
+    <select id="qCompany" onchange="runQuery()" style="height:30px;border:1px solid var(--border);border-radius:6px;padding:0 8px;font-size:12px;background:var(--card);color:var(--text);flex:1;min-width:100px;">
+      <option value="">All Companies</option>
+      <option value="MBR Texas">BSynch</option>
+      <option>J&amp;F Sandblasting</option>
+      <option>RV Solutions</option>
+      <option>C.U.R. Roofing</option>
+    </select>
+    <input id="qJob" placeholder="Job name..." oninput="runQuery()" list="qJobSuggestions"
+      style="height:30px;border:1px solid var(--border);border-radius:6px;padding:0 8px;font-size:12px;background:var(--card);color:var(--text);flex:1;min-width:100px;">
+    <datalist id="qJobSuggestions"></datalist>
+    <input id="qDateFrom" type="date" onchange="runQuery()"
+      style="height:30px;border:1px solid var(--border);border-radius:6px;padding:0 6px;font-size:12px;background:var(--card);color:var(--text);flex:1;min-width:110px;">
+    <input id="qDateTo" type="date" onchange="runQuery()"
+      style="height:30px;border:1px solid var(--border);border-radius:6px;padding:0 6px;font-size:12px;background:var(--card);color:var(--text);flex:1;min-width:110px;">
+    <button onclick="exportQueryCSV()" class="btn-s" style="height:30px;padding:0 10px;font-size:11px;white-space:nowrap;">⬇ CSV</button>
+    <button onclick="buildShareText()" class="btn-s" style="height:30px;padding:0 10px;font-size:11px;">📋</button>
   </div>
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
-    <div id="qResultCount" style="font-size:12px;color:var(--muted);"></div>
-    <div style="display:flex;gap:6px;">
-      <button onclick="exportQueryCSV()" class="btn-s" style="height:28px;padding:0 10px;font-size:11px;">⬇ Export CSV</button>
-      <button onclick="buildShareText()" class="btn-s" style="height:28px;padding:0 10px;font-size:11px;">📋 Share</button>
-    </div>
-  </div>
+  <div id="qResultCount" style="font-size:11px;color:var(--muted);margin-bottom:6px;"></div>
   <div id="queryResults"></div>
 </div>
 
