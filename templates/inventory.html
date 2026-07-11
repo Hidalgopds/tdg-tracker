@@ -2448,7 +2448,7 @@ function exportQueryCSV(){
     return true;
   });
   var nl="\r\n";
-  var csv='REQ #,Material,Qty,Unit/Bldg,Requester,Company,Job,Notes,Status,Date,Approved By,Delivered By,Pickup By'+nl;
+  var csv='﻿REQ #,Material,Qty,Unit/Bldg,Requester,Company,Job,Notes,Status,Date,Approved By,Delivered By,Pickup By'+nl;
   results.forEach(function(r){
     var mats=[];
     if(r.materials_json){try{mats=JSON.parse(r.materials_json);}catch(e){}}
