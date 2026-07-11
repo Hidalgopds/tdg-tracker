@@ -1941,7 +1941,7 @@ def email_low_stock():
 @app.route("/api/po-test", methods=["POST","GET"])
 def po_test():
     """Debug: confirm Flask receives POSTs"""
-    return {"ok": True, "method": request.method, "got": (request.json or {})}
+    return {"ok": True, "method": request.method, "got": (request.get_json(silent=True) or {})}
 
 @app.route("/api/po", methods=["GET"])
 def list_pos():
@@ -1958,7 +1958,7 @@ def list_pos():
 @app.route("/api/po", methods=["POST"])
 def create_po():
     """Create a new purchase order."""
-    data = request.json or {}
+    data = request.get_json(silent=True) or {}
     required = ["po_number"]
     for f in required:
         if not data.get(f):
@@ -2002,7 +2002,7 @@ def get_po(po_id):
 @app.route("/api/po/<po_id>", methods=["PATCH"])
 def update_po(po_id):
     """Update PO fields — items, notes, status, photos, etc."""
-    data = request.json or {}
+    data = request.get_json(silent=True) or {}
     allowed = {"po_number","supplier","expected_date","status","items",
                "notes","discrepancy_notes","photos","received_by","received_at"}
     payload = {k: v for k, v in data.items() if k in allowed}
@@ -2028,7 +2028,7 @@ def receive_po(po_id):
     - Set PO status to received/partial
     - Record received_by + photos + notes
     """
-    data = request.json or {}
+    data = request.get_json(silent=True) or {}
     received_by = data.get("received_by","")
     items       = data.get("items", [])       # [{item_id, qty_received}]
     photos      = data.get("photos", [])
