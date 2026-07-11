@@ -1164,6 +1164,11 @@ if(_ROLE==='dispatcher'||_LVL>=4){
   var _rcvtab=document.getElementById('itab-receiving');
   if(_rcvtab)_rcvtab.style.display='';
 }
+// Hide Suppliers tab for contractor role
+if(_ROLE==='contractor'){
+  var _stab=document.getElementById('itab-units');
+  if(_stab)_stab.style.display='none';
+}
 // Locations tab hidden (accessible via backend only)
 
 // ── My Profile ──────────────────────────────────────────────────────────────
