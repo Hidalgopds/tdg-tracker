@@ -581,13 +581,24 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <div class="mtitle" id="newPoModalTitle">📦 New Purchase Order</div>
 
   <form id="newPoForm" onsubmit="submitNewPO(event)">
-    <div style="margin-bottom:10px;">
-      <label style="font-size:12px;color:var(--muted);">PO Number *</label>
-      <input id="po_number" required placeholder="e.g. PO-2026-001" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:14px;box-sizing:border-box;">
+    <div style="margin-bottom:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div>
+        <label style="font-size:12px;color:var(--muted);">PO Number *</label>
+        <input id="po_number" required placeholder="e.g. PO-2026-001" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:14px;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);">S.O. Number</label>
+        <input id="po_so_number" placeholder="e.g. SO-1234" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:14px;box-sizing:border-box;">
+      </div>
     </div>
     <div style="margin-bottom:10px;">
       <label style="font-size:12px;color:var(--muted);">Supplier</label>
-      <input id="po_supplier" placeholder="Supplier name" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:14px;box-sizing:border-box;">
+      <div style="position:relative;">
+        <input id="po_supplier" placeholder="Type to search suppliers..." autocomplete="off"
+          oninput="filterPoSupplier(this)"
+          style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:14px;box-sizing:border-box;">
+        <div id="poSupplierAC" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);max-height:160px;overflow-y:auto;font-size:13px;"></div>
+      </div>
     </div>
     <div style="margin-bottom:10px;">
       <label style="font-size:12px;color:var(--muted);">Expected Date</label>
@@ -1840,12 +1851,39 @@ function addPoItemRow(item){
   document.getElementById('poItemRows').appendChild(row);
 }
 
+function filterPoSupplier(inp){
+  var q=(inp.value||'').trim().toLowerCase();
+  var ac=document.getElementById('poSupplierAC');
+  if(!ac)return;
+  if(!q){ac.style.display='none';return;}
+  var hits=(_allSuppliers||[]).filter(function(s){
+    return (s.name||'').toLowerCase().includes(q)||(s.category||'').toLowerCase().includes(q);
+  }).slice(0,8);
+  if(!hits.length){ac.style.display='none';return;}
+  ac.innerHTML='';
+  hits.forEach(function(s){
+    var d=document.createElement('div');
+    d.style.cssText='padding:8px 12px;cursor:pointer;border-bottom:1px solid #e2e8f0;color:#0f172a;background:#fff;';
+    d.innerHTML='<span style="font-weight:600;">'+s.name+'</span>'+(s.category?'<span style="color:#94a3b8;font-size:11px;margin-left:6px;">'+s.category+'</span>':'');
+    d.onmouseover=function(){this.style.background='#eff6ff';};
+    d.onmouseout=function(){this.style.background='#fff';};
+    d.onmousedown=function(e){
+      e.preventDefault();
+      inp.value=s.name;
+      ac.style.display='none';
+    };
+    ac.appendChild(d);
+  });
+  ac.style.display='block';
+}
+
 function submitNewPO(e){
   e.preventDefault();
   var poNum  = (document.getElementById('po_number').value||'').trim();
   var supplier = (document.getElementById('po_supplier').value||'').trim();
   var date   = document.getElementById('po_date').value || null;
   var notes  = (document.getElementById('po_notes').value||'').trim();
+  var soNum  = (document.getElementById('po_so_number')||{value:''}).value.trim();
   // collect items
   var items = [];
   document.querySelectorAll('.po-item-sel').forEach(function(sel){
@@ -1865,7 +1903,7 @@ function submitNewPO(e){
   var fetchUrl = isEdit ? '/api/po/'+_editPoId : '/api/po';
   var fetchMethod = isEdit ? 'PATCH' : 'POST';
   fetch(fetchUrl,{method:fetchMethod,headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({po_number:poNum,supplier:supplier||null,expected_date:date,notes:notes||null,items:items,created_by:user})})
+    body:JSON.stringify({po_number:poNum,so_number:soNum||null,supplier:supplier||null,expected_date:date,notes:notes||null,items:items,created_by:user})})
   .then(function(r){return r.json();}).then(function(d){
     if(d.ok){
       toast(isEdit ? 'PO updated ✓' : 'PO created ✓');
@@ -2719,6 +2757,7 @@ function doAddItem(){
 // ── Utils ────────────────────────────────────────────────────────────────────
 function esc(s){if(!s)return'';var d=document.createElement('div');d.textContent=String(s);return d.innerHTML;}
 function openModal(id){document.getElementById(id).classList.add('open');}
+document.addEventListener('click',function(e){var ac=document.getElementById('poSupplierAC');if(ac&&!ac.contains(e.target)&&e.target.id!=='po_supplier')ac.style.display='none';});
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 function toast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(type?' '+type:'');t.style.display='block';setTimeout(function(){t.style.display='none';},3000);}
 document.querySelectorAll('.modal-bg').forEach(function(el){el.addEventListener('click',function(e){if(e.target===el)closeModal(el.id);});});

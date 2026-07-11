@@ -1966,6 +1966,7 @@ def create_po():
     try:
         payload = {
             "po_number":     str(data.get("po_number","")).strip().upper(),
+            "so_number":     (data.get("so_number") or "").strip() or None,
             "supplier":      (data.get("supplier") or "").strip() or None,
             "expected_date": data.get("expected_date") or None,
             "status":        "pending",
@@ -2006,7 +2007,7 @@ def get_po(po_id):
 def update_po(po_id):
     """Update PO fields — items, notes, status, photos, etc."""
     data = request.get_json(silent=True) or {}
-    allowed = {"po_number","supplier","expected_date","status","items",
+    allowed = {"po_number","so_number","supplier","expected_date","status","items",
                "notes","discrepancy_notes","photos","received_by","received_at"}
     payload = {k: v for k, v in data.items() if k in allowed}
     if not payload:
