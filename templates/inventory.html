@@ -940,6 +940,60 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 </div>
 
 <!-- REQUESTS REVIEW MODAL -->
+<!-- Auth / Editor PIN Modal -->
+<div class="modal-bg" id="authModal">
+<div class="modal" style="max-width:380px;">
+  <div class="mhandle"></div>
+
+  <!-- Step 1: Select name -->
+  <div id="s1">
+    <div class="mtitle">🔐 Editor Access</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:14px;text-align:center;">Select your name to continue</div>
+    <div id="nameList" style="display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto;"></div>
+    <button class="btn-s" onclick="closeModal('authModal')" style="margin-top:14px;">Cancel</button>
+  </div>
+
+  <!-- Step 2: PIN entry -->
+  <div id="s2" style="display:none;">
+    <div class="mtitle" id="pinTitle" style="text-align:center;">Hello!</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:18px;text-align:center;" id="pinSub">Enter your 4-digit PIN</div>
+    <div style="display:flex;justify-content:center;gap:14px;margin-bottom:22px;">
+      <div class="pin-dot" id="pd0"></div>
+      <div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div>
+      <div class="pin-dot" id="pd3"></div>
+    </div>
+    <div style="font-size:12px;color:#ef4444;text-align:center;min-height:18px;margin-bottom:10px;" id="pinErr"></div>
+    <div class="pin-grid">
+      <button class="pk" onclick="pk('1')">1</button>
+      <button class="pk" onclick="pk('2')">2</button>
+      <button class="pk" onclick="pk('3')">3</button>
+      <button class="pk" onclick="pk('4')">4</button>
+      <button class="pk" onclick="pk('5')">5</button>
+      <button class="pk" onclick="pk('6')">6</button>
+      <button class="pk" onclick="pk('7')">7</button>
+      <button class="pk" onclick="pk('8')">8</button>
+      <button class="pk" onclick="pk('9')">9</button>
+      <button class="pk" onclick="pk('C')" style="font-size:14px;color:#64748b;">⌫</button>
+      <button class="pk" onclick="pk('0')">0</button>
+      <button class="pk" onclick="pk('X')" style="font-size:14px;color:#ef4444;">✕</button>
+    </div>
+    <button onclick="goS1()" style="margin-top:14px;background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;width:100%;text-align:center;">← Back</button>
+  </div>
+
+  <!-- Step 3: Welcome / Inbox -->
+  <div id="s3" style="display:none;">
+    <div class="mtitle" style="text-align:center;">✅ Unlocked</div>
+    <div style="font-size:15px;font-weight:700;text-align:center;margin-bottom:16px;" id="s3name"></div>
+    <div id="s3Reqs" style="margin-bottom:14px;"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <button class="btn-p" onclick="openInbox('pending')" style="font-size:13px;">📬 Inbox</button>
+      <button class="btn-s" onclick="doLogout()" style="font-size:13px;">🔒 Lock</button>
+    </div>
+    <button class="btn-s" onclick="closeModal('authModal')" style="margin-top:8px;font-size:13px;">Close</button>
+  </div>
+</div></div>
+
 <div class="modal-bg" id="reqsModal">
 <div class="modal">
   <div class="mhandle"></div>
