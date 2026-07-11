@@ -713,15 +713,13 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <div class="mtitle">📦 New Purchase Order</div>
 
   <form id="newPoForm" onsubmit="submitNewPO(event)">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-      <div>
-        <label style="font-size:12px;color:var(--muted);">PO Number *</label>
-        <input id="po_number" required placeholder="e.g. PO-2026-001" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:14px;box-sizing:border-box;">
-      </div>
-      <div>
-        <label style="font-size:12px;color:var(--muted);">Supplier</label>
-        <input id="po_supplier" placeholder="Supplier name" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:14px;box-sizing:border-box;">
-      </div>
+    <div style="margin-bottom:10px;">
+      <label style="font-size:12px;color:var(--muted);">PO Number *</label>
+      <input id="po_number" required placeholder="e.g. PO-2026-001" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:14px;box-sizing:border-box;">
+    </div>
+    <div style="margin-bottom:10px;">
+      <label style="font-size:12px;color:var(--muted);">Supplier</label>
+      <input id="po_supplier" placeholder="Supplier name" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:14px;box-sizing:border-box;">
     </div>
     <div style="margin-bottom:10px;">
       <label style="font-size:12px;color:var(--muted);">Expected Date</label>
@@ -1688,11 +1686,11 @@ function addPoItemRow(item){
   });
   var row = document.createElement('div');
   row.id = 'porow-' + idx;
-  row.style.cssText = 'display:grid;grid-template-columns:2fr 80px 80px 28px;gap:6px;align-items:center;';
+  row.style.cssText = 'display:flex;gap:6px;align-items:center;flex-wrap:wrap;';
   row.innerHTML =
-    '<select class="po-item-sel" data-idx="' + idx + '" style="padding:6px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:13px;">' + opts + '</select>' +
-    '<input type="number" min="0" step="0.01" placeholder="Qty" value="' + iqty + '" class="po-item-qty" data-idx="' + idx + '" style="padding:6px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:13px;text-align:center;">' +
-    '<input type="number" min="0" step="0.01" placeholder="$/unit" value="' + icost + '" class="po-item-cost" data-idx="' + idx + '" style="padding:6px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:13px;text-align:center;">' +
+    '<select class="po-item-sel" data-idx="' + idx + '" style="flex:1;min-width:140px;padding:6px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:13px;">' + opts + '</select>' +
+    '<input type="number" min="0" step="0.01" placeholder="Qty" value="' + iqty + '" class="po-item-qty" data-idx="' + idx + '" style="width:72px;padding:6px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:13px;text-align:center;">' +
+    '<input type="number" min="0" step="0.01" placeholder="$/unit" value="' + icost + '" class="po-item-cost" data-idx="' + idx + '" style="width:72px;padding:6px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:13px;text-align:center;">' +
     '<button type="button" onclick="document.getElementById("porow-"+idx).remove()" style="background:none;border:none;color:#f87171;font-size:16px;cursor:pointer;">×</button>';
   document.getElementById('poItemRows').appendChild(row);
 }
