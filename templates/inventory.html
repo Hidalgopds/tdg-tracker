@@ -1396,10 +1396,10 @@ function doMatAC(inp,idx){
   ac.innerHTML='';
   hits.forEach(function(it){
     var d=document.createElement('div');
-    d.style.cssText='padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);color:#0f172a;background:#f0f4f8;';
+    d.style.cssText='padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #e2e8f0;color:#0f172a;background:#fff;';
     d.textContent=(it.name||'')+(it.qty_on_hand!=null?' ('+it.qty_on_hand+' '+(it.unit||'EA')+')':'');
-    d.onmouseover=function(){this.style.background='#1a3050';};
-    d.onmouseout=function(){this.style.background='';};
+    d.onmouseover=function(){this.style.background='#eff6ff';this.style.color='#1d4ed8';};
+    d.onmouseout=function(){this.style.background='#fff';this.style.color='#0f172a';};
     d.onmousedown=function(e){e.preventDefault();inp.value=it.name||'';
       var hidEl=document.querySelector('.mat-id[data-idx="'+idx+'"]');if(hidEl)hidEl.value=it.id||'';
       ac.style.display='none';};
