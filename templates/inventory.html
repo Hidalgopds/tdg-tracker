@@ -47,7 +47,6 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .ic-loc::before{content:"📍";font-size:8px;}
 .loc-inp{flex:1;min-width:60px;height:28px;background:#f8fafc;border:1px solid var(--border);border-radius:6px;color:#0f172a;font-size:11px;padding:0 6px;font-family:monospace;text-transform:uppercase;}
 .ic-edit{display:none;gap:6px;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;flex-wrap:wrap;}
-.ic-req-btn{display:none;width:100%;margin-top:8px;padding:6px 0;border:1px solid #f97316;border-radius:6px;background:#fff7ed;color:#c2410c;font-size:11px;font-weight:600;cursor:pointer;text-align:center;}
 .editor-active .ic-edit{display:flex;}
 .qty-inp{width:55px;height:30px;background:#f8fafc;border:1px solid var(--border);color:#0f172a;border-radius:6px;color:var(--text);font-size:13px;text-align:center;}
 .ic-save{flex:1;height:30px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;}
@@ -1132,8 +1131,6 @@ function renderGrid(){
   var toolbar=document.getElementById('invToolbar');
   if(toolbar)toolbar.style.display=edUser?'flex':'none';
   f.forEach(function(it){g.appendChild(mkCard(it));});
-  // Show request buttons only for non-editors (must run after cards are in DOM)
-  document.querySelectorAll('.ic-req-btn').forEach(function(b){b.style.display=edUser?'none':'block';});
 }
 
 function mkCard(it){
@@ -1153,7 +1150,6 @@ function mkCard(it){
     (stxt?'<span class="ic-stat '+sc+'">'+stxt+'</span>':'')+
     (lastR?'<div style="font-size:9px;color:var(--muted);margin-top:3px;">Restocked: '+lastR+'</div>':'')+
     '</div>'+
-    '<button class="ic-req-btn" onclick="openReqModal(this)" data-id="'+it.id+'" data-name="'+esc(it.name)+'" data-unit="'+esc(it.unit||'EA')+'" style="display:none;">📋 Request</button>'+
     '<div class="ic-edit">'+
       '<input class="qty-inp" id="q-'+it.id+'" type="number" min="0" value="'+qty+'" title="On Hand">'+
       '<input class="qty-inp" id="sq-'+it.id+'" type="number" min="0" placeholder="Safe" title="Safe qty" value="'+(safeQ||'')+'">'+
