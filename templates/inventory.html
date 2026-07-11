@@ -498,12 +498,16 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <button onclick="openLowStockModal()" style="height:28px;padding:0 12px;background:rgba(251,146,60,.2);border:1px solid rgba(251,146,60,.5);border-radius:6px;color:#fb923c;font-size:12px;font-weight:700;cursor:pointer;">View &amp; Email Alert →</button>
 </div>
 
-<!-- ITEM TOOLBAR -->
-<div id="invToolbar" style="display:none;align-items:center;justify-content:flex-end;gap:6px;padding:8px 16px 4px;">
+<!-- ITEM TOOLBAR (editor only) -->
+<div id="invToolbar" style="display:none;align-items:center;justify-content:flex-end;gap:6px;padding:8px 16px 0;">
   <button onclick="openNewItemModal()" class="btn-p" style="height:32px;padding:0 14px;font-size:12px;" title="Add a single new material item">+ Add Item</button>
   <button onclick="document.getElementById('xlsxImportInput').click()" class="btn-s" style="height:32px;padding:0 14px;font-size:12px;" title="Import multiple items from an Excel file">📥 Import Excel</button>
   <input id="xlsxImportInput" type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleXlsxImport(event)">
-  <button onclick="printItemLabels()" class="btn-s" style="height:32px;padding:0 14px;font-size:12px;" title="Print QR labels for all items — 4 per page">🖨 Print Labels</button>
+</div>
+<!-- ITEM ACTIONS (always visible) -->
+<div style="display:flex;justify-content:flex-end;gap:6px;padding:6px 16px 4px;">
+  <button onclick="exportItemsCSV()" class="btn-s" style="height:30px;padding:0 12px;font-size:12px;" title="Export current inventory list to Excel-ready CSV">⬇ Export CSV</button>
+  <button onclick="printItemLabels()" class="btn-s" style="height:30px;padding:0 12px;font-size:12px;" title="Print QR labels — 4 per page">🖨 Print Labels</button>
 </div>
 
 <!-- GRID -->
@@ -516,7 +520,10 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 <div class="um-panel" id="um-tab-content">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
     <div style="font-size:15px;font-weight:700;color:var(--text);">🏪 Supplier Directory</div>
-    <button onclick="openNewSupplier()" class="btn-p" style="height:32px;padding:0 14px;font-size:12px;">+ Add Supplier</button>
+    <div style="display:flex;gap:6px;">
+      <button onclick="exportSuppliersCSV()" class="btn-s" style="height:32px;padding:0 12px;font-size:12px;" title="Export supplier list to CSV">⬇ Export CSV</button>
+      <button onclick="openNewSupplier()" class="btn-p" style="height:32px;padding:0 14px;font-size:12px;">+ Add Supplier</button>
+    </div>
   </div>
   <input id="supplierSearch" placeholder="Search suppliers..." oninput="filterSuppliers()"
     style="width:100%;box-sizing:border-box;height:34px;padding:0 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:13px;margin-bottom:12px;">
@@ -1954,7 +1961,7 @@ var _xlsxParsed=[];
 function closePO(poId){
   if(!confirm('Mark this PO as closed? You can still receive partial items already logged.'))return;
   fetch('/api/po/'+poId,{method:'PATCH',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({status:'closed'})})
+    body:JSON.stringify({status:'cancelled'})})
   .then(function(r){return r.json();}).then(function(d){
     if(d.ok||d.id){toast('PO closed ✓');loadPOs();}
     else toast(d.error||'Error','error');
@@ -2159,6 +2166,39 @@ function loadSuppliers(){
     document.getElementById('supplierList').innerHTML='<div style="color:#f87171;text-align:center;padding:24px;">Failed to load</div>';
   });
 }
+function exportItemsCSV(){
+  var nl="
+";
+  var csv='﻿SKU,Name,Category,Unit,Qty On Hand,Safe Stock,Location,Last Restocked'+nl;
+  var items=ITEMS;
+  if(activeCat&&activeCat!=='All')items=items.filter(function(it){return it.category===activeCat;});
+  items.forEach(function(it){
+    var q=function(s){return '"'+String(s||'').replace(/"/g,'""')+'"';};
+    csv+=[q(it.sku||''),q(it.name||''),q(it.category||''),q(it.unit||'EA'),
+      it.qty_on_hand||0,it.safe_qty||0,q(it.location_code||''),
+      it.last_restocked_at?it.last_restocked_at.substring(0,10):''
+    ].join(',')+nl;
+  });
+  var a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='inventory_'+new Date().toISOString().substring(0,10)+'.csv';
+  a.click();
+}
+
+function exportSuppliersCSV(){
+  var nl="
+";
+  var csv='﻿Name,Category,Contact,Phone,Email,Notes'+nl;
+  _allSuppliers.forEach(function(s){
+    var q=function(v){return '"'+String(v||'').replace(/"/g,'""')+'"';};
+    csv+=[q(s.name),q(s.category),q(s.contact_name),q(s.phone),q(s.email),q(s.notes)].join(',')+nl;
+  });
+  var a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='suppliers_'+new Date().toISOString().substring(0,10)+'.csv';
+  a.click();
+}
+
 function filterSuppliers(){
   var q=(document.getElementById('supplierSearch').value||'').toLowerCase();
   renderSuppliers(_allSuppliers.filter(function(s){
