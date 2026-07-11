@@ -1131,9 +1131,9 @@ function renderGrid(){
   if(edUser)g.classList.add('editor-active');else g.classList.remove('editor-active');
   var toolbar=document.getElementById('invToolbar');
   if(toolbar)toolbar.style.display=edUser?'flex':'none';
-  // Show request buttons only for non-editors
-  document.querySelectorAll('.ic-req-btn').forEach(function(b){b.style.display=edUser?'none':'block';});
   f.forEach(function(it){g.appendChild(mkCard(it));});
+  // Show request buttons only for non-editors (must run after cards are in DOM)
+  document.querySelectorAll('.ic-req-btn').forEach(function(b){b.style.display=edUser?'none':'block';});
 }
 
 function mkCard(it){
