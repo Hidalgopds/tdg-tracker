@@ -2544,6 +2544,59 @@ def export_material_requests():
     r = requests.get(url, headers=sb_headers())
     return jsonify(r.json() if r.ok else [])
 
+# ── Suppliers ────────────────────────────────────────────────────────────────
+@app.route("/api/suppliers", methods=["GET"])
+def get_suppliers():
+    url = f"{SUPABASE_URL}/rest/v1/suppliers?select=*&order=name.asc"
+    r = requests.get(url, headers=sb_headers())
+    return jsonify({"suppliers": r.json() if r.ok else []})
+
+@app.route("/api/suppliers", methods=["POST"])
+def create_supplier():
+    data = request.get_json(silent=True) or {}
+    name = (data.get("name") or "").strip()
+    if not name:
+        return jsonify({"error": "Name required"}), 400
+    payload = {
+        "name":         name,
+        "category":     data.get("category") or None,
+        "contact_name": (data.get("contact_name") or "").strip() or None,
+        "phone":        (data.get("phone") or "").strip() or None,
+        "email":        (data.get("email") or "").strip() or None,
+        "notes":        (data.get("notes") or "").strip() or None,
+    }
+    r = requests.post(f"{SUPABASE_URL}/rest/v1/suppliers",
+                      headers={**sb_headers(), "Prefer": "return=representation"},
+                      json=payload)
+    if r.ok:
+        row = r.json()
+        rec = row[0] if isinstance(row, list) and row else row
+        return jsonify({"ok": True, "id": rec.get("id")})
+    return jsonify({"error": r.text}), 400
+
+@app.route("/api/suppliers/<sup_id>", methods=["PATCH"])
+def update_supplier(sup_id):
+    data = request.get_json(silent=True) or {}
+    payload = {}
+    for k in ["name","category","contact_name","phone","email","notes"]:
+        if k in data:
+            payload[k] = (data[k] or "").strip() or None
+    if not payload:
+        return jsonify({"error": "Nothing to update"}), 400
+    r = requests.patch(
+        f"{SUPABASE_URL}/rest/v1/suppliers?id=eq.{sup_id}",
+        headers={**sb_headers(), "Prefer": "return=representation"},
+        json=payload)
+    return jsonify({"ok": r.ok}) if r.ok else jsonify({"error": r.text}), 400
+
+@app.route("/api/suppliers/<sup_id>", methods=["DELETE"])
+def delete_supplier(sup_id):
+    r = requests.delete(
+        f"{SUPABASE_URL}/rest/v1/suppliers?id=eq.{sup_id}",
+        headers=sb_headers())
+    return jsonify({"ok": r.ok})
+
+
 # ── App users / PIN ──────────────────────────────────────────────
 @app.route("/api/users/has-pin", methods=["GET"])
 def has_pin():

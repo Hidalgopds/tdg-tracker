@@ -477,7 +477,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 <!-- TAB BAR -->
 <div class="inv-tabs">
   <button class="inv-tab active" id="itab-inv" onclick="switchInvTab('inv')">&#x1F4E6; Inventory</button>
-  <button class="inv-tab" id="itab-units" onclick="switchInvTab('units')">&#x1F3D7; Job Tracking</button>
+  <button class="inv-tab" id="itab-units" onclick="switchInvTab('units')">🏪 Suppliers</button>
   <button class="inv-tab" id="itab-receiving" onclick="switchInvTab('receiving')" style="display:none;">&#x1F4E6; Receiving</button>
   <button class="inv-tab" id="itab-dispatch" onclick="switchInvTab('dispatch')" style="display:none;">&#x1F4CB; Dispatch</button>
 </div>
@@ -505,161 +505,18 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 
 <!-- UNIT MATERIALS PANEL -->
 <div class="um-panel" id="um-tab-content">
-  <div class="um-topbar">
-    <button class="um-create-btn" onclick="openCU()">+ Create Unit</button>
-    <div class="um-unit-bar" id="umUnitBar"></div>
-    <button class="um-completed-toggle" id="umCompletedToggle" onclick="toggleCompleted()" style="display:none">&#x25BC; Completed (0)</button>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+    <div style="font-size:15px;font-weight:700;color:var(--text);">🏪 Supplier Directory</div>
+    <button onclick="openNewSupplier()" class="btn-p" style="height:32px;padding:0 14px;font-size:12px;">+ Add Supplier</button>
   </div>
-  <div id="umCompletedBar" style="display:none;flex-wrap:wrap;gap:6px;padding:0 0 10px;"></div>
-
-  <div id="umContentArea" class="um-content-area">
-    <div class="um-unit-header">
-      <div>
-        <div class="um-unit-title" id="umUnitTitle"></div>
-        <div id="umUnitStatus" class="um-unit-status status-active">Active</div>
-      </div>
-      <div class="um-action-btns">
-        <button class="add-mat-btn" id="umAddMatBtn" onclick="openMatForm()">+ Add Material</button>
-        <button class="complete-unit-btn" id="umCompleteUnitBtn" onclick="completeUnit()">&#x2713; Mark Complete</button>
-        <button class="reopen-unit-btn" id="umReopenUnitBtn" style="display:none" onclick="reopenUnit()">&#x21BA; Reopen Unit</button>
-      </div>
-    </div>
-
-    <div class="um-form" id="umForm">
-      <h4 id="umFormTitle">Add Material</h4>
-      <input type="hidden" id="umEditId">
-      <div class="um-g2">
-        <div class="um-field"><label>Material / Item</label><input class="um-inp" id="umMaterial" placeholder="e.g. Bolts 3/8"></div>
-        <div class="um-field"><label>Unit of Measure</label><input class="um-inp" id="umMeasure" placeholder="e.g. pcs, lbs, ft"></div>
-      </div>
-      <div class="um-g3">
-        <div class="um-field"><label>Qty Delivered</label><input class="um-inp" id="umDelivered" type="number" min="0" placeholder="0"></div>
-        <div class="um-field"><label>Qty Remaining</label><input class="um-inp" id="umRemaining" type="number" min="0" placeholder="0"></div>
-        <div class="um-field"><label>Date</label><input class="um-inp" id="umDate" type="date"></div>
-      </div>
-      <div class="um-field" style="margin-bottom:10px"><label>Notes</label><input class="um-inp" id="umNotes" placeholder="Optional notes"></div>
-      <div class="um-form-btns">
-        <button class="um-cancel-btn" onclick="closeMatForm()">Cancel</button>
-        <button class="um-save-btn" onclick="saveMaterial()">Save</button>
-      </div>
-    </div>
-
-    <div style="overflow-x:auto">
-      <table class="um-table">
-        <thead><tr>
-          <th>Material</th><th>Measure</th><th>Delivered</th>
-          <th>Remaining</th><th>Date</th><th>Notes</th><th></th>
-        </tr></thead>
-        <tbody id="umTableBody"></tbody>
-      </table>
-    </div>
+  <input id="supplierSearch" placeholder="Search suppliers..." oninput="filterSuppliers()"
+    style="width:100%;box-sizing:border-box;height:34px;padding:0 12px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:13px;margin-bottom:12px;">
+  <div id="supplierList" style="display:flex;flex-direction:column;gap:8px;">
+    <div style="color:var(--muted);text-align:center;padding:32px;font-size:13px;">Loading suppliers...</div>
   </div>
-  <div id="umSelectPrompt" class="um-select-prompt">Create or select a unit above to get started</div>
 </div>
 
-<!-- FAB buttons -->
-<button class="fab" onclick="openReqModal()">📋 Request Materials</button>
-<button class="fab-add" id="fabAdd" onclick="openModal('addModal')" title="Add Item">➕</button>
-
-<!-- ═══ MODALS ═══ -->
-
-<!-- REQUEST MODAL -->
-<div class="modal-bg" id="reqModal">
-<div class="modal">
-  <div class="mhandle"></div>
-  <div class="mtitle">📋 Request Materials</div>
-  <div class="fg"><label class="fl">Requested By</label>
-    <input class="fi" id="rqName" type="text" placeholder="Name..." readonly style="opacity:.8;cursor:default;background:#f1f5f9;"></div>
-  <div class="fg" id="rqCompanyFg" style="display:none"><label class="fl">Company</label>
-    <input class="fi" id="rqCompany" type="text" placeholder="Your company name..." readonly style="opacity:.8;cursor:default;background:#f1f5f9;"></div>
-  <div class="fg"><label class="fl">Job Name <span style="color:#ef4444;font-size:10px;" id="rqJobRequired"></span></label>
-    <input class="fi" id="rqJob" type="text" placeholder="e.g. TDG Data Center - Bldg 7"></div>
-  <div id="matLines"></div>
-  <button type="button" onclick="addMatLine()" style="width:100%;height:34px;background:rgba(14,165,233,.1);border:1.5px dashed rgba(14,165,233,.4);border-radius:8px;color:#38bdf8;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:6px;">+ Add Material</button>
-  <!-- legacy compat hidden fields -->
-  <input type="hidden" id="rqMat"><input type="hidden" id="rqQty"><input type="hidden" id="rqBldg">
-  <input type="hidden" id="rqItemId"><div id="acList" style="display:none"></div><div id="dupWarn"></div>
-  <div class="fg"><label class="fl">Notes (optional)</label>
-    <textarea class="fta" id="rqNotes" placeholder="Any details..."></textarea></div>
-  <button class="btn-p" onclick="submitReq()">📤 Send Request</button>
-  <button class="btn-s" onclick="closeModal('reqModal')">Cancel</button>
-</div></div>
-
-<!-- EDITOR AUTH MODAL -->
-<div class="modal-bg" id="authModal">
-<div class="modal">
-  <div class="mhandle"></div>
-  <!-- Step 1: pick name -->
-  <div id="s1">
-    <div class="mtitle">🔒 Editor Access</div>
-    <label class="fl">Select your name</label>
-    <div id="nameList" style="margin-top:10px"></div>
-    <button class="btn-s" onclick="closeModal('authModal')">Cancel</button>
-  </div>
-  <!-- Step 2: PIN -->
-  <div id="s2" style="display:none">
-    <div class="mtitle" style="text-align:center" id="pinTitle">Enter PIN</div>
-    <div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:8px" id="pinSub">4-digit PIN</div>
-    <div class="pin-display">
-      <div class="pin-dot" id="pd0"></div><div class="pin-dot" id="pd1"></div>
-      <div class="pin-dot" id="pd2"></div><div class="pin-dot" id="pd3"></div>
-    </div>
-    <div class="pin-err" id="pinErr"></div>
-    <div class="pin-grid" style="margin-top:12px">
-      <button class="pk" onclick="pk('1')">1</button><button class="pk" onclick="pk('2')">2</button><button class="pk" onclick="pk('3')">3</button>
-      <button class="pk" onclick="pk('4')">4</button><button class="pk" onclick="pk('5')">5</button><button class="pk" onclick="pk('6')">6</button>
-      <button class="pk" onclick="pk('7')">7</button><button class="pk" onclick="pk('8')">8</button><button class="pk" onclick="pk('9')">9</button>
-      <button class="pk" onclick="pk('C')" style="color:var(--muted);font-size:18px">⌫</button>
-      <button class="pk" onclick="pk('0')">0</button>
-      <button class="pk" onclick="pk('X')" style="color:var(--red);font-size:14px">✕</button>
-    </div>
-    <button class="btn-s" style="margin-top:14px" onclick="goS1()">← Back</button>
-  </div>
-  <!-- Step 3: logged in -->
-  <div id="s3" style="display:none;text-align:center">
-    <div style="font-size:36px;margin-bottom:8px">🔓</div>
-    <div id="s3name" style="font-size:16px;font-weight:800"></div>
-    <div style="font-size:12px;color:var(--muted);margin-top:4px">Editor access active</div>
-    <div style="margin-top:18px;padding:14px;background:#f8fafc;border-radius:10px;border:1px solid var(--border)">
-      <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:10px">PENDING REQUESTS</div>
-      <div id="inlineReqs"></div>
-    </div>
-    <button class="btn-s" onclick="closeModal('authModal')" style="margin-top:10px">Close</button>
-    <button class="btn-s" onclick="doLogout()" style="color:var(--red);border-color:rgba(239,68,68,.3);margin-top:6px">🔒 Log Out</button>
-  </div>
-</div></div>
-
-<!-- ADD ITEM MODAL -->
-<div class="modal-bg" id="addModal">
-<div class="modal">
-  <div class="mhandle"></div>
-  <div class="mtitle">➕ Add Item</div>
-  <div class="fg"><label class="fl">Item Name</label>
-    <input class="fi" id="nName" type="text" placeholder='e.g. 2" Lock Rings'></div>
-  <div class="grid2">
-    <div class="fg"><label class="fl">Category</label>
-      <select class="fsel" id="nCat">
-        <option>Cable Tray</option><option>Conduit</option><option>Electrical</option>
-        <option>Fasteners</option><option>Hardware</option><option>Roofing</option>
-        <option>Sealant</option><option>Trim</option><option>Drainage</option>
-        <option>Insulation</option><option>Wall Panels</option><option>Coatings</option><option>General</option>
-      </select></div>
-    <div class="fg"><label class="fl">Unit</label>
-      <select class="fsel" id="nUnit">
-        <option>EA</option><option>BX</option><option>LF</option><option>FT</option>
-        <option>RL</option><option>TU</option><option>SET</option><option>QT</option>
-      </select></div>
-  </div>
-  <div class="fg"><label class="fl">Qty on Hand</label>
-    <input class="fi" id="nQty" type="number" min="0" placeholder="0"></div>
-  <div class="fg"><label class="fl">Notes</label>
-    <input class="fi" id="nNotes" type="text" placeholder="Optional"></div>
-  <button class="btn-p" onclick="doAddItem()">✅ Add Item</button>
-  <button class="btn-s" onclick="closeModal('addModal')">Cancel</button>
-</div></div>
-
-<!-- LOCATIONS TAB -->
-<div id="loc-tab-content" style="display:none;">
+id="loc-tab-content" style="display:none;">
   <div style="padding:16px;">
     <!-- Toolbar -->
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
@@ -726,6 +583,16 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
     <div style="margin-bottom:10px;">
       <label style="font-size:12px;color:var(--muted);">Notes</label>
       <textarea id="po_notes" rows="2" placeholder="Optional notes..." style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:14px;box-sizing:border-box;resize:vertical;"></textarea>
+    </div>
+
+    <!-- External PO Document Upload -->
+    <div style="margin-bottom:12px;">
+      <label style="font-size:12px;color:var(--muted);font-weight:600;">📎 Attach PO Document (PDF / Image)</label>
+      <div id="poDocZone" onclick="document.getElementById('poDocInput').click()"
+        style="margin-top:4px;border:2px dashed var(--border);border-radius:7px;padding:10px 14px;cursor:pointer;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;">
+        <span id="poDocLabel">Tap to upload PDF or image from supplier</span>
+      </div>
+      <input id="poDocInput" type="file" accept=".pdf,image/*" style="display:none;" onchange="handlePoDoc(event)">
     </div>
 
     <!-- Items -->
@@ -817,8 +684,8 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
       style="height:30px;border:1px solid var(--border);border-radius:6px;padding:0 6px;font-size:12px;background:var(--card);color:var(--text);flex:1;min-width:110px;">
     <input id="qDateTo" type="date" onchange="runQuery()"
       style="height:30px;border:1px solid var(--border);border-radius:6px;padding:0 6px;font-size:12px;background:var(--card);color:var(--text);flex:1;min-width:110px;">
-    <button onclick="exportQueryCSV()" class="btn-s" style="height:30px;padding:0 10px;font-size:11px;white-space:nowrap;">⬇ CSV</button>
-    <button onclick="buildShareText()" class="btn-s" style="height:30px;padding:0 10px;font-size:11px;">📋</button>
+    <button onclick="exportQueryCSV()" class="btn-s" style="height:30px;padding:0 12px;font-size:12px;white-space:nowrap;display:flex;align-items:center;gap:4px;">⬇ Export CSV</button>
+    <button onclick="buildShareText()" class="btn-s" style="height:30px;padding:0 12px;font-size:12px;white-space:nowrap;display:flex;align-items:center;gap:4px;">📋 Share Report</button>
   </div>
   <div id="qResultCount" style="font-size:11px;color:var(--muted);margin-bottom:6px;"></div>
   <div id="queryResults"></div>
@@ -854,6 +721,50 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <div style="display:flex;gap:8px;">
     <button onclick="submitAllocatePO()" class="btn-p" style="flex:1;background:#7c3aed;">📋 Confirm Allocation</button>
     <button onclick="closeModal('allocatePoModal')" class="btn-s" style="flex:1;">Cancel</button>
+  </div>
+</div></div>
+
+<!-- NEW SUPPLIER MODAL -->
+<div class="modal-bg" id="newSupplierModal">
+<div class="modal" style="max-width:480px;">
+  <div class="mhandle"></div>
+  <div class="mtitle" id="supplierModalTitle">🏪 Add Supplier</div>
+  <input type="hidden" id="editSupplierId">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+    <div style="grid-column:1/-1;">
+      <label style="font-size:11px;color:var(--muted);">Company Name *</label>
+      <input id="suppName" class="fi" placeholder="e.g. Fastenal" style="margin-top:3px;">
+    </div>
+    <div>
+      <label style="font-size:11px;color:var(--muted);">Category</label>
+      <select id="suppCat" class="fi" style="margin-top:3px;height:36px;">
+        <option value="">General</option>
+        <option>Cable Tray</option><option>Conduit</option><option>Electrical</option>
+        <option>Fasteners</option><option>Hardware</option><option>Roofing</option>
+        <option>Coatings</option><option>Insulation</option><option>Drainage</option>
+      </select>
+    </div>
+    <div>
+      <label style="font-size:11px;color:var(--muted);">Contact Name</label>
+      <input id="suppContact" class="fi" placeholder="Rep name" style="margin-top:3px;">
+    </div>
+    <div>
+      <label style="font-size:11px;color:var(--muted);">Phone</label>
+      <input id="suppPhone" class="fi" type="tel" placeholder="(832) 555-0100" style="margin-top:3px;">
+    </div>
+    <div>
+      <label style="font-size:11px;color:var(--muted);">Email</label>
+      <input id="suppEmail" class="fi" type="email" placeholder="orders@supplier.com" style="margin-top:3px;">
+    </div>
+    <div style="grid-column:1/-1;">
+      <label style="font-size:11px;color:var(--muted);">Notes</label>
+      <textarea id="suppNotes" class="fi" rows="2" placeholder="Lead time, payment terms, etc." style="margin-top:3px;resize:vertical;"></textarea>
+    </div>
+  </div>
+  <div id="suppErr" style="display:none;color:#ef4444;font-size:12px;margin-bottom:8px;padding:6px 10px;background:rgba(239,68,68,.08);border-radius:6px;"></div>
+  <div style="display:flex;gap:8px;">
+    <button onclick="saveSupplier()" class="btn-p" style="flex:1;" id="suppSaveBtn">Save Supplier</button>
+    <button onclick="closeModal('newSupplierModal')" class="btn-s" style="flex:1;">Cancel</button>
   </div>
 </div></div>
 
@@ -1580,6 +1491,12 @@ function renderReqCard(req){
     btnD.textContent='📦 Signature Required';
     btnD.onclick=function(){deliverReq(req);};
     el.appendChild(btnD);
+  } else if(req.status==='Delivered'){
+    var btnP=document.createElement('button');
+    btnP.style.cssText='width:100%;height:32px;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.35);border-radius:8px;color:#4ade80;font-size:11px;font-weight:700;cursor:pointer;margin-top:6px;';
+    btnP.textContent='🖨 Print Dispatch Receipt';
+    btnP.onclick=function(){printDispatchReceipt(req);};
+    el.appendChild(btnP);
   }
   if(_LVL>=5){
     var btnDel=document.createElement('button');
@@ -1948,6 +1865,150 @@ function submitReceivePO(){
   }).catch(function(e){toast('Error: '+e.message,'error');});
 }
 var _rcvItemIds=[];
+var _poDocData=null;
+
+function handlePoDoc(e){
+  var f=e.target.files&&e.target.files[0];
+  if(!f){return;}
+  var lbl=document.getElementById('poDocLabel');
+  if(lbl)lbl.textContent='📎 '+f.name+' ('+Math.round(f.size/1024)+'KB)';
+  var reader=new FileReader();
+  reader.onload=function(ev){_poDocData={name:f.name,type:f.type,data:ev.target.result};};
+  reader.readAsDataURL(f);
+  e.target.value='';
+}
+
+function printDispatchReceipt(req){
+  var mats=[];
+  if(req.materials_json){try{mats=JSON.parse(req.materials_json);}catch(e){}}
+  if(!mats.length)mats=[{item_name:req.item_name||'',qty_needed:req.qty_needed||0,building:req.building||''}];
+  var reqNum='REQ-'+(req.id?String(req.id).replace(/-/g,'').substring(0,8).toUpperCase():'????');
+  var rows=mats.map(function(m){return '<tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">'+
+    (m.item_name||'')+'</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;text-align:center;">'+
+    (m.qty_needed||0)+'</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">'+
+    (m.building||'')+'</td></tr>';}).join('');
+  var html='<!DOCTYPE html><html><head><title>Dispatch Receipt '+reqNum+'</title>'+
+    '<style>body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;color:#0f172a;}'+
+    'h2{border-bottom:2px solid #0f172a;padding-bottom:8px;}'+
+    'table{width:100%;border-collapse:collapse;margin:16px 0;}'+
+    'th{background:#f8fafc;padding:8px;text-align:left;border-bottom:2px solid #e2e8f0;}'+
+    '.sig-box{border:1px solid #cbd5e1;height:80px;margin-top:8px;border-radius:6px;}</style></head><body>'+
+    '<h2>📦 Dispatch Receipt</h2>'+
+    '<table style="margin-bottom:16px;"><tr><td><strong>REQ #</strong></td><td>'+reqNum+'</td>'+
+    '<td><strong>Date</strong></td><td>'+(req.created_at?req.created_at.split('T')[0]:'')+'</td></tr>'+
+    '<tr><td><strong>Requester</strong></td><td>'+(req.requester_name||'')+'</td>'+
+    '<td><strong>Job</strong></td><td>'+(req.job_name||req.building||'')+'</td></tr>'+
+    '<tr><td><strong>Company</strong></td><td>'+(req.contractor_company||'BSynch')+'</td>'+
+    '<td><strong>Delivered by</strong></td><td>'+(req.delivered_by||'')+'</td></tr></table>'+
+    '<table><thead><tr><th>Material</th><th style="text-align:center;">Qty</th><th>Unit</th></tr></thead>'+
+    '<tbody>'+rows+'</tbody></table>'+
+    '<div style="margin-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:32px;">'+
+    '<div><div style="font-size:12px;color:#64748b;margin-bottom:4px;">Received by (print name)</div><div class="sig-box"></div></div>'+
+    '<div><div style="font-size:12px;color:#64748b;margin-bottom:4px;">Signature</div><div class="sig-box"></div></div>'+
+    '</div><div style="margin-top:40px;font-size:10px;color:#94a3b8;text-align:center;">Generated by BSynch · Powered by Cognita Ops</div>'+
+    '</body></html>';
+  var w=window.open('','_blank','width=750,height=900');
+  if(w){w.document.write(html);w.document.close();setTimeout(function(){w.print();},400);}
+}
+
+// ── Suppliers ─────────────────────────────────────────────────
+var _allSuppliers=[], _suppEditId=null;
+function loadSuppliers(){
+  fetch('/api/suppliers').then(function(r){return r.json();}).then(function(d){
+    _allSuppliers=d.suppliers||[];
+    renderSuppliers(_allSuppliers);
+  }).catch(function(){
+    document.getElementById('supplierList').innerHTML='<div style="color:#f87171;text-align:center;padding:24px;">Failed to load</div>';
+  });
+}
+function filterSuppliers(){
+  var q=(document.getElementById('supplierSearch').value||'').toLowerCase();
+  renderSuppliers(_allSuppliers.filter(function(s){
+    return (s.name||'').toLowerCase().includes(q)||(s.category||'').toLowerCase().includes(q)||(s.contact_name||'').toLowerCase().includes(q);
+  }));
+}
+function renderSuppliers(list){
+  var el=document.getElementById('supplierList');
+  if(!list.length){el.innerHTML='<div style="color:var(--muted);text-align:center;padding:32px;font-size:13px;">No suppliers yet. Add your first one.</div>';return;}
+  el.innerHTML='';
+  list.forEach(function(s){
+    var card=document.createElement('div');
+    card.style.cssText='background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;align-items:flex-start;gap:12px;';
+    var info=document.createElement('div');info.style.flex='1';
+    var nm=document.createElement('div');nm.style.cssText='font-weight:700;font-size:14px;';nm.textContent=s.name||'';
+    info.appendChild(nm);
+    if(s.category){var cat=document.createElement('div');cat.style.cssText='font-size:11px;color:var(--muted);margin-bottom:4px;';cat.textContent=s.category;info.appendChild(cat);}
+    var meta=document.createElement('div');meta.style.cssText='font-size:12px;color:var(--muted);';
+    var metaParts=[];
+    if(s.contact_name)metaParts.push('👤 '+esc(s.contact_name));
+    if(s.phone)metaParts.push('📞 '+esc(s.phone));
+    if(s.email)metaParts.push('✉️ '+esc(s.email));
+    meta.textContent=metaParts.join('  ');info.appendChild(meta);
+    if(s.notes){var nt=document.createElement('div');nt.style.cssText='font-size:11px;color:var(--muted);margin-top:4px;';nt.textContent=s.notes;info.appendChild(nt);}
+    card.appendChild(info);
+    var btns=document.createElement('div');btns.style.cssText='display:flex;gap:6px;flex-shrink:0;';
+    var eb=document.createElement('button');eb.className='btn-s';eb.style.cssText='height:28px;padding:0 10px;font-size:11px;';eb.textContent='Edit';
+    (function(sid){eb.onclick=function(){editSupplier(sid);};})(s.id);
+    var db=document.createElement('button');db.style.cssText='height:28px;padding:0 10px;font-size:11px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;color:#f87171;cursor:pointer;';db.textContent='Delete';
+    (function(sid){db.onclick=function(){deleteSupplier(sid);};})(s.id);
+    btns.appendChild(eb);btns.appendChild(db);card.appendChild(btns);
+    el.appendChild(card);
+  });
+}
+function openNewSupplier(){
+  _suppEditId=null;
+  document.getElementById('suppName').value='';
+  document.getElementById('suppCat').value='';
+  document.getElementById('suppContact').value='';
+  document.getElementById('suppPhone').value='';
+  document.getElementById('suppEmail').value='';
+  document.getElementById('suppNotes').value='';
+  document.getElementById('editSupplierId').value='';
+  document.getElementById('supplierModalTitle').textContent='🏪 Add Supplier';
+  document.getElementById('suppSaveBtn').textContent='Save Supplier';
+  var e=document.getElementById('suppErr');if(e)e.style.display='none';
+  openModal('newSupplierModal');
+}
+function editSupplier(id){
+  var s=_allSuppliers.find(function(x){return x.id===id;});
+  if(!s)return;
+  _suppEditId=id;
+  document.getElementById('suppName').value=s.name||'';
+  document.getElementById('suppCat').value=s.category||'';
+  document.getElementById('suppContact').value=s.contact_name||'';
+  document.getElementById('suppPhone').value=s.phone||'';
+  document.getElementById('suppEmail').value=s.email||'';
+  document.getElementById('suppNotes').value=s.notes||'';
+  document.getElementById('editSupplierId').value=id;
+  document.getElementById('supplierModalTitle').textContent='✏️ Edit Supplier';
+  document.getElementById('suppSaveBtn').textContent='Save Changes';
+  var e=document.getElementById('suppErr');if(e)e.style.display='none';
+  openModal('newSupplierModal');
+}
+function saveSupplier(){
+  var name=(document.getElementById('suppName').value||'').trim();
+  var errEl=document.getElementById('suppErr');
+  if(!name){if(errEl){errEl.textContent='⚠ Company name required';errEl.style.display='block';}return;}
+  var payload={name:name,category:document.getElementById('suppCat').value||null,
+    contact_name:(document.getElementById('suppContact').value||'').trim()||null,
+    phone:(document.getElementById('suppPhone').value||'').trim()||null,
+    email:(document.getElementById('suppEmail').value||'').trim()||null,
+    notes:(document.getElementById('suppNotes').value||'').trim()||null};
+  var isEdit=!!_suppEditId;
+  var url=isEdit?'/api/suppliers/'+_suppEditId:'/api/suppliers';
+  var method=isEdit?'PATCH':'POST';
+  fetch(url,{method:method,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+  .then(function(r){return r.json();}).then(function(d){
+    if(d.ok){toast(isEdit?'Supplier updated ✓':'Supplier added ✓');closeModal('newSupplierModal');loadSuppliers();}
+    else{if(errEl){errEl.textContent='⚠ '+(d.error||'Error');errEl.style.display='block';}}
+  }).catch(function(e){if(errEl){errEl.textContent='⚠ '+e.message;errEl.style.display='block';}});
+}
+function deleteSupplier(id){
+  if(!confirm('Delete this supplier?'))return;
+  fetch('/api/suppliers/'+id,{method:'DELETE'}).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){toast('Supplier removed');loadSuppliers();}else toast(d.error||'Error','error');
+  });
+}
 var _currentAllocPoId = null;
 var _allocPoItems = [];
 
@@ -2351,6 +2412,7 @@ function switchInvTab(t){
   if(t==='dispatch'){if(!_qAllReqs.length)initQueryTab();else runQuery();}
   if(t==='units'&&!umLoaded)loadProjectUnits();
   if(t==='receiving')loadPOs();
+  if(t==='units')loadSuppliers();
 }
 
 // ── State ──────────────────────────────────────────────────────────────────
