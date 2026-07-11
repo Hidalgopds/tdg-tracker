@@ -766,7 +766,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
       style="margin-top:6px;border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;color:var(--muted);font-size:13px;">
       Tap to add photos
     </div>
-    <input id="rcvPhotoInput" type="file" accept="image/*" multiple style="display:none;" onchange="handleRcvPhotos(event)">
+    <input id="rcvPhotoInput" type="file" accept="image/*" capture="environment" style="display:none;" onchange="handleRcvPhotos(event)">
     <div id="rcvPhotoPreview" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;"></div>
   </div>
 
@@ -920,7 +920,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <div class="rq-tab-bar">
     <button class="rq-tab active" id="rqtab-pending" onclick="onInboxTab('pending')">Pending</button>
     <button class="rq-tab" id="rqtab-approved" onclick="onInboxTab('approved')">Approved</button>
-    <button class="rq-tab" id="rqtab-all" onclick="onInboxTab('all')">All</button>
+    <button class="rq-tab" id="rqtab-history" onclick="onInboxTab('history')">History</button>
   </div>
   <div id="reqList"></div>
   <button class="btn-s" onclick="closeModal('reqsModal')">Close</button>
@@ -1488,19 +1488,24 @@ function openInbox(tab){
 }
 function onInboxTab(tab){
   CURRENT_INBOX_TAB=tab;
-  ['pending','approved','all'].forEach(function(t){var btn=document.getElementById('rqtab-'+t);if(btn)btn.classList.toggle('active',t===CURRENT_INBOX_TAB);});
+  ['pending','approved','history'].forEach(function(t){var btn=document.getElementById('rqtab-'+t);if(btn)btn.classList.toggle('active',t===CURRENT_INBOX_TAB);});
   loadAndRenderInbox();
 }
 function loadAndRenderInbox(){
   var list=document.getElementById('reqList');
   list.innerHTML='<p style="color:var(--muted);font-size:12px;text-align:center;padding:16px">Loading...</p>';
   var url='/api/material-requests';
-  if(CURRENT_INBOX_TAB==='pending')url+='?status=Pending';
-  else if(CURRENT_INBOX_TAB==='approved')url+='?status=Approved';
+  if(CURRENT_INBOX_TAB==='pending') url+='?status=Pending';
+  else if(CURRENT_INBOX_TAB==='approved') url+='?status=Approved';
+  else if(CURRENT_INBOX_TAB==='history') url+='?limit=50&days=7';
   fetch(url).then(function(r){return r.json();}).then(function(d){
     var reqs=d||[];
-    if(!reqs.length){var msgs={pending:'No pending requests',approved:'No requests awaiting delivery',all:'No requests yet'};list.innerHTML='<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px">'+msgs[CURRENT_INBOX_TAB]+'</p>';return;}
+    var msgs={pending:'No pending requests',approved:'No requests awaiting delivery',history:'No activity in the last 7 days'};
+    if(!reqs.length){list.innerHTML='<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px">'+msgs[CURRENT_INBOX_TAB]+'</p>';return;}
     list.innerHTML='';
+    if(CURRENT_INBOX_TAB==='history'){
+      list.innerHTML+='<p style="color:var(--muted);font-size:11px;text-align:center;margin-bottom:8px;">Last 7 days · '+reqs.length+' records</p>';
+    }
     reqs.forEach(function(req){list.appendChild(renderReqCard(req));});
   }).catch(function(){list.innerHTML='<p style="color:var(--red);font-size:12px;text-align:center;padding:16px">Error loading</p>';});
 }

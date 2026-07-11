@@ -2351,13 +2351,21 @@ def delete_inventory_item(item_id):
 # ── Material requests ────────────────────────────────────────────
 @app.route("/api/material-requests", methods=["GET"])
 def get_material_requests():
-    status = request.args.get("status")
+    status  = request.args.get("status")
     item_id = request.args.get("item_id")
-    url = f"{SUPABASE_URL}/rest/v1/material_requests?select=*&order=created_at.desc&limit=200"
+    limit   = int(request.args.get("limit", 200))
+    days    = request.args.get("days")          # history mode: last N days
+    url = f"{SUPABASE_URL}/rest/v1/material_requests?select=*&order=created_at.desc&limit={limit}"
     if status:
         url += f"&status=eq.{status}"
     if item_id:
         url += f"&item_id=eq.{item_id}"
+    if days:
+        try:
+            cutoff = (datetime.now(timezone.utc) - timedelta(days=int(days))).isoformat()
+            url += f"&created_at=gte.{cutoff}"
+        except Exception:
+            pass
     r = requests.get(url, headers=sb_headers())
     return jsonify(r.json() if r.ok else [])
 
