@@ -48,6 +48,7 @@
 .gnav a{display:flex;flex-direction:column;align-items:center;gap:1px;text-decoration:none;color:#475569;padding:0 8px;font-size:10px;font-weight:500;transition:.15s;min-width:44px;}
 .gnav a:hover,.gnav a.gna{color:#a855f7;}
 .gnav a .gi{font-size:19px;line-height:1.2;}
+.gnav-sub{display:block;font-size:8px;color:#94a3b8;line-height:1;margin-top:1px;white-space:nowrap;}
 body{padding-bottom:60px !important;}
 #chip-label{display:none!important;}
 #mbr-checkin-chip{padding:4px!important;gap:0!important;}
@@ -513,7 +514,7 @@ function timeAgo(iso){
     <a class="card card-inv" href="/inventory">
       <div class="card-icon icon-inv">📦</div>
       <div class="card-body">
-        <h3>Inventory</h3>
+        <h3>MM <span style="font-size:13px;font-weight:400;color:#64748b;">Material Manager</span></h3>
         <p>View stock levels, search materials, and submit material requests. Editors can update quantities and approve requests.</p>
       </div>
       <div class="card-footer">
@@ -598,7 +599,7 @@ function timeAgo(iso){
     {h:'/log',   icon:'📋', label:'Log', min:2},
     {h:'/dashboard', icon:'📊', label:'Dashboard', min:4},
     {h:'/timesheet', icon:'🕐', label:'Timesheet'},
-    {h:'/inventory', icon:'📦', label:'Inventory', min:2},
+    {h:'/inventory', icon:'📦', label:'MM', sublabel:'Material Manager', min:2},
     {h:'/issues-log',icon:'⚠️', label:'Issues', min:2},
     {h:'/settings',  icon:'⚙️', label:'Settings', min:4}
   ];
@@ -610,7 +611,7 @@ function timeAgo(iso){
     a.href = item.h; a.className = 'gnav-link';
     var active = item.h==='/'?p===item.h:p===item.h||p.startsWith(item.h);
     if(active) a.classList.add('gna');
-    a.innerHTML = '<span class="gi">'+item.icon+'</span>'+item.label;
+    a.innerHTML = '<span class="gi">'+item.icon+'</span>'+item.label+(item.sublabel?'<span class="gnav-sub">'+item.sublabel+'</span>':'');
     nav.appendChild(a);
   });
 })();
