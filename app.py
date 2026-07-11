@@ -1963,15 +1963,18 @@ def create_po():
     for f in required:
         if not data.get(f):
             return jsonify({"error": f"Missing {f}"}), 400
-    payload = {
-        "po_number":     data["po_number"].strip().upper(),
-        "supplier":      data.get("supplier","").strip() or None,
-        "expected_date": data.get("expected_date") or None,
-        "status":        "pending",
-        "items":         data.get("items", []),
-        "notes":         data.get("notes","").strip() or None,
-        "created_by":    data.get("created_by",""),
-    }
+    try:
+        payload = {
+            "po_number":     str(data.get("po_number","")).strip().upper(),
+            "supplier":      (data.get("supplier") or "").strip() or None,
+            "expected_date": data.get("expected_date") or None,
+            "status":        "pending",
+            "items":         data.get("items") or [],
+            "notes":         (data.get("notes") or "").strip() or None,
+            "created_by":    data.get("created_by") or "",
+        }
+    except Exception as e:
+        return jsonify({"error": f"Payload error: {str(e)}"}), 400
     try:
         r = requests.post(
             f"{SUPABASE_URL}/rest/v1/purchase_orders",
