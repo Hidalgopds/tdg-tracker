@@ -62,10 +62,10 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .ic-move-btn:hover{background:#1558a8;}
 .fab{position:fixed;bottom:76px;right:16px;height:42px;padding:0 18px;background:var(--accent);border:none;border-radius:22px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 18px rgba(26,107,196,.5);z-index:200;display:flex;align-items:center;gap:6px;white-space:nowrap;}
 .fab-add{position:fixed;bottom:128px;right:16px;width:44px;height:44px;background:#22c55e;border:none;border-radius:50%;color:#fff;font-size:20px;cursor:pointer;box-shadow:0 3px 14px rgba(34,197,94,.4);z-index:200;display:none;align-items:center;justify-content:center;}
-.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;align-items:flex-end;justify-content:center;}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;align-items:center;justify-content:center;}
 .modal-bg.open{display:flex;}
-.modal{background:#ffffff;border:1px solid var(--border);border-radius:16px 16px 0 0;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;padding:18px 18px 36px;}
-@media(min-width:560px){.modal-bg{align-items:center;}.modal{border-radius:16px;max-height:88vh;}}
+.modal{background:#ffffff;border:1px solid var(--border);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;padding:18px 18px 24px;margin:12px;}
+@media(min-width:560px){.modal{max-height:88vh;}}
 .mhandle{width:38px;height:4px;background:var(--border);border-radius:4px;margin:0 auto 14px;}
 .mtitle{font-size:16px;font-weight:800;margin-bottom:14px;}
 .fg{margin-bottom:13px;}
