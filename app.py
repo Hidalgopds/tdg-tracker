@@ -1871,12 +1871,18 @@ def update_inventory_item(item_id):
 
 @app.route("/api/inventory/low-stock", methods=["GET"])
 def get_low_stock():
-    """Return items where qty_on_hand <= safe_qty (and safe_qty > 0), enriched with last request date."""
-    url = f"{SUPABASE_URL}/rest/v1/inventory_items?safe_qty=gt.0&order=category.asc,name.asc&select=*&limit=500"
+    """Return Out + Low items using same logic as frontend KPI, enriched with last request date."""
+    url = f"{SUPABASE_URL}/rest/v1/inventory_items?order=category.asc,name.asc&select=*&limit=500"
     r = requests.get(url, headers=sb_headers())
     if not r.ok:
         return jsonify([])
-    items = [it for it in r.json() if (it.get("qty_on_hand") or 0) <= (it.get("safe_qty") or 0)]
+    def _needs_attention(it):
+        q = it.get("qty_on_hand") or 0
+        s = it.get("safe_qty") or 0
+        if q <= 0:          return True   # Out of stock
+        if s > 0: return q <= s           # Alert: below safe qty
+        return q < 10                     # Low fallback (no safe qty set)
+    items = [it for it in r.json() if _needs_attention(it)]
     if not items:
         return jsonify([])
     # Fetch most recent material_request per item (by item_id or item_name fallback)
@@ -1936,11 +1942,16 @@ def email_low_stock():
     if not _to_email:
         return jsonify({"error": "No alert email configured"}), 500
     # Fetch low-stock items
-    url = f"{SUPABASE_URL}/rest/v1/inventory_items?safe_qty=gt.0&order=category.asc,name.asc&select=*&limit=500"
+    url = f"{SUPABASE_URL}/rest/v1/inventory_items?order=category.asc,name.asc&select=*&limit=500"
     r = requests.get(url, headers=sb_headers())
     if not r.ok:
         return jsonify({"error": "Failed to fetch inventory"}), 500
-    items = [it for it in r.json() if (it.get("qty_on_hand") or 0) <= (it.get("safe_qty") or 0)]
+    def _alert(it):
+        q = it.get("qty_on_hand") or 0; s = it.get("safe_qty") or 0
+        if q <= 0: return True
+        if s > 0: return q <= s
+        return q < 10
+    items = [it for it in r.json() if _alert(it)]
     if not items:
         return jsonify({"ok": True, "count": 0, "message": "No low-stock items"})
     rows = "".join(
