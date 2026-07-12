@@ -1869,17 +1869,15 @@ function openLowStockModal(){
       } else {
         daysCell='<span style="'+chipStyle+'background:#fee2e2;color:#dc2626;">'+daysAgo+'d</span>';
       }
-      html+='<tr>';
+      var q=it.qty_on_hand||0,s=it.safe_qty||0;
+      var badge=q<=0?'<span style="font-size:9px;background:#fee2e2;color:#dc2626;border-radius:4px;padding:1px 5px;margin-left:4px;font-weight:700;">OUT</span>'
+        :(s>0&&q<=s?'<span style="font-size:9px;background:#fff7ed;color:#ea580c;border-radius:4px;padding:1px 5px;margin-left:4px;font-weight:700;">ALERT</span>'
+        :'<span style="font-size:9px;background:#fef9c3;color:#ca8a04;border-radius:4px;padding:1px 5px;margin-left:4px;font-weight:700;">LOW</span>');
+      html+='<tr>'
         +'<td style="padding:8px;border-bottom:1px solid var(--border);"><div style="font-weight:700;color:#0f172a;">'+safeHtml(it.name||'')+'</div>'
         +'<div style="color:var(--muted);font-size:10px;">'+safeHtml(it.category||'')+'</div></td>'
-        +(function(){
-          var q=it.qty_on_hand||0,s=it.safe_qty||0;
-          var badge=q<=0?'<span style="font-size:9px;background:#fee2e2;color:#dc2626;border-radius:4px;padding:1px 5px;margin-left:4px;font-weight:700;">OUT</span>'
-            :(s>0&&q<=s?'<span style="font-size:9px;background:#fff7ed;color:#ea580c;border-radius:4px;padding:1px 5px;margin-left:4px;font-weight:700;">ALERT</span>'
-            :'<span style="font-size:9px;background:#fef9c3;color:#ca8a04;border-radius:4px;padding:1px 5px;margin-left:4px;font-weight:700;">LOW</span>');
-          return '<td style="padding:8px;text-align:center;border-bottom:1px solid var(--border);"><span style="color:#f87171;font-weight:800;">'+q+'</span>'+badge+'</td>';
-        })()
-        +'<td style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:#fb923c;">'+it.safe_qty+'</td>'
+        +'<td style="padding:8px;text-align:center;border-bottom:1px solid var(--border);"><span style="color:#f87171;font-weight:800;">'+q+'</span>'+badge+'</td>'
+        +'<td style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:#fb923c;">'+(it.safe_qty||'—')+'</td>'
         +'<td style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--muted);font-size:11px;">'+(reqDate||'—')+'</td>'
         +'<td style="padding:8px;text-align:center;border-bottom:1px solid var(--border);">'+daysCell+'</td>'
         +'</tr>';
