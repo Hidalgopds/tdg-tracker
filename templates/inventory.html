@@ -1281,6 +1281,20 @@ var CURRENT_INBOX_TAB='pending';
 var _sigReqId=null;
 var _sigCtx=null,_sigCanvas=null,_sigDrawing=false;
 var _ROLE=localStorage.getItem('mbrRole')||'worker';
+
+function fmtDate(s){
+  if(!s)return '';
+  var d=new Date(s.substring(0,10)+'T12:00:00');
+  if(isNaN(d))return s.substring(0,10);
+  return (d.getMonth()+1)+'/'+ d.getDate()+'/'+ d.getFullYear();
+}
+function fmtDateTime(s){
+  if(!s)return '';
+  var d=new Date(s);
+  if(isNaN(d))return s.substring(0,16).replace('T',' ');
+  var h=d.getHours(),min=d.getMinutes();
+  return (d.getMonth()+1)+'/'+d.getDate()+'/'+d.getFullYear()+' '+(h%12||12)+':'+(min<10?'0':'')+min+(h>=12?'pm':'am');
+}
 var _LVL={admin:5,boss:4,inventory:3,dispatcher:3,lead:2,worker:1,contractor:2}[_ROLE]||1;
 // Show Dispatch tab for dispatcher/admin/boss
 if(_ROLE==='dispatcher'||_LVL>=4){
@@ -1394,7 +1408,7 @@ function mkCard(it){
   var safeQ=it.safe_qty||0;
   var sc=qty<=0?'s-out':(safeQ>0&&qty<=safeQ?'s-alert':(qty<10?'s-low':'s-ok'));
   var stxt=qty<=0?'Out':(safeQ>0&&qty<=safeQ?'⚠ Alert':(qty<10?'Low':''));
-  var lastR=it.last_restocked_at?it.last_restocked_at.substring(0,10):'';
+  var lastR=it.last_restocked_at?fmtDate(it.last_restocked_at):'';
   var d=document.createElement('div');d.className='inv-card';
   var ALL_CATS=['Cable Tray','Coatings','Conduit','Drainage','Electrical','Fasteners','Hardware','Insulation','Roofing','Sealant','Trim','Wall Panels','General'];
   var catOpts=ALL_CATS.map(function(c){return'<option value="'+c+'"'+(c===it.category?' selected':'')+'>'+c+'</option>';}).join('');
@@ -1569,7 +1583,7 @@ function doAC(q){
 function checkDup(itemId,name){
   fetch('/api/material-requests?item_id='+itemId+'&status=Pending').then(function(r){return r.json();}).then(function(reqs){
     var w=document.getElementById('dupWarn');
-    if(reqs&&reqs.length){w.textContent='⚠ "'+name+'" was already requested by '+reqs[0].requester_name+' on '+reqs[0].created_at.split('T')[0];w.style.display='block';}
+    if(reqs&&reqs.length){w.textContent='⚠ "'+name+'" was already requested by '+reqs[0].requester_name+' on '+fmtDate(reqs[0].created_at);w.style.display='block';}
     else w.style.display='none';
   }).catch(function(){});
 }
@@ -1811,7 +1825,7 @@ function buildMatHtml(req){
   return h;
 }
 function renderReqCard(req){
-  var dt=req.created_at?req.created_at.split('T')[0]:'';
+  var dt=req.created_at?fmtDate(req.created_at):'';
   var cls={Pending:'sb-pend',Approved:'sb-appr',Rejected:'sb-rej',Delivered:'sb-deliv'}[req.status]||'sb-pend';
   var reqNum='REQ-'+(req.id?String(req.id).replace(/-/g,'').substring(0,8).toUpperCase():'????');
   var el=document.createElement('div');el.className='req-card';
@@ -1824,7 +1838,7 @@ function renderReqCard(req){
     +'<div class="req-meta">'+metaLine+'</div>'
     +(req.job_name?'<div class="req-meta">Job: '+esc(req.job_name)+(req.contractor_company?' / '+esc(req.contractor_company):'')+' </div>':'')
     +(req.notes?'<div class="req-meta">'+esc(req.notes)+'</div>':'')
-    +(req.status==='Delivered'?'<div style="font-size:11px;color:var(--muted);margin-top:6px;">✅ Delivered by '+(req.delivered_by?esc(req.delivered_by):'--')+(req.delivered_at?' \xb7 '+req.delivered_at.split('T')[0]:'')+' </div>':'')
+    +(req.status==='Delivered'?'<div style="font-size:11px;color:var(--muted);margin-top:6px;">✅ Delivered by '+(req.delivered_by?esc(req.delivered_by):'--')+(req.delivered_at?' \xb7 '+fmtDate(req.delivered_at):'')+' </div>':'')
     +'</div>'
     +'<span class="sbadge '+cls+'" style="flex-shrink:0;margin-left:8px;">'+req.status+'</span>'
     +'</div>';
@@ -1970,7 +1984,7 @@ function lsRender(){
     +'</tr></thead><tbody>';
   filtered.forEach(function(it){
     var realIdx=_lsItems.indexOf(it);
-    var reqDate=it.last_requested_at?it.last_requested_at.substring(0,10):null;
+    var reqDate=it.last_requested_at?fmtDate(it.last_requested_at):null;
     var daysAgo=it.days_since_request;
     var daysCell;
     if(daysAgo===null||daysAgo===undefined){
@@ -2061,7 +2075,7 @@ function loadPOs(){
       html += '<span style="font-weight:700;font-size:13px;color:var(--text);">' + esc(po.po_number) + '</span>';
       if(po.so_number) html += '<span style="font-size:11px;color:#64748b;margin-left:6px;">S.O. '+esc(po.so_number)+'</span>';
       if(po.supplier) html += '<span style="font-size:11px;color:var(--muted);margin-left:8px;">🏪 '+esc(po.supplier)+'</span>';
-      if(po.expected_date) html += '<span style="font-size:11px;color:var(--muted);margin-left:8px;">📅 '+po.expected_date+'</span>';
+      if(po.expected_date) html += '<span style="font-size:11px;color:var(--muted);margin-left:8px;">📅 '+fmtDate(po.expected_date)+'</span>';
       html += '</div>';
       html += '<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:'+statusColor+'22;color:'+statusColor+';white-space:nowrap;">'+po.status.toUpperCase()+'</span>';
       html += '<div style="display:flex;gap:4px;flex-shrink:0;">';
@@ -2617,7 +2631,7 @@ function printDispatchReceipt(req){
     '.sig-box{border:1px solid #cbd5e1;height:80px;margin-top:8px;border-radius:6px;}</style></head><body>'+
     '<h2>📦 Dispatch Receipt</h2>'+
     '<table style="margin-bottom:16px;"><tr><td><strong>REQ #</strong></td><td>'+reqNum+'</td>'+
-    '<td><strong>Date</strong></td><td>'+(req.created_at?req.created_at.split('T')[0]:'')+'</td></tr>'+
+    '<td><strong>Date</strong></td><td>'+(req.created_at?fmtDate(req.created_at):'')+'</td></tr>'+
     '<tr><td><strong>Requester</strong></td><td>'+(req.requester_name||'')+'</td>'+
     '<td><strong>Job</strong></td><td>'+(req.job_name||req.building||'')+'</td></tr>'+
     '<tr><td><strong>Company</strong></td><td>'+(req.contractor_company||'BSynch')+'</td>'+
@@ -3012,7 +3026,7 @@ function renderQueryResults(results){
     var matCell=mats.map(function(m){
       return '<div>'+safeHtml(m.item_name||'')+' <span style="color:var(--muted);">x'+m.qty_needed+'</span></div>';
     }).join('');
-    var dt=r.created_at?r.created_at.substring(0,10):'';
+    var dt=r.created_at?fmtDate(r.created_at):'';
     html+='<tr data-rid="'+r.id+'" style="border-bottom:1px solid var(--border);cursor:pointer;">'
       +'<td style="padding:8px 6px;color:var(--muted);font-size:10px;white-space:nowrap;">'+rn+'</td>'
       +'<td style="padding:8px 6px;color:#0f172a;">'+matCell+'</td>'
@@ -3093,7 +3107,7 @@ function renderMatDocs(docs){
     +'<th style="padding:8px 6px;text-align:left;color:var(--muted);font-size:10px;">BY</th>'
     +'</tr></thead><tbody>';
   docs.forEach(function(d){
-    var dt=d.created_at?d.created_at.substring(0,16).replace('T',' '):'';
+    var dt=d.created_at?fmtDateTime(d.created_at):'';
     var badge=d.mvt_type==='GI'?'<span style="'+giStyle+'">GI</span>':'<span style="'+grStyle+'">GR</span>';
     var sign=d.mvt_type==='GI'?'<span style="color:#dc2626;">−</span>':'<span style="color:#16a34a;">+</span>';
     var jobRef='';
@@ -3309,7 +3323,7 @@ function inlineReqs(){
     if(!REQS.length){el.innerHTML='<div style="color:var(--muted);font-size:12px;text-align:center;padding:8px">No pending requests</div>';return;}
     el.innerHTML='';
     REQS.slice(0,3).forEach(function(req){
-      var dt=req.created_at?req.created_at.split('T')[0]:'';
+      var dt=req.created_at?fmtDate(req.created_at):'';
       var c=document.createElement('div');c.className='req-card';c.style.marginBottom='8px';
       c.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
         '<div><div class="req-name">'+esc(req.item_name)+'</div>'+
