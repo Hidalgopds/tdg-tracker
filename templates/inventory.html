@@ -2597,12 +2597,12 @@ function autofillPO(text){
   var lines=text.split(/\n/).map(function(l){return l.trim();}).filter(Boolean);
   var pn=document.getElementById('po_number');
   if(pn&&!pn.value.trim()){
-    var m=text.match(/(?:P\.?O\.?|purchase\s+order)\s*[#:\-]?\s*([A-Z0-9\-]{3,20})/i);
+    var m=text.match(/\b(?:P\.?O\.?|purchase\s+order)\s*[#:\-]?\s*([A-Z0-9][A-Z0-9\-]*\d[A-Z0-9\-]*)\b/i);
     if(m)pn.value=m[1].trim();
   }
   var so=document.getElementById('po_so_number');
   if(so&&!so.value.trim()){
-    var ms=text.match(/(?:S\.?O\.?|sales\s+order|invoice|INV|order\s+no\.?)\s*[#:\-]?\s*([A-Z0-9\-]{3,20})/i);
+    var ms=text.match(/\b(?:S\.?O\.?|sales\s+order|invoice|INV|order\s+no\.?)\s*[#:\-]?\s*([A-Z0-9][A-Z0-9\-]*\d[A-Z0-9\-]*)\b/i);
     if(ms)so.value=ms[1].trim();
   }
   var sup=document.getElementById('po_supplier');
