@@ -1871,12 +1871,49 @@ def update_inventory_item(item_id):
 
 @app.route("/api/inventory/low-stock", methods=["GET"])
 def get_low_stock():
-    """Return items where qty_on_hand <= safe_qty (and safe_qty > 0)."""
+    """Return items where qty_on_hand <= safe_qty (and safe_qty > 0), enriched with last request date."""
     url = f"{SUPABASE_URL}/rest/v1/inventory_items?safe_qty=gt.0&order=category.asc,name.asc&select=*&limit=500"
     r = requests.get(url, headers=sb_headers())
     if not r.ok:
         return jsonify([])
     items = [it for it in r.json() if (it.get("qty_on_hand") or 0) <= (it.get("safe_qty") or 0)]
+    if not items:
+        return jsonify([])
+    # Fetch most recent material_request per item (by item_id or item_name fallback)
+    try:
+        from datetime import datetime, timezone
+        item_ids = [str(it["id"]) for it in items if it.get("id")]
+        # Get recent requests for these items (last 500, ordered desc)
+        req_url = f"{SUPABASE_URL}/rest/v1/material_requests?select=item_id,item_name,created_at&order=created_at.desc&limit=500"
+        rr = requests.get(req_url, headers=sb_headers(), timeout=5)
+        reqs = rr.json() if rr.ok else []
+        # Build map: item_id -> last created_at (first hit wins since ordered desc)
+        last_req_by_id = {}
+        last_req_by_name = {}
+        for req in reqs:
+            iid = str(req.get("item_id") or "")
+            iname = (req.get("item_name") or "").lower().strip()
+            cat = req.get("created_at") or ""
+            if iid and iid not in last_req_by_id:
+                last_req_by_id[iid] = cat
+            if iname and iname not in last_req_by_name:
+                last_req_by_name[iname] = cat
+        now = datetime.now(timezone.utc)
+        for it in items:
+            iid = str(it.get("id") or "")
+            iname = (it.get("name") or "").lower().strip()
+            last_req = last_req_by_id.get(iid) or last_req_by_name.get(iname)
+            it["last_requested_at"] = last_req or None
+            if last_req:
+                try:
+                    dt = datetime.fromisoformat(last_req.replace("Z", "+00:00"))
+                    it["days_since_request"] = (now - dt).days
+                except Exception:
+                    it["days_since_request"] = None
+            else:
+                it["days_since_request"] = None
+    except Exception:
+        pass  # best-effort: return items without request data if anything fails
     return jsonify(items)
 
 @app.route("/api/inventory/low-stock/email", methods=["POST"])
