@@ -1647,16 +1647,19 @@ function procPIN(){
   }
   fetch('/api/users/verify-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:curPinUser,pin:pinBuf})})
   .then(function(r){if(!r.ok)throw new Error('srv');return r.json();}).then(function(d){
-    if(d.ok){edUser=curPinUser;sessionStorage.setItem('edUser',edUser);activateEd();goS3();inlineReqs();}
+    if(d.ok){
+      edUser=curPinUser;sessionStorage.setItem('edUser',edUser);
+      try{activateEd();goS3();inlineReqs();}catch(e){console.warn('activateEd error',e);}
+    }
     else{document.getElementById('pinErr').textContent='Incorrect PIN.';pinBuf='';updDots();}
-  }).catch(function(){document.getElementById('pinErr').textContent='Network error — try again.';pinBuf='';updDots();});
+  }).catch(function(e){if(e&&e.message==='srv'){document.getElementById('pinErr').textContent='Server error — try again.';}else{document.getElementById('pinErr').textContent='Network error — try again.';}pinBuf='';updDots();});
 }
 
 function activateEd(){
-  document.getElementById('edBtn').classList.add('active');
-  document.getElementById('edBtn').textContent='🔓 '+edUser;
-  document.getElementById('s3name').textContent='Welcome, '+edUser+'!';
-  var fa=document.getElementById('fabAdd');fa.style.display='flex';
+  var _eb=document.getElementById('edBtn');
+  if(_eb){_eb.classList.add('active');_eb.textContent='🔓 '+edUser;}
+  var _s3=document.getElementById('s3name');if(_s3)_s3.textContent='Welcome, '+edUser+'!';
+  var _fa=document.getElementById('fabAdd');if(_fa)_fa.style.display='flex';
   renderGrid();loadPending();
 }
 
