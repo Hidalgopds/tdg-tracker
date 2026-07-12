@@ -533,7 +533,8 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 <div style="display:flex;align-items:center;gap:6px;padding:4px 14px 4px;">
   <input type="text" id="srch" placeholder="🔍  Search items..." oninput="doFilter()"
     style="flex:1;min-width:0;height:26px;padding:0 8px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:#0f172a;font-size:12px;outline:none;">
-  <button onclick="exportItemsCSV()" style="flex-shrink:0;width:auto;height:26px;padding:0 8px;font-size:10px;white-space:nowrap;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;color:#475569;cursor:pointer;margin:0;">⬇ CSV</button>
+    <button onclick="document.getElementById('xlsxImportInput').click()" style="flex-shrink:0;width:auto;height:26px;padding:0 8px;font-size:10px;white-space:nowrap;border:1px solid #2563eb;border-radius:6px;background:#eff6ff;color:#2563eb;cursor:pointer;font-weight:600;" title="Bulk import items from CSV/Excel">⬆ Import</button>
+<button onclick="exportItemsCSV()" style="flex-shrink:0;width:auto;height:26px;padding:0 8px;font-size:10px;white-space:nowrap;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;color:#475569;cursor:pointer;margin:0;">⬇ CSV</button>
   <button onclick="printItemLabels()" style="flex-shrink:0;width:auto;height:26px;padding:0 8px;font-size:10px;white-space:nowrap;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;color:#475569;cursor:pointer;margin:0;">🖨 Labels</button>
   <button id="reqQuickBtn" onclick="openReqModal()" style="flex-shrink:0;width:auto;height:26px;padding:0 10px;font-size:10px;font-weight:700;white-space:nowrap;border:none;border-radius:6px;background:#f97316;color:#fff;cursor:pointer;margin:0;">+ Request</button>
 </div>
@@ -1911,7 +1912,7 @@ function loadLowStock(){
     var bannerCnt=document.getElementById('lowBannerCount');
     if(banner&&bannerCnt){
       bannerCnt.textContent=items.length;
-      banner.style.display=items.length>0?'flex':'none';
+      banner.style.display='none'; // hidden — warning icon in header is enough
     }
   }).catch(function(){});
 }
