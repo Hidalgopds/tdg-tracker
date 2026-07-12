@@ -4,7 +4,7 @@
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNiIgZmlsbD0iIzFhNmJjNCIvPjx0ZXh0IHg9IjE2IiB5PSIyMyIgZm9udC1mYW1pbHk9IkFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LXNpemU9IjIwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSI+QjwvdGV4dD48L3N2Zz4=">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Inventory — BSynch</title>
+<title>Material Management — BSynch</title>
 <style>
 :root{--bg:#f0f4f8;--card:#ffffff;--border:#e2e8f0;--text:#0f172a;--muted:#64748b;--accent:#1a6bc4;--green:#16a34a;--amber:#d97706;--red:#dc2626;}
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -416,7 +416,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 <div class="header">
   <div class="header-primary">
     <button class="back-btn" onclick="window.location='/'" title="Home">&#x2039;</button>
-    <span class="hlogo">&#x1F4E6; Inventory</span>
+    <span class="hlogo">&#x1F4E6; Material Management</span>
     <div style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0;">
       <button id="lowStockBtn" onclick="openLowStockModal()" style="display:none;height:30px;padding:0 8px;background:rgba(251,146,60,.15);border:1px solid rgba(251,146,60,.4);border-radius:7px;color:#fb923c;font-size:11px;font-weight:700;cursor:pointer;" title="Low stock">&#x26A0;&#xFE0F; <span id="lowStockCount">0</span></button>
       <button class="req-bell-btn" id="reqBell" onclick="openInbox('pending')" style="position:relative;">&#x1F4EC;<span class="req-bell-badge" id="reqBellBadge"></span></button>
@@ -1352,7 +1352,8 @@ function mkCard(it){
     (it.sku?'<span class="ic-sku">'+esc(it.sku)+'</span> ':'')+
     '<div class="ic-name">'+esc(it.name)+'</div>'+
     (it.location_code?'<div class="ic-loc" onclick="filterByLoc(\'' + esc(it.location_code) + '\')">'+esc(it.location_code)+'</div>':'')+
-    '<div class="ic-bottom"><div><span class="ic-qty">'+qty+'</span> <span class="ic-unit">'+esc(it.unit||'EA')+'</span></div>'+
+    '<div class="ic-bottom"><div><span class="ic-qty">'+qty+'</span> <span class="ic-unit">'+esc(it.unit||'EA')+'</span>'+( safeQ>0?'<span style="font-size:9px;color:var(--muted);margin-left:5px;background:#f1f5f9;border-radius:10px;padding:1px 5px;">min:'+safeQ+'</span>':'')+'
+    </div>'+
     (stxt?'<span class="ic-stat '+sc+'">'+stxt+'</span>':'')+
     (lastR?'<div style="font-size:9px;color:var(--muted);margin-top:3px;">Restocked: '+lastR+'</div>':'')+
     '</div>'+

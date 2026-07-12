@@ -887,10 +887,10 @@ function timeAgo(iso){
       <select id="um-role">
         <option value="admin">Admin — full access + Settings (you)</option>
         <option value="boss">Boss — full access + owner level</option>
-        <option value="inventory">Inventory — view/edit/approve materials only</option>
+        <option value="inventory">Material Management — view/edit/approve materials only</option>
         <option value="lead" selected>Lead — Log, Timesheet, Dashboard, Issues</option>
         <option value="worker">Worker — QR check-in only</option>
-        <option value="contractor">Contractor — Inventory only</option>
+        <option value="contractor">Contractor — Material Management only</option>
                 <option value="dispatcher">Dispatcher — Approves requests</option>
       </select>
     </div>
@@ -1007,7 +1007,7 @@ var PAGES = [
   {id:'ts.attendance',    label:'↳ Attendance (Late/Absent)',   parent:'timesheet',locked:false},
   {id:'ts.reports',       label:'↳ Attendance Reports (Admin)', parent:'timesheet',locked:false},
   // Inventory
-  {id:'inventory',        label:'📦 Inventory',                 parent:null,       locked:false},
+  {id:'inventory',        label:'📦 Mat. Mgmt',                 parent:null,       locked:false},
   {id:'inv.view',         label:'↳ View Stock',                 parent:'inventory',locked:false},
   {id:'inv.edit',         label:'↳ Add / Edit Items',           parent:'inventory',locked:false},
   {id:'inv.requests',     label:'↳ Material Requests',          parent:'inventory',locked:false},
@@ -1684,7 +1684,7 @@ async function deleteNotif(id){
     {h:'/log',icon:'📋',label:'Log'},
     {h:'/dashboard',icon:'📊',label:'Dashboard',min:3},
     {h:'/timesheet',icon:'🕐',label:'Timesheet'},
-    {h:'/inventory',icon:'📦',label:'Inventory'},
+    {h:'/inventory',icon:'📦',label:'Mat. Mgmt'},
     {h:'/issues-log',icon:'⚠️',label:'Issues',min:2},
     {h:'/settings',icon:'⚙️',label:'Settings',min:4}
   ];
