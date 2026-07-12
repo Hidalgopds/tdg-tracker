@@ -484,15 +484,15 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 <!-- INVENTORY SUMMARY BAR -->
 <div id="invSummary" style="display:none;overflow-x:auto;white-space:nowrap;padding:10px 12px 2px;border-bottom:1px solid var(--border);">
   <div style="display:inline-flex;gap:8px;">
-    <div class="inv-kpi" id="kpi-total" style="background:#f8fafc;">
+    <div class="inv-kpi" id="kpi-total" style="background:#f8fafc;cursor:pointer;" onclick="setSummaryFilter('')" title="Show all items">
       <div class="inv-kpi-val" id="kpiTotal">—</div>
       <div class="inv-kpi-lbl">Total SKUs</div>
     </div>
-    <div class="inv-kpi" id="kpi-out" style="background:#fff1f2;">
+    <div class="inv-kpi" id="kpi-out" style="background:#fff1f2;cursor:pointer;" onclick="setSummaryFilter('out')" title="Filter: Out of Stock">
       <div class="inv-kpi-val" id="kpiOut" style="color:#dc2626;">—</div>
       <div class="inv-kpi-lbl">Out of Stock</div>
     </div>
-    <div class="inv-kpi" id="kpi-low" style="background:#fff7ed;">
+    <div class="inv-kpi" id="kpi-low" style="background:#fff7ed;cursor:pointer;" onclick="setSummaryFilter('low')" title="Filter: Low Stock">
       <div class="inv-kpi-val" id="kpiLow" style="color:#ea580c;">—</div>
       <div class="inv-kpi-lbl">Low Stock</div>
     </div>
@@ -1203,6 +1203,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 
 <script>
 var ITEMS=[],REQS=[],activeCat='All',srchQ='',activeLoc='',edUser=null,curPinUser=null,pinBuf='',setNewPin=false,pin1st='';
+var summaryFilter='';
 var CURRENT_INBOX_TAB='pending';
 var _sigReqId=null;
 var _sigCtx=null,_sigCanvas=null,_sigDrawing=false;
@@ -1295,7 +1296,11 @@ function renderGrid(){
   var q=srchQ.toLowerCase();
   if(activeLoc&&!q){q=activeLoc.toLowerCase();}
   var f=ITEMS.filter(function(it){
-    return(activeCat==='All'||it.category===activeCat)&&(!q||(it.name||'').toLowerCase().includes(q)||(it.category||'').toLowerCase().includes(q)||(it.location_code||'').toLowerCase().includes(q)||(it.sku||'').toLowerCase().includes(q));
+    if(!(activeCat==='All'||it.category===activeCat))return false;
+    if(q&&!((it.name||'').toLowerCase().includes(q)||(it.category||'').toLowerCase().includes(q)||(it.location_code||'').toLowerCase().includes(q)||(it.sku||'').toLowerCase().includes(q)))return false;
+    if(summaryFilter==='out')return (it.qty_on_hand||0)<=0;
+    if(summaryFilter==='low'){var _q=it.qty_on_hand||0,_s=it.safe_qty||0;return _q>0&&_s>0&&_q<=_s;}
+    return true;
   });
   var g=document.getElementById('invGrid');
   document.getElementById('emptyEl').style.display=f.length?'none':'block';
@@ -2679,6 +2684,20 @@ function renderQueryResults(results){
     row.onmouseout=function(){this.style.background='';};
     row.onclick=function(){openDispDetail(window._dispMap[this.dataset.rid]);};
   });
+}
+function setSummaryFilter(f){
+  // Toggle off if already active
+  summaryFilter=(summaryFilter===f)?'':f;
+  // Reset category to All when filtering by stock status
+  if(summaryFilter){activeCat='All';document.querySelectorAll('.chip').forEach(function(x){x.classList.remove('active');});var allChip=document.querySelector('.chip');if(allChip)allChip.classList.add('active');}
+  renderGrid();
+  // Update KPI card highlight
+  ['kpi-total','kpi-out','kpi-low','kpi-val'].forEach(function(id){
+    var el=document.getElementById(id);if(!el)return;
+    el.style.boxShadow='';el.style.borderColor='';
+  });
+  if(summaryFilter==='out'){var el=document.getElementById('kpi-out');if(el){el.style.boxShadow='0 0 0 2px #dc2626';el.style.borderColor='#dc2626';}}
+  if(summaryFilter==='low'){var el=document.getElementById('kpi-low');if(el){el.style.boxShadow='0 0 0 2px #ea580c';el.style.borderColor='#ea580c';}}
 }
 function renderInvSummary(){
   var el=document.getElementById('invSummary');
