@@ -548,8 +548,10 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
     <div style="font-size:15px;font-weight:700;color:var(--text);">🏪 Supplier Directory</div>
     <div style="display:flex;gap:6px;">
-      <button onclick="exportSuppliersCSV()" style="height:26px;padding:0 8px;font-size:10px;white-space:nowrap;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;color:#475569;cursor:pointer;">⬇ CSV</button>
-      <button onclick="openNewSupplier()" style="height:26px;padding:0 10px;font-size:10px;white-space:nowrap;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer;font-weight:600;">+ Add Supplier</button>
+      <button onclick="exportSuppliersCSV()" style="height:28px;padding:0 8px;font-size:10px;white-space:nowrap;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;color:#475569;cursor:pointer;">⬇ CSV</button>
+      <button onclick="document.getElementById('suppImportInput').click()" style="height:28px;padding:0 8px;font-size:10px;white-space:nowrap;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;color:#475569;cursor:pointer;">⬆ Import</button>
+      <input id="suppImportInput" type="file" accept=".csv" style="display:none;" onchange="importSuppliersCSV(event)">
+      <button onclick="openNewSupplier()" style="height:28px;padding:0 10px;font-size:10px;white-space:nowrap;border:none;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer;font-weight:600;">+ Add Supplier</button>
     </div>
   </div>
   <input id="supplierSearch" placeholder="Search suppliers..." oninput="filterSuppliers()"
@@ -794,6 +796,25 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
     <button onclick="closeModal('allocatePoModal')" class="btn-s" style="flex:1;">Cancel</button>
   </div>
 </div></div>
+
+
+<!-- SUPPLIER IMPORT PREVIEW MODAL -->
+<div class="modal-bg" id="suppImportModal">
+<div class="modal" style="max-width:680px;">
+  <div class="mhandle"></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <div class="mtitle" style="margin:0;">📥 Import Suppliers</div>
+    <button onclick="closeModal('suppImportModal')" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--muted);">✕</button>
+  </div>
+  <div id="suppImportCount" style="font-size:13px;color:var(--muted);margin-bottom:10px;"></div>
+  <div id="suppImportPreview" style="max-height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;margin-bottom:14px;"></div>
+  <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">Existing suppliers with the same name will not be duplicated — check first if needed.</div>
+  <div style="display:flex;gap:8px;">
+    <button id="suppImportBtn" onclick="confirmSuppImport()" style="flex:1;height:36px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">Import</button>
+    <button onclick="closeModal('suppImportModal')" style="flex:1;height:36px;background:#f1f5f9;color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:13px;cursor:pointer;">Cancel</button>
+  </div>
+</div>
+</div>
 
 <!-- NEW SUPPLIER MODAL -->
 <div class="modal-bg" id="newSupplierModal">
@@ -2526,7 +2547,7 @@ function renderSuppliers(list){
   el.innerHTML='';
   list.forEach(function(s){
     var card=document.createElement('div');
-    card.style.cssText='background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;align-items:flex-start;gap:12px;';
+    card.style.cssText='background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px;';
     var info=document.createElement('div');info.style.flex='1';
     var nm=document.createElement('div');nm.style.cssText='font-weight:700;font-size:14px;';nm.textContent=s.name||'';
     info.appendChild(nm);
@@ -2540,7 +2561,7 @@ function renderSuppliers(list){
     if(s.notes){var nt=document.createElement('div');nt.style.cssText='font-size:11px;color:var(--muted);margin-top:4px;';nt.textContent=s.notes;info.appendChild(nt);}
     card.appendChild(info);
     var btns=document.createElement('div');btns.style.cssText='display:flex;gap:6px;flex-shrink:0;';
-    var eb=document.createElement('button');eb.className='btn-s';eb.style.cssText='height:28px;padding:0 10px;font-size:11px;';eb.textContent='Edit';
+    var eb=document.createElement('button');eb.style.cssText='height:28px;padding:0 10px;font-size:11px;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;color:#475569;cursor:pointer;';eb.textContent='Edit';
     (function(sid){eb.onclick=function(){editSupplier(sid);};})(s.id);
     var db=document.createElement('button');db.style.cssText='height:28px;padding:0 10px;font-size:11px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;color:#f87171;cursor:pointer;';db.textContent='Delete';
     (function(sid){db.onclick=function(){deleteSupplier(sid);};})(s.id);
@@ -2601,6 +2622,85 @@ function deleteSupplier(id){
   fetch('/api/suppliers/'+id,{method:'DELETE'}).then(function(r){return r.json();}).then(function(d){
     if(d.ok){toast('Supplier removed');loadSuppliers();}else toast(d.error||'Error','error');
   });
+}
+
+// -- Supplier Bulk Import
+var _suppImportRows = [];
+function importSuppliersCSV(evt){
+  var file = evt.target.files[0];
+  if(!file)return;
+  evt.target.value='';
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var lines = (e.target.result||'').split(/\r?\n/);
+    if(!lines.length){toast('Empty file','error');return;}
+    var headers = lines[0].split(',').map(function(h){return h.trim().replace(/^"|"$/g,'').toLowerCase();});
+    var nameIdx=headers.indexOf('name'), catIdx=headers.indexOf('category'),
+        conIdx=headers.indexOf('contact_name'), phIdx=headers.indexOf('phone'),
+        emIdx=headers.indexOf('email'), ntIdx=headers.indexOf('notes');
+    if(nameIdx<0){toast('CSV must have a "name" column','error');return;}
+    _suppImportRows=[];
+    for(var i=1;i<lines.length;i++){
+      var line=lines[i].trim();if(!line)continue;
+      var cols=[];var cur='';var inq=false;
+      for(var c=0;c<line.length;c++){
+        var ch=line[c];
+        if(ch==='"'){inq=!inq;}
+        else if(ch===','&&!inq){cols.push(cur.trim());cur='';}
+        else cur+=ch;
+      }
+      cols.push(cur.trim());
+      var name=(cols[nameIdx]||'').replace(/^"|"$/g,'').trim();
+      if(!name)continue;
+      _suppImportRows.push({
+        name:name,
+        category:(catIdx>=0?(cols[catIdx]||'').replace(/^"|"$/g,'').trim():''),
+        contact_name:(conIdx>=0?(cols[conIdx]||'').replace(/^"|"$/g,'').trim():''),
+        phone:(phIdx>=0?(cols[phIdx]||'').replace(/^"|"$/g,'').trim():''),
+        email:(emIdx>=0?(cols[emIdx]||'').replace(/^"|"$/g,'').trim():''),
+        notes:(ntIdx>=0?(cols[ntIdx]||'').replace(/^"|"$/g,'').trim():''),
+      });
+    }
+    if(!_suppImportRows.length){toast('No valid rows found','error');return;}
+    var prev=document.getElementById('suppImportPreview');
+    if(!prev)return;
+    var html='<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;">';
+    html+='<tr style="background:#f1f5f9;"><th style="padding:6px 8px;text-align:left;border-bottom:2px solid #e2e8f0;">Name</th><th style="padding:6px 8px;text-align:left;border-bottom:2px solid #e2e8f0;">Category</th><th style="padding:6px 8px;text-align:left;border-bottom:2px solid #e2e8f0;">Contact</th><th style="padding:6px 8px;text-align:left;border-bottom:2px solid #e2e8f0;">Phone</th><th style="padding:6px 8px;text-align:left;border-bottom:2px solid #e2e8f0;">Email</th></tr>';
+    _suppImportRows.forEach(function(r){
+      html+='<tr style="border-bottom:1px solid #e2e8f0;">';
+      html+='<td style="padding:6px 8px;font-weight:600;">'+esc(r.name)+'</td>';
+      html+='<td style="padding:6px 8px;color:var(--muted);">'+esc(r.category)+'</td>';
+      html+='<td style="padding:6px 8px;color:var(--muted);">'+esc(r.contact_name)+'</td>';
+      html+='<td style="padding:6px 8px;color:var(--muted);">'+esc(r.phone)+'</td>';
+      html+='<td style="padding:6px 8px;color:var(--muted);">'+esc(r.email)+'</td>';
+      html+='</tr>';
+    });
+    html+='</table></div>';
+    prev.innerHTML=html;
+    document.getElementById('suppImportCount').textContent=_suppImportRows.length+' supplier'+(_suppImportRows.length!==1?'s':'')+' ready to import';
+    openModal('suppImportModal');
+  };
+  reader.readAsText(file);
+}
+function confirmSuppImport(){
+  if(!_suppImportRows.length)return;
+  var btn=document.getElementById('suppImportBtn');
+  if(btn){btn.disabled=true;btn.textContent='Importing...';}
+  var done=0,errs=0;
+  function next(i){
+    if(i>=_suppImportRows.length){
+      closeModal('suppImportModal');
+      loadSuppliers();
+      toast('Imported '+done+' supplier'+(done!==1?'s':'')+(errs?' ('+errs+' errors)':'')+(errs?'':' OK'));
+      if(btn){btn.disabled=false;btn.textContent='Import';}
+      return;
+    }
+    fetch('/api/suppliers',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(_suppImportRows[i])})
+    .then(function(r){return r.json();}).then(function(d){d.ok?done++:errs++;next(i+1);})
+    .catch(function(){errs++;next(i+1);});
+  }
+  next(0);
 }
 var _currentAllocPoId = null;
 var _allocPoItems = [];
