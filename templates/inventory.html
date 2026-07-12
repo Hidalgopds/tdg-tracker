@@ -1299,7 +1299,7 @@ function renderGrid(){
     if(!(activeCat==='All'||it.category===activeCat))return false;
     if(q&&!((it.name||'').toLowerCase().includes(q)||(it.category||'').toLowerCase().includes(q)||(it.location_code||'').toLowerCase().includes(q)||(it.sku||'').toLowerCase().includes(q)))return false;
     if(summaryFilter==='out')return (it.qty_on_hand||0)<=0;
-    if(summaryFilter==='low'){var _q=it.qty_on_hand||0,_s=it.safe_qty||0;return _q>0&&_s>0&&_q<=_s;}
+    if(summaryFilter==='low'){var _q=it.qty_on_hand||0,_s=it.safe_qty||0;return _q>0&&(_s>0?_q<=_s:_q<10);}
     return true;
   });
   var g=document.getElementById('invGrid');
@@ -2707,7 +2707,7 @@ function renderInvSummary(){
   var outCt=ITEMS.filter(function(it){return (it.qty_on_hand||0)<=0;}).length;
   var lowCt=ITEMS.filter(function(it){
     var q=it.qty_on_hand||0,s=it.safe_qty||0;
-    return q>0&&s>0&&q<=s;
+    return q>0&&(s>0?q<=s:q<10);
   }).length;
   var hasVal=ITEMS.some(function(it){return it.unit_cost>0;});
   var totalVal=hasVal?ITEMS.reduce(function(sum,it){return sum+(it.unit_cost||0)*(it.qty_on_hand||0);},0):null;
