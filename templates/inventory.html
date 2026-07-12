@@ -617,7 +617,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
     <div style="margin-bottom:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div>
         <label style="font-size:12px;color:var(--muted);">PO Number *</label>
-        <input id="po_number" required placeholder="e.g. PO-2026-001" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:14px;box-sizing:border-box;">
+        <input id="po_number" placeholder="e.g. PO-2026-001" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:14px;box-sizing:border-box;">
       </div>
       <div>
         <label style="font-size:12px;color:var(--muted);">S.O. Number</label>
@@ -650,6 +650,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
         <span id="poDocLabel">Tap to upload PDF or image from supplier</span>
       </div>
       <input id="poDocInput" type="file" accept=".pdf,image/*" style="display:none;" onchange="handlePoDoc(event)">
+      <div id="poOcrStatus" style="display:none;margin-top:6px;font-size:11px;padding:4px 8px;border-radius:5px;"></div>
     </div>
 
     <!-- Items -->
@@ -2158,6 +2159,12 @@ function filterPoSupplier(inp){
 function submitNewPO(e){
   e.preventDefault();
   var poNum  = (document.getElementById('po_number').value||'').trim();
+  if(!poNum){
+    var errEl=document.getElementById('poFormErr');
+    if(errEl){errEl.textContent='PO Number is required.';errEl.style.display='block';}
+    document.getElementById('po_number').focus();
+    return;
+  }
   var supplier = (document.getElementById('po_supplier').value||'').trim();
   var date   = document.getElementById('po_date').value || null;
   var notes  = (document.getElementById('po_notes').value||'').trim();
@@ -2491,6 +2498,47 @@ function printItemLabels(){
   w.document.write(html);w.document.close();
 }
 
+function showPoOcrStatus(msg,type){
+  var el=document.getElementById('poOcrStatus');
+  if(!el)return;
+  el.textContent=msg;
+  el.style.display=msg?'block':'none';
+  el.style.background=type==='ok'?'rgba(34,197,94,.12)':type==='error'?'rgba(248,113,113,.12)':'rgba(59,130,246,.1)';
+  el.style.color=type==='ok'?'#16a34a':type==='error'?'#dc2626':'#1d4ed8';
+}
+function autofillPO(text){
+  var lines=text.split(/\n/).map(function(l){return l.trim();}).filter(Boolean);
+  var pn=document.getElementById('po_number');
+  if(pn&&!pn.value.trim()){
+    var m=text.match(/(?:P\.?O\.?|purchase\s+order)\s*[#:\-]?\s*([A-Z0-9\-]{3,20})/i);
+    if(m)pn.value=m[1].trim();
+  }
+  var so=document.getElementById('po_so_number');
+  if(so&&!so.value.trim()){
+    var ms=text.match(/(?:S\.?O\.?|sales\s+order|invoice|INV|order\s+no\.?)\s*[#:\-]?\s*([A-Z0-9\-]{3,20})/i);
+    if(ms)so.value=ms[1].trim();
+  }
+  var sup=document.getElementById('po_supplier');
+  if(sup&&!sup.value.trim()&&lines.length>0){
+    for(var i=0;i<Math.min(5,lines.length);i++){
+      var l=lines[i];
+      if(l.length>3&&l.length<60&&!/^\d/.test(l)&&!/date|total|invoice|purchase|order/i.test(l)){
+        sup.value=l;break;
+      }
+    }
+  }
+  var dt=document.getElementById('po_date');
+  if(dt&&!dt.value){
+    var md=text.match(/\b(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})\b/);
+    if(!md)md=text.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
+    if(md){
+      try{
+        var d=new Date(md[0]);
+        if(!isNaN(d))dt.value=d.toISOString().substring(0,10);
+      }catch(e){}
+    }
+  }
+}
 function handlePoDoc(e){
   var f=e.target.files&&e.target.files[0];
   if(!f){return;}
@@ -2500,6 +2548,23 @@ function handlePoDoc(e){
   reader.onload=function(ev){_poDocData={name:f.name,type:f.type,data:ev.target.result};};
   reader.readAsDataURL(f);
   e.target.value='';
+  // Auto-OCR if image
+  if(f.type.startsWith('image/')){
+    if(typeof Tesseract==='undefined'){showPoOcrStatus('OCR engine not loaded.','error');return;}
+    showPoOcrStatus('🔍 Reading document...','');
+    Tesseract.recognize(f,'spa+eng',{
+      logger:function(m){
+        if(m.status==='recognizing text')
+          showPoOcrStatus('🔍 Reading... '+Math.round(m.progress*100)+'%','');
+      }
+    }).then(function(r){
+      var text=(r.data.text||'').trim();
+      if(text){autofillPO(text);showPoOcrStatus('✅ Fields auto-filled from document — review before saving','ok');}
+      else showPoOcrStatus('⚠ No text detected. Fill fields manually.','error');
+    }).catch(function(){showPoOcrStatus('Could not read image. Fill fields manually.','error');});
+  } else if(f.type==='application/pdf'){
+    showPoOcrStatus('📄 PDF attached — fill fields manually or type them in.','');
+  }
 }
 
 function printDispatchReceipt(req){
