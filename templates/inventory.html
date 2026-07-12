@@ -526,6 +526,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <button onclick="openNewItemModal()" class="btn-p" style="height:32px;padding:0 14px;font-size:12px;" title="Add a single new material item">+ Add Item</button>
   <button onclick="document.getElementById('xlsxImportInput').click()" class="btn-s" style="height:32px;padding:0 14px;font-size:12px;" title="Import multiple items from an Excel file">📥 Import Excel</button>
   <input id="xlsxImportInput" type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleXlsxImport(event)">
+  <button id="saveAllBtn" onclick="saveAll()" style="display:none;height:32px;padding:0 16px;font-size:12px;font-weight:700;border:none;border-radius:8px;background:#16a34a;color:#fff;cursor:pointer;">💾 Save All <span id="saveAllCount" style="background:rgba(255,255,255,.25);border-radius:10px;padding:0 6px;margin-left:2px;font-size:11px;"></span></button>
 </div>
 <!-- ITEM SEARCH + ACTIONS BAR -->
 <div style="display:flex;align-items:center;gap:6px;padding:4px 14px 4px;">
@@ -1204,6 +1205,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 <script>
 var ITEMS=[],REQS=[],activeCat='All',srchQ='',activeLoc='',edUser=null,curPinUser=null,pinBuf='',setNewPin=false,pin1st='';
 var summaryFilter='';
+var _dirty={};
 var CURRENT_INBOX_TAB='pending';
 var _sigReqId=null;
 var _sigCtx=null,_sigCanvas=null,_sigDrawing=false;
@@ -1329,10 +1331,9 @@ function mkCard(it){
     (lastR?'<div style="font-size:9px;color:var(--muted);margin-top:3px;">Restocked: '+lastR+'</div>':'')+
     '</div>'+
     '<div class="ic-edit">'+
-      '<input class="qty-inp" id="q-'+it.id+'" type="number" min="0" value="'+qty+'" title="On Hand">'+
-      '<input class="qty-inp" id="sq-'+it.id+'" type="number" min="0" placeholder="Safe" title="Safe qty" value="'+(safeQ||'')+'">'+
-      '<input class="loc-inp" id="loc-'+it.id+'" type="text" placeholder="Location (e.g. A-01)" title="Location" value="'+(it.location_code||'')+'">'+
-      '<button class="ic-save" onclick="saveQty(\''+it.id+'\')">Save</button>'+
+      '<input class="qty-inp" id="q-'+it.id+'" type="number" min="0" value="'+qty+'" title="On Hand" oninput="markDirty('"+it.id+"')">'+
+      '<input class="qty-inp" id="sq-'+it.id+'" type="number" min="0" placeholder="Safe" title="Safe qty" oninput="markDirty('"+it.id+"')" value="'+(safeQ||'')+'">'+
+      '<input class="loc-inp" id="loc-'+it.id+'" type="text" placeholder="Location (e.g. A-01)" title="Location" oninput="markDirty('"+it.id+"')" value="'+(it.location_code||'')+'">'+
       '<button class="ic-del" onclick="delItem(\''+it.id+'\',\''+esc(it.name).replace(/'/g,"\\'")+ '\')" title="Delete">🗑️</button>'+
     '</div>'+
     '<div class="ic-cat-edit">'+
@@ -1645,10 +1646,10 @@ function procPIN(){
     return;
   }
   fetch('/api/users/verify-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:curPinUser,pin:pinBuf})})
-  .then(function(r){return r.json();}).then(function(d){
+  .then(function(r){if(!r.ok)throw new Error('srv');return r.json();}).then(function(d){
     if(d.ok){edUser=curPinUser;sessionStorage.setItem('edUser',edUser);activateEd();goS3();inlineReqs();}
     else{document.getElementById('pinErr').textContent='Incorrect PIN.';pinBuf='';updDots();}
-  }).catch(function(){document.getElementById('pinErr').textContent='Error.';});
+  }).catch(function(){document.getElementById('pinErr').textContent='Network error — try again.';pinBuf='';updDots();});
 }
 
 function activateEd(){
@@ -2264,12 +2265,18 @@ function showXlsxPreview(rows){
   var body=document.getElementById('xlsxPreviewBody');
   var html='<table style="width:100%;border-collapse:collapse;font-size:12px;">';
   html+='<thead><tr style="background:var(--card);"><th style="padding:6px;text-align:left;">Name</th><th style="padding:6px;">Cat</th><th style="padding:6px;">Unit</th><th style="padding:6px;">Qty</th><th style="padding:6px;">Safe</th><th style="padding:6px;">Loc</th></tr></thead><tbody>';
+  var _nm2={};ITEMS.forEach(function(it){_nm2[(it.name||'').toLowerCase().trim()]=true;});
+  var updCt=0,newCt=0;
   _xlsxParsed.forEach(function(r){
-    html+='<tr style="border-bottom:1px solid var(--border);"><td style="padding:6px;">'+esc(r.name)+'</td><td style="padding:6px;text-align:center;">'+esc(r.category)+'</td><td style="padding:6px;text-align:center;">'+esc(r.unit)+'</td><td style="padding:6px;text-align:center;">'+r.qty_on_hand+'</td><td style="padding:6px;text-align:center;">'+(r.safe_qty||'')+'</td><td style="padding:6px;text-align:center;">'+(r.location_code||'')+'</td></tr>';
+    var isUpd=!!_nm2[(r.name||'').toLowerCase().trim()];
+    if(isUpd)updCt++;else newCt++;
+    var badge=isUpd?'<span style="font-size:9px;background:#dbeafe;color:#1d4ed8;border-radius:4px;padding:1px 5px;font-weight:700;margin-left:4px;">UPDATE</span>':'<span style="font-size:9px;background:#dcfce7;color:#15803d;border-radius:4px;padding:1px 5px;font-weight:700;margin-left:4px;">NEW</span>';
+    html+='<tr style="border-bottom:1px solid var(--border);"><td style="padding:6px;">'+esc(r.name)+badge+'</td><td style="padding:6px;text-align:center;">'+esc(r.category)+'</td><td style="padding:6px;text-align:center;">'+esc(r.unit)+'</td><td style="padding:6px;text-align:center;">'+r.qty_on_hand+'</td><td style="padding:6px;text-align:center;">'+(r.safe_qty||'')+'</td><td style="padding:6px;text-align:center;">'+(r.location_code||'')+'</td></tr>';
   });
   html+='</tbody></table>';
+  document.getElementById('xlsxConfirmBtn').textContent='Import '+_xlsxParsed.length+' rows ('+updCt+' update, '+newCt+' new)';
   body.innerHTML=html;
-  document.getElementById('xlsxConfirmBtn').textContent='Import '+_xlsxParsed.length+' Items';
+  // confirmBtn set above
   var errEl=document.getElementById('xlsxImportErr');if(errEl)errEl.style.display='none';
   openModal('xlsxPreviewModal');
 }
@@ -2285,10 +2292,18 @@ function confirmXlsxImport(){
       toast('Imported '+done+' items'+(errs?' ('+errs+' errors)':'')+(errs?' — check console':' ✓'));
       closeModal('xlsxPreviewModal');loadInv();return;
     }
-    var payload=Object.assign({},_xlsxParsed[i],{editor:editor,created_by:createdBy});
-    fetch('/api/inventory',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
-    .then(function(r){return r.json();}).then(function(d){d.error?errs++:done++;next(i+1);})
-    .catch(function(){errs++;next(i+1);});
+    var _key=(_xlsxParsed[i].name||'').toLowerCase().trim();
+    var _existId=(function(){for(var j=0;j<ITEMS.length;j++){if((ITEMS[j].name||'').toLowerCase().trim()===_key)return ITEMS[j].id;}return null;})();
+    var payload=Object.assign({},_xlsxParsed[i],{editor:editor,created_by:createdBy,updated_by:editor});
+    if(_existId){
+      fetch('/api/inventory/'+_existId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+      .then(function(r){return r.json();}).then(function(d){d.ok?done++:errs++;next(i+1);})
+      .catch(function(){errs++;next(i+1);});
+    }else{
+      fetch('/api/inventory',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+      .then(function(r){return r.json();}).then(function(d){d.error?errs++:done++;next(i+1);})
+      .catch(function(){errs++;next(i+1);});
+    }
   }
   next(0);
 }
@@ -3013,6 +3028,41 @@ function doCopy(){var t=document.getElementById('shareTxt');t.select();document.
 function doWhatsApp(){window.open('https://wa.me/?text='+encodeURIComponent(document.getElementById('shareTxt').value),'_blank');}
 
 // ── Inventory editing ────────────────────────────────────────────────────────
+function markDirty(id){
+  _dirty[id]=true;
+  var btn=document.getElementById('saveAllBtn');
+  var cnt=document.getElementById('saveAllCount');
+  if(btn){btn.style.display='';if(cnt)cnt.textContent=Object.keys(_dirty).length;}
+}
+function saveAll(){
+  var ids=Object.keys(_dirty);
+  if(!ids.length)return;
+  var btn=document.getElementById('saveAllBtn');
+  if(btn){btn.textContent='Saving...';btn.disabled=true;}
+  var done=0,errs=0;
+  function next(i){
+    if(i>=ids.length){
+      _dirty={};
+      loadInv();setTimeout(loadLowStock,600);renderInvSummary();
+      var b=document.getElementById('saveAllBtn');
+      if(b){b.style.display='none';b.disabled=false;b.innerHTML='💾 Save All <span id="saveAllCount" style="background:rgba(255,255,255,.25);border-radius:10px;padding:0 6px;margin-left:2px;font-size:11px;"></span>';}
+      toast('Saved '+done+' item'+(done!==1?'s':'')+(errs?' ('+errs+' errors)':'')+(errs?'':' ✓'));
+      return;
+    }
+    var id=ids[i];
+    var qEl=document.getElementById('q-'+id);
+    var sqEl=document.getElementById('sq-'+id);
+    var locEl=document.getElementById('loc-'+id);
+    if(!qEl){next(i+1);return;}
+    var payload={qty_on_hand:parseFloat(qEl.value)||0,editor:edUser,updated_by:localStorage.getItem('mbrAuth')||edUser};
+    if(sqEl)payload.safe_qty=parseInt(sqEl.value)||0;
+    if(locEl)payload.location_code=(locEl.value||'').trim().toUpperCase()||null;
+    fetch('/api/inventory/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(function(r){return r.json();}).then(function(d){d.ok?done++:errs++;next(i+1);})
+    .catch(function(){errs++;next(i+1);});
+  }
+  next(0);
+}
 function saveQty(id){
   if(!edUser){toast('Editor access required','error');return;}
   var v=parseFloat(document.getElementById('q-'+id).value)||0;
