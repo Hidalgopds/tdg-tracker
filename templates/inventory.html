@@ -2249,7 +2249,6 @@ function submitNewPO(e){
   var user = localStorage.getItem('mbrAuth')||'';
   var poErrEl=document.getElementById('poFormErr');
   if(poErrEl){poErrEl.style.display='none';poErrEl.textContent='';}
-  console.log('[PO] Sending:', {po_number:poNum,supplier:supplier,items:items});
   var isEdit = !!_editPoId;
   var fetchUrl = isEdit ? '/api/po/'+_editPoId : '/api/po';
   var fetchMethod = isEdit ? 'PATCH' : 'POST';
@@ -3272,7 +3271,6 @@ function openDispDetail(r){
       +'<td style="padding:5px 6px;text-align:right;font-weight:700;color:#0f172a;">'+m.qty_needed+'</td></tr>';
   });
   matsHtml+='</table>';
-  function fmtDate(s){if(!s)return '—';return s.substring(0,10)+(s.length>10?' '+s.substring(11,16):'');}
   var sigImg=r.signature_data
     ?'<div style="margin-top:8px;background:#fff;border:1px solid #bbf7d0;border-radius:6px;overflow:hidden;text-align:center;padding:4px;">'
       +'<img src="'+r.signature_data+'" style="max-width:100%;max-height:90px;object-fit:contain;">'
@@ -3326,7 +3324,6 @@ function printDispDetail(){
   var mats=[];
   if(r.materials_json){try{mats=JSON.parse(r.materials_json);}catch(e){}}
   if(!mats.length)mats=[{item_name:r.item_name||'—',qty_needed:r.qty_needed||0}];
-  function fmtDate(s){if(!s)return '—';return s.substring(0,10)+(s.length>10?' '+s.substring(11,16):'');}
   var matsRows=mats.map(function(m){return '<tr><td style="padding:4px 8px;border-bottom:1px solid #e5e7eb;">'+safeHtml(m.item_name||'')+'</td><td style="padding:4px 8px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:700;">'+m.qty_needed+'</td></tr>';}).join('');
   var win=window.open('','_blank');
   win.document.write('<!DOCTYPE html><html><head><title>'+rn+'<\/title>'
@@ -3771,7 +3768,7 @@ function renderFacts(list){
 
 function loadAndRenderFacts(){
   var el=document.getElementById('factList');
-  if(el)el.innerHTML='<div class="fact-empty">Cargando...</div>';
+  if(el)el.innerHTML='<div class="fact-empty">Loading...</div>';
   fetch('/api/facturas').then(function(r){return r.json();}).then(function(d){
     renderFacts(d.facturas||[]);
   }).catch(function(){
@@ -3875,7 +3872,7 @@ document.addEventListener('DOMContentLoaded',function(){
     var file=fotoEl?fotoEl.files[0]:null;
     if(!file)return;
     if(typeof Tesseract==='undefined'){
-      showOcrStatus('No se pudo cargar el motor OCR. Revisa tu conexión.','error');return;
+      showOcrStatus('OCR engine failed to load. Check your connection.','error');return;
     }
     var self=this;self.disabled=true;
     showOcrStatus('Reading invoice... 0%','');
@@ -3891,7 +3888,7 @@ document.addEventListener('DOMContentLoaded',function(){
       if(texto){autofillFact(texto);showOcrStatus('✅ Texto leído. Revisa y edita los campos.','done');}
       else showOcrStatus('⚠ No se detectó texto. Try a clearer photo.','error');
     }).catch(function(){
-      showOcrStatus('Error al leer la imagen. Intenta de nuevo.','error');
+      showOcrStatus('Error reading image. Try again.','error');
     }).finally(function(){self.disabled=false;});
   });
 
