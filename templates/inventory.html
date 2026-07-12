@@ -1352,8 +1352,7 @@ function mkCard(it){
     (it.sku?'<span class="ic-sku">'+esc(it.sku)+'</span> ':'')+
     '<div class="ic-name">'+esc(it.name)+'</div>'+
     (it.location_code?'<div class="ic-loc" onclick="filterByLoc(\'' + esc(it.location_code) + '\')">'+esc(it.location_code)+'</div>':'')+
-    '<div class="ic-bottom"><div><span class="ic-qty">'+qty+'</span> <span class="ic-unit">'+esc(it.unit||'EA')+'</span>'+( safeQ>0?'<span style="font-size:9px;color:var(--muted);margin-left:5px;background:#f1f5f9;border-radius:10px;padding:1px 5px;">min:'+safeQ+'</span>':'')+'
-    </div>'+
+    '<div class="ic-bottom"><div><span class="ic-qty">'+qty+'</span> <span class="ic-unit">'+esc(it.unit||'EA')+'</span>'+( safeQ>0?'<span style="font-size:9px;color:var(--muted);margin-left:5px;background:#f1f5f9;border-radius:10px;padding:1px 5px;">min:'+safeQ+'</span>':'')+'</div>'+
     (stxt?'<span class="ic-stat '+sc+'">'+stxt+'</span>':'')+
     (lastR?'<div style="font-size:9px;color:var(--muted);margin-top:3px;">Restocked: '+lastR+'</div>':'')+
     '</div>'+
