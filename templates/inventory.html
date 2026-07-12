@@ -599,7 +599,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
       <option value="cancelled">Cancelled</option>
     </select>
     <button onclick="openModal('factListModal')" style="height:32px;padding:0 12px;font-size:12px;font-weight:500;white-space:nowrap;border:1px solid #cbd5e1;border-radius:7px;background:#f8fafc;color:#475569;cursor:pointer;">🧾 Invoices</button>
-    <button class="btn-p" onclick="openModal('newPoModal')" style="height:32px;padding:0 12px;font-size:12px;font-weight:700;">+ New PO</button>
+    <button onclick="openModal('newPoModal')" style="height:32px;padding:0 12px;font-size:12px;font-weight:700;border:none;border-radius:7px;background:var(--accent);color:#fff;cursor:pointer;white-space:nowrap;">+ New PO</button>
   </div>
 
   <!-- PO List -->
@@ -3535,13 +3535,13 @@ async function saveNewUnit(){
 
 
 // ══ FACTURAS ══════════════════════════════════════════════════════
-// Facturas stored in Supabase (replaced localStorage)
+// Invoices stored in Supabase (replaced localStorage)
 
 function renderFacts(list){
   var el=document.getElementById('factList');
   if(!el)return;
   if(!list||!list.length){
-    el.innerHTML='<div class="fact-empty">\u{1F4AB} A\xfan no hay facturas.<br>Toca "+ Nueva factura" para agregar la primera.</div>';
+    el.innerHTML='<div class="fact-empty">\u{1F4AB} A\xfan no hay facturas.<br>Tap "+ New" to add the first one.</div>';
     return;
   }
   el.innerHTML='';
@@ -3555,12 +3555,12 @@ function renderFacts(list){
     var body=document.createElement('div');body.className='fact-card__body';
     var fid=String(f.id||'');
     body.innerHTML=
-      '<div class="fact-card__num">'+(f.numero?'Factura '+esc(f.numero):'Sin numero')+'</div>'+
+      '<div class="fact-card__num">'+(f.numero?'Invoice '+esc(f.numero):'No number')+'</div>'+
       (f.proveedor?'<div class="fact-card__row">\U0001F3EA '+esc(f.proveedor)+'</div>':'')+
       (f.monto?'<div class="fact-card__row">\U0001F4B5 '+esc(f.monto)+'</div>':'')+
       (f.specs?'<div class="fact-card__specs">'+esc(f.specs)+'</div>':'')+
       '<div class="fact-card__meta"><span>'+esc(f.uploader||'')+'</span>'+
-      '<button class="fact-card__del" onclick="deleteFact(\''+fid+'\')">Eliminar</button></div>';
+      '<button class="fact-card__del" onclick="deleteFact(\''+fid+'\')">Delete</button></div>';
     card.appendChild(body);el.appendChild(card);
   });
 }
@@ -3571,15 +3571,15 @@ function loadAndRenderFacts(){
   fetch('/api/facturas').then(function(r){return r.json();}).then(function(d){
     renderFacts(d.facturas||[]);
   }).catch(function(){
-    if(el)el.innerHTML='<div class="fact-empty">Error al cargar facturas.</div>';
+    if(el)el.innerHTML='<div class="fact-empty">Failed to load invoices.</div>';
   });
 }
 
 function deleteFact(id){
-  if(!confirm('Eliminar esta factura?'))return;
+  if(!confirm('Delete this invoice?'))return;
   fetch('/api/facturas/'+id,{method:'DELETE'}).then(function(r){return r.json();}).then(function(d){
-    if(d.ok){toast('Factura eliminada');loadAndRenderFacts();}
-    else toast(d.error||'Error al eliminar','error');
+    if(d.ok){toast('Invoice deleted');loadAndRenderFacts();}
+    else toast(d.error||'Error deleting','error');
   }).catch(function(){toast('Error de red','error');});
 }
 
@@ -3591,7 +3591,7 @@ function resetFactForm(){
   if(ocrSt){ocrSt.style.display='none';ocrSt.className='fact-ocr-status';}
   var ocrFld=document.getElementById('factOcrField');if(ocrFld)ocrFld.style.display='none';
   var ocrTxt=document.getElementById('factOcrText');if(ocrTxt)ocrTxt.value='';
-  var upTxt=document.getElementById('factUploadText');if(upTxt)upTxt.textContent='📷 Toca para tomar foto o elegir imagen';
+  var upTxt=document.getElementById('factUploadText');if(upTxt)upTxt.textContent='📷 Tap to take a photo or choose image';
 }
 
 function resetFactStatus(){
@@ -3664,18 +3664,18 @@ document.addEventListener('DOMContentLoaded',function(){
       showOcrStatus('No se pudo cargar el motor OCR. Revisa tu conexión.','error');return;
     }
     var self=this;self.disabled=true;
-    showOcrStatus('Leyendo la factura... 0%','');
+    showOcrStatus('Reading invoice... 0%','');
     Tesseract.recognize(file,'spa+eng',{
       logger:function(m){
         if(m.status==='recognizing text')
-          showOcrStatus('Leyendo la factura... '+Math.round(m.progress*100)+'%','');
+          showOcrStatus('Reading invoice... '+Math.round(m.progress*100)+'%','');
       }
     }).then(function(r){
       var texto=(r.data.text||'').trim();
       var ocrTxt=document.getElementById('factOcrText');if(ocrTxt)ocrTxt.value=texto;
       var ocrFld=document.getElementById('factOcrField');if(ocrFld)ocrFld.style.display='block';
       if(texto){autofillFact(texto);showOcrStatus('✅ Texto leído. Revisa y edita los campos.','done');}
-      else showOcrStatus('⚠ No se detectó texto. Prueba con una foto más clara.','error');
+      else showOcrStatus('⚠ No se detectó texto. Try a clearer photo.','error');
     }).catch(function(){
       showOcrStatus('Error al leer la imagen. Intenta de nuevo.','error');
     }).finally(function(){self.disabled=false;});
@@ -3686,7 +3686,7 @@ document.addEventListener('DOMContentLoaded',function(){
     e.preventDefault();
     var fotoEl=document.getElementById('factFoto');
     var file=fotoEl?fotoEl.files[0]:null;
-    if(!file){toast('Selecciona la foto de la factura','warn');return;}
+    if(!file){toast('Please attach an invoice photo','warn');return;}
     var reader=new FileReader();
     reader.onload=function(ev){
       var payload={
@@ -3699,8 +3699,8 @@ document.addEventListener('DOMContentLoaded',function(){
       };
       fetch('/api/facturas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
       .then(function(r){return r.json();}).then(function(d){
-        if(d.ok){closeModal('factModal');resetFactForm();loadAndRenderFacts();toast('Factura guardada','ok');}
-        else toast(d.error||'Error al guardar','error');
+        if(d.ok){closeModal('factModal');resetFactForm();loadAndRenderFacts();toast('Invoice saved','ok');}
+        else toast(d.error||'Error saving','error');
       }).catch(function(){toast('Error de red','error');});
     };
     reader.readAsDataURL(file);
@@ -3899,18 +3899,18 @@ async function deleteMaterial(id){
 <div class="modal-bg" id="factModal">
   <div class="modal" style="border-radius:16px 16px 0 0;padding-bottom:24px;">
     <div class="mhandle"></div>
-    <div class="mtitle">📄 Subir Factura</div>
+    <div class="mtitle">📄 Upload Invoice</div>
 
     <form id="factForm" style="padding:0 16px;">
-      <label class="fact-field-label">Foto de la factura <span style="color:var(--red)">*</span></label>
+      <label class="fact-field-label">Invoice Photo <span style="color:var(--red)">*</span></label>
       <label class="fact-upload-zone" id="factUploadZone">
         <input type="file" id="factFoto" accept="image/*" capture="environment" style="display:none">
-        <span id="factUploadText">📷 Toca para tomar foto o elegir imagen</span>
+        <span id="factUploadText">📷 Tap to take a photo or choose image</span>
       </label>
       <img id="factPreview" style="display:none;width:100%;max-height:200px;object-fit:contain;border-radius:8px;border:1px solid var(--border);margin:8px 0;">
 
       <div id="factOcrBox" style="margin:8px 0;">
-        <button type="button" class="fact-ocr-btn" id="factOcrBtn" disabled>👁 Leer texto de la factura (OCR)</button>
+        <button type="button" class="fact-ocr-btn" id="factOcrBtn" disabled>👁 Read invoice text (OCR)</button>
         <div class="fact-ocr-status" id="factOcrStatus" style="display:none;"></div>
       </div>
 
@@ -3919,21 +3919,21 @@ async function deleteMaterial(id){
         <textarea id="factOcrText" class="fact-textarea" rows="3" placeholder="Aquí aparece el texto leído..."></textarea>
       </div>
 
-      <label class="fact-field-label">Número de factura</label>
-      <input type="text" id="factNumero" class="fact-input" placeholder="Ej. F-001234">
+      <label class="fact-field-label">Invoice Number</label>
+      <input type="text" id="factNumero" class="fact-input" placeholder="e.g. F-001234">
 
-      <label class="fact-field-label">Proveedor</label>
+      <label class="fact-field-label">Supplier</label>
       <input type="text" id="factProveedor" class="fact-input" placeholder="Home Depot, Grainger, etc.">
 
-      <label class="fact-field-label">Monto total</label>
+      <label class="fact-field-label">Total Amount</label>
       <input type="text" id="factMonto" class="fact-input" placeholder="$1,250.00">
 
-      <label class="fact-field-label">Items / Descripción</label>
-      <textarea id="factSpecs" class="fact-textarea" rows="3" placeholder="Materiales recibidos..."></textarea>
+      <label class="fact-field-label">Items / Description</label>
+      <textarea id="factSpecs" class="fact-textarea" rows="3" placeholder="Materials received..."></textarea>
 
       <div style="display:flex;gap:10px;margin-top:16px;">
-        <button type="button" class="btn-s" style="flex:1;background:#f1f5f9;color:var(--text);" onclick="closeModal('factModal');resetFactForm();">Cancelar</button>
-        <button type="submit" class="btn-s" style="flex:1;background:var(--accent);color:#fff;">Guardar factura</button>
+        <button type="button" class="btn-s" style="flex:1;background:#f1f5f9;color:var(--text);" onclick="closeModal('factModal');resetFactForm();">Cancel</button>
+        <button type="submit" class="btn-s" style="flex:1;background:var(--accent);color:#fff;">Save Invoice</button>
       </div>
     </form>
   </div>
@@ -3945,9 +3945,9 @@ async function deleteMaterial(id){
   <div class="modal" style="border-radius:16px 16px 0 0;max-height:85vh;">
     <div class="mhandle"></div>
     <div style="display:flex;align-items:center;justify-content:space-between;padding:0 16px 12px;">
-      <div class="mtitle" style="margin:0;padding:0;">📋 Facturas</div>
+      <div class="mtitle" style="margin:0;padding:0;">📋 Invoices</div>
       <div style="display:flex;gap:8px;">
-        <button class="fact-new-btn" style="font-size:12px;height:30px;padding:0 12px;" onclick="closeModal('factListModal');resetFactForm();openModal('factModal');">+ Nueva</button>
+        <button class="fact-new-btn" style="font-size:12px;height:30px;padding:0 12px;" onclick="closeModal('factListModal');resetFactForm();openModal('factModal');">+ New</button>
         <button onclick="closeModal('factListModal')" style="background:none;border:none;font-size:20px;color:var(--muted);cursor:pointer;line-height:1;">✕</button>
       </div>
     </div>
