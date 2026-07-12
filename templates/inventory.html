@@ -1331,9 +1331,9 @@ function mkCard(it){
     (lastR?'<div style="font-size:9px;color:var(--muted);margin-top:3px;">Restocked: '+lastR+'</div>':'')+
     '</div>'+
     '<div class="ic-edit">'+
-      '<input class="qty-inp" id="q-'+it.id+'" type="number" min="0" value="'+qty+'" title="On Hand" oninput="markDirty('"+it.id+"')">'+
-      '<input class="qty-inp" id="sq-'+it.id+'" type="number" min="0" placeholder="Safe" title="Safe qty" oninput="markDirty('"+it.id+"')" value="'+(safeQ||'')+'">'+
-      '<input class="loc-inp" id="loc-'+it.id+'" type="text" placeholder="Location (e.g. A-01)" title="Location" oninput="markDirty('"+it.id+"')" value="'+(it.location_code||'')+'">'+
+      '<input class="qty-inp" id="q-'+it.id+'" type="number" min="0" value="'+qty+'" title="On Hand" oninput="markDirty(this)">'+
+      '<input class="qty-inp" id="sq-'+it.id+'" type="number" min="0" placeholder="Safe" title="Safe qty" oninput="markDirty(this)" value="'+(safeQ||'')+'">'+
+      '<input class="loc-inp" id="loc-'+it.id+'" type="text" placeholder="Location (e.g. A-01)" title="Location" oninput="markDirty(this)" value="'+(it.location_code||'')+'">'+
       '<button class="ic-del" onclick="delItem(\''+it.id+'\',\''+esc(it.name).replace(/'/g,"\\'")+ '\')" title="Delete">🗑️</button>'+
     '</div>'+
     '<div class="ic-cat-edit">'+
@@ -3028,7 +3028,9 @@ function doCopy(){var t=document.getElementById('shareTxt');t.select();document.
 function doWhatsApp(){window.open('https://wa.me/?text='+encodeURIComponent(document.getElementById('shareTxt').value),'_blank');}
 
 // ── Inventory editing ────────────────────────────────────────────────────────
-function markDirty(id){
+function markDirty(inp){
+  var id=(inp&&inp.id)?inp.id.replace(/^(q-|sq-|loc-)/,''):(inp||'');
+  if(!id)return;
   _dirty[id]=true;
   var btn=document.getElementById('saveAllBtn');
   var cnt=document.getElementById('saveAllCount');
