@@ -2689,11 +2689,17 @@ function openDispDetail(r){
   });
   matsHtml+='</table>';
   function fmtDate(s){if(!s)return '—';return s.substring(0,10)+(s.length>10?' '+s.substring(11,16):'');}
+  var sigImg=r.signature_data
+    ?'<div style="margin-top:8px;background:#fff;border:1px solid #bbf7d0;border-radius:6px;overflow:hidden;text-align:center;padding:4px;">'
+      +'<img src="'+r.signature_data+'" style="max-width:100%;max-height:90px;object-fit:contain;">'
+      +'</div>'
+    :'';
   var pickupHtml=r.pickup_by
     ?'<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:10px;margin-top:6px;">'
       +'<div style="font-size:10px;font-weight:700;color:#15803d;margin-bottom:4px;">✅ SIGNED / PICKED UP BY</div>'
       +'<div style="font-size:15px;font-weight:700;color:#166534;">'+safeHtml(r.pickup_by)+'</div>'
       +(r.delivered_at?'<div style="font-size:11px;color:#16a34a;margin-top:2px;">'+fmtDate(r.delivered_at)+'</div>':'')
+      +sigImg
       +'</div>'
     :'<div style="background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:8px;margin-top:6px;font-size:12px;color:#854d0e;">⏳ Not yet picked up</div>';
   var h='<div style="font-size:18px;font-weight:800;color:#0f172a;margin-bottom:4px;">'+rn+'</div>'
@@ -2753,6 +2759,7 @@ function printDispDetail(){
     +'<div style="margin-top:16px;padding:10px;background:#f0fdf4;border-radius:6px;">'
       +'<b>Picked Up By:<\/b> '+(r.pickup_by||'_________________________')+'<br>'
       +'<b>Date:<\/b> '+(r.delivered_at?fmtDate(r.delivered_at):'_________________________')
+      +(r.signature_data?'<div style="margin-top:8px;border-top:1px solid #bbf7d0;padding-top:8px;"><img src="'+r.signature_data+'" style="max-width:200px;max-height:70px;object-fit:contain;"><\/div>':'<div style="margin-top:20px;border-top:1px solid #86efac;font-size:11px;color:#15803d;">Signature<\/div>')
     +'<\/div>'
     +'<div style="margin-top:12px;padding:10px;background:#f8fafc;border-radius:6px;font-size:11px;color:#64748b;">'
       +'Approved by: '+(r.approved_by||'—')+' · '+fmtDate(r.approved_at)+'<br>'
