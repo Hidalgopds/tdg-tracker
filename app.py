@@ -2088,6 +2088,17 @@ def receive_po(po_id):
         if not pr.ok:
             errors.append(f"Failed to update {cur.get('name',iid)}: {pr.text}")
 
+    # Write Goods Receipt material documents (best effort)
+    try:
+        for iid_gr, qty_gr in recv_map.items():
+            if iid_gr and qty_gr > 0:
+                # find item name from po_items
+                _iname = next((pi.get("item_name","") for pi in po_items if str(pi.get("item_id",""))==iid_gr), "")
+                write_mat_doc('GR', iid_gr, _iname, qty_gr,
+                              ref_id=po.get("po_number",""), ref_type='purchase_order',
+                              performed_by=received_by)
+    except Exception:
+        pass
     # Update PO record
     from datetime import datetime
     new_status = "received" if fully_received else "partial"
@@ -2349,6 +2360,39 @@ def delete_inventory_item(item_id):
         return jsonify({"ok": True})
     return jsonify({"error": r.text}), 400
 
+# ── Material Documents (stock movement log) ─────────────────────────────────
+def write_mat_doc(mvt_type, item_id, item_name, qty, **kw):
+    """Write a material document (GI/GR). Best-effort, never raises."""
+    try:
+        requests.post(
+            f"{SUPABASE_URL}/rest/v1/material_documents",
+            json={"mvt_type": mvt_type,
+                  "item_id": str(item_id) if item_id else None,
+                  "item_name": item_name or "",
+                  "qty": float(qty),
+                  "unit": kw.get("unit", "EA"),
+                  "job_name": kw.get("job_name"),
+                  "building": kw.get("building"),
+                  "ref_id": kw.get("ref_id"),
+                  "ref_type": kw.get("ref_type"),
+                  "performed_by": kw.get("performed_by"),
+                  "notes": kw.get("notes")},
+            headers={**sb_headers(), "Prefer": "return=minimal"}, timeout=3)
+    except Exception:
+        pass
+
+@app.route("/api/material-documents", methods=["GET"])
+def list_mat_docs():
+    limit   = request.args.get("limit", 300)
+    item_id = request.args.get("item_id")
+    mvt     = request.args.get("mvt_type")
+    url = (f"{SUPABASE_URL}/rest/v1/material_documents"
+           f"?select=*&order=created_at.desc&limit={limit}")
+    if item_id: url += f"&item_id=eq.{item_id}"
+    if mvt:     url += f"&mvt_type=eq.{mvt}"
+    r = requests.get(url, headers=sb_headers())
+    return jsonify(r.json() if r.ok else [])
+
 # ── Material requests ────────────────────────────────────────────
 @app.route("/api/material-requests", methods=["GET"])
 def get_material_requests():
@@ -2449,6 +2493,21 @@ def deliver_material_request(req_id):
                 headers={**sb_headers(), "Prefer": "return=minimal"},
                 json={"qty_on_hand": new_qty, "updated_at": "now()"}
             )
+    # Write Goods Issue material documents (best effort)
+    if materials:
+        try:
+            _rn = 'REQ-' + str(req_id).replace('-','').upper()[:8]
+            _job = rd.get("job_name") if 'rd' in dir() else None
+            _bld = rd.get("building") if 'rd' in dir() else None
+            for _m in materials:
+                _iid = _m.get("item_id"); _qty = int(_m.get("qty_needed") or 0)
+                if _iid and _qty > 0:
+                    write_mat_doc('GI', _iid, _m.get("item_name",""), _qty,
+                                  job_name=_job, building=_bld,
+                                  ref_id=_rn, ref_type='material_request',
+                                  performed_by=delivered_by)
+        except Exception:
+            pass
     # Mark request delivered
     payload = {
         "status": "Delivered",

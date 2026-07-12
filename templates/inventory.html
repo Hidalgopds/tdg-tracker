@@ -475,6 +475,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <button class="inv-tab" id="itab-units" onclick="switchInvTab('units')">🏪 Suppliers</button>
   <button class="inv-tab" id="itab-receiving" onclick="switchInvTab('receiving')" style="display:none;">&#x1F4E6; Receiving</button>
   <button class="inv-tab" id="itab-dispatch" onclick="switchInvTab('dispatch')" style="display:none;">&#x1F4CB; Dispatch</button>
+  <button class="inv-tab" id="itab-matdocs" onclick="switchInvTab('matdocs')" style="display:none;">📋 Mat. Docs</button>
 </div>
 <div id="inv-tab-content">
 <!-- CATEGORY CHIPS -->
@@ -676,6 +677,20 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 
 
 <!-- DISPATCH TAB -->
+<div id="matdocs-tab-content" style="display:none;padding:12px 0;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+    <div style="font-size:15px;font-weight:700;color:var(--text);">📋 Material Document Log</div>
+    <div style="display:flex;gap:6px;">
+      <select id="mdMvtFilter" onchange="loadMatDocs()" style="height:30px;border:1px solid var(--border);border-radius:6px;padding:0 8px;font-size:12px;background:var(--card);color:var(--text);">
+        <option value="">All Types</option>
+        <option value="GI">GI — Goods Issue</option>
+        <option value="GR">GR — Goods Receipt</option>
+      </select>
+    </div>
+  </div>
+  <div id="matDocsBody"><div style="color:var(--muted);text-align:center;padding:32px;">Loading...</div></div>
+</div>
+
 <div id="dispatch-tab-content" style="display:none;padding:12px 0;">
   <!-- Top action bar -->
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
@@ -1174,6 +1189,11 @@ if(_ROLE==='dispatcher'||_LVL>=4){
 if(_ROLE==='dispatcher'||_LVL>=4){
   var _rcvtab=document.getElementById('itab-receiving');
   if(_rcvtab)_rcvtab.style.display='';
+}
+// Show Mat. Docs tab for inventory/boss/admin
+if(_LVL>=3){
+  var _mdtab=document.getElementById('itab-matdocs');
+  if(_mdtab)_mdtab.style.display='';
 }
 // Hide Suppliers tab for contractor role
 if(_ROLE==='contractor'){
@@ -2632,6 +2652,47 @@ function renderQueryResults(results){
     row.onclick=function(){openDispDetail(window._dispMap[this.dataset.rid]);};
   });
 }
+function loadMatDocs(){
+  var mvt=(document.getElementById('mdMvtFilter')||{value:''}).value;
+  var url='/api/material-documents?limit=300'+(mvt?'&mvt_type='+mvt:'');
+  fetch(url).then(function(r){return r.json();}).then(function(d){renderMatDocs(d||[]);}).catch(function(){
+    document.getElementById('matDocsBody').innerHTML='<div style="color:#f87171;text-align:center;padding:24px;">Failed to load</div>';
+  });
+}
+function renderMatDocs(docs){
+  var el=document.getElementById('matDocsBody');
+  if(!el)return;
+  if(!docs.length){el.innerHTML='<div style="color:var(--muted);text-align:center;padding:32px;">No material documents yet.<br><span style="font-size:12px;">Documents are created automatically when materials are issued or received.</span></div>';return;}
+  var giStyle='background:#fee2e2;color:#dc2626;font-weight:700;font-size:10px;padding:2px 7px;border-radius:4px;';
+  var grStyle='background:#dcfce7;color:#16a34a;font-weight:700;font-size:10px;padding:2px 7px;border-radius:4px;';
+  var h='<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;">'
+    +'<thead><tr style="border-bottom:2px solid var(--border);">'
+    +'<th style="padding:8px 6px;text-align:left;color:var(--muted);font-size:10px;white-space:nowrap;">DATE</th>'
+    +'<th style="padding:8px 6px;text-align:left;color:var(--muted);font-size:10px;">TYPE</th>'
+    +'<th style="padding:8px 6px;text-align:left;color:var(--muted);font-size:10px;">ITEM</th>'
+    +'<th style="padding:8px 6px;text-align:right;color:var(--muted);font-size:10px;">QTY</th>'
+    +'<th style="padding:8px 6px;text-align:left;color:var(--muted);font-size:10px;">JOB / REF</th>'
+    +'<th style="padding:8px 6px;text-align:left;color:var(--muted);font-size:10px;">BY</th>'
+    +'</tr></thead><tbody>';
+  docs.forEach(function(d){
+    var dt=d.created_at?d.created_at.substring(0,16).replace('T',' '):'';
+    var badge=d.mvt_type==='GI'?'<span style="'+giStyle+'">GI</span>':'<span style="'+grStyle+'">GR</span>';
+    var sign=d.mvt_type==='GI'?'<span style="color:#dc2626;">−</span>':'<span style="color:#16a34a;">+</span>';
+    var jobRef='';
+    if(d.job_name)jobRef+=safeHtml(d.job_name);
+    if(d.ref_id)jobRef+=(jobRef?' · ':'')+safeHtml(d.ref_id);
+    h+='<tr style="border-bottom:1px solid var(--border);">'
+      +'<td style="padding:7px 6px;color:var(--muted);white-space:nowrap;font-size:11px;">'+dt+'</td>'
+      +'<td style="padding:7px 6px;">'+badge+'</td>'
+      +'<td style="padding:7px 6px;color:var(--text);">'+safeHtml(d.item_name||'—')+'</td>'
+      +'<td style="padding:7px 6px;text-align:right;font-weight:700;color:var(--text);">'+sign+(d.qty||0)+'</td>'
+      +'<td style="padding:7px 6px;color:var(--muted);font-size:11px;">'+jobRef+'</td>'
+      +'<td style="padding:7px 6px;color:var(--muted);white-space:nowrap;font-size:11px;">'+safeHtml(d.performed_by||'—')+'</td>'
+      +'</tr>';
+  });
+  h+='</tbody></table></div>';
+  el.innerHTML=h;
+}
 function exportQueryCSV(){
   var cnt=document.getElementById('queryCount');
   var status=(document.getElementById('qStatus')||{value:''}).value;
@@ -2939,7 +3000,7 @@ document.addEventListener('click',function(e){if(!e.target.closest('.acwrap'))do
 
 // ── Tab switching ──────────────────────────────────────────────────────────
 function switchInvTab(t){
-  ['inv','units','receiving','dispatch'].forEach(function(id){
+  ['inv','units','receiving','dispatch','matdocs'].forEach(function(id){
     var btn=document.getElementById('itab-'+id);
     if(btn)btn.classList.toggle('active',t===id);
   });
@@ -2947,11 +3008,12 @@ function switchInvTab(t){
   document.getElementById('um-tab-content').style.display=t==='units'?'block':'none';
   var rcvEl=document.getElementById('receiving-tab-content');if(rcvEl)rcvEl.style.display=t==='receiving'?'block':'none';
   var disEl=document.getElementById('dispatch-tab-content');if(disEl)disEl.style.display=t==='dispatch'?'block':'none';
+  var mdEl=document.getElementById('matdocs-tab-content');if(mdEl)mdEl.style.display=t==='matdocs'?'block':'none';
   if(t==='dispatch'){if(!_qAllReqs.length)initQueryTab();else runQuery();}
   if(t==='units'&&!umLoaded)loadProjectUnits();
   if(t==='receiving')loadPOs();
   if(t==='units')loadSuppliers();
-
+  if(t==='matdocs')loadMatDocs();
 }
 
 // ── State ──────────────────────────────────────────────────────────────────
