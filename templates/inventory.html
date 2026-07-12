@@ -607,6 +607,55 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <div id="poList"><div style="color:var(--muted);text-align:center;padding:32px;">Loading...</div></div>
 </div>
 
+<!-- ── NEW MAT DOC MODAL ──────────────────────────────────────── -->
+<div class="modal-bg" id="newMatDocModal">
+<div class="modal" style="max-width:460px;">
+  <div class="mhandle"></div>
+  <div class="mtitle">📋 Log Material Document</div>
+  <form id="matDocForm" onsubmit="submitMatDoc(event)">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+      <div>
+        <label style="font-size:12px;color:var(--muted);font-weight:600;">Type *</label>
+        <select id="mdType" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:14px;">
+          <option value="GI">GI — Goods Issue (out)</option>
+          <option value="GR">GR — Goods Receipt (in)</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);font-weight:600;">Qty *</label>
+        <input id="mdQty" type="number" min="0" step="0.01" placeholder="0" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:14px;box-sizing:border-box;">
+      </div>
+    </div>
+    <div style="margin-bottom:10px;">
+      <label style="font-size:12px;color:var(--muted);font-weight:600;">Item / Material *</label>
+      <input id="mdItem" type="text" placeholder="e.g. 1&quot; Unistrut Strap" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:14px;box-sizing:border-box;">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+      <div>
+        <label style="font-size:12px;color:var(--muted);font-weight:600;">Job / Unit</label>
+        <input id="mdJob" type="text" placeholder="e.g. TDG-Unit-05" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:14px;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-size:12px;color:var(--muted);font-weight:600;">Ref # (PO / REQ)</label>
+        <input id="mdRef" type="text" placeholder="e.g. PO-2026-001" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:14px;box-sizing:border-box;">
+      </div>
+    </div>
+    <div style="margin-bottom:10px;">
+      <label style="font-size:12px;color:var(--muted);font-weight:600;">Performed By</label>
+      <input id="mdBy" type="text" placeholder="Your name" style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:14px;box-sizing:border-box;">
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:12px;color:var(--muted);font-weight:600;">Notes</label>
+      <textarea id="mdNotes" rows="2" placeholder="Optional notes..." style="width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--card);color:var(--text);font-size:14px;box-sizing:border-box;resize:vertical;"></textarea>
+    </div>
+    <div id="mdFormErr" style="display:none;background:rgba(248,113,113,.15);border:1px solid #f87171;border-radius:7px;padding:8px 12px;font-size:13px;color:#f87171;margin-bottom:10px;"></div>
+    <div style="display:flex;gap:8px;">
+      <button type="submit" style="flex:1;height:44px;font-size:14px;font-weight:700;border:none;border-radius:10px;background:#2563eb;color:#fff;cursor:pointer;">Save Entry</button>
+      <button type="button" onclick="closeModal('newMatDocModal')" style="flex:1;height:44px;font-size:14px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--text);cursor:pointer;">Cancel</button>
+    </div>
+  </form>
+</div></div>
+
 <!-- ── NEW PO MODAL ──────────────────────────────────────────── -->
 <div class="modal-bg" id="newPoModal">
 <div class="modal" style="max-width:520px;">
@@ -714,6 +763,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
     <div style="font-size:15px;font-weight:700;color:var(--text);">📋 Material Document Log</div>
     <div style="display:flex;gap:6px;">
+      <button onclick="openNewMatDocModal()" style="height:30px;padding:0 12px;font-size:12px;font-weight:600;border:none;border-radius:7px;background:#2563eb;color:#fff;cursor:pointer;">+ Log Entry</button>
       <select id="mdMvtFilter" onchange="loadMatDocs()" style="height:30px;border:1px solid var(--border);border-radius:6px;padding:0 8px;font-size:12px;background:var(--card);color:var(--text);">
         <option value="">All Types</option>
         <option value="GI">GI — Goods Issue</option>
@@ -3083,6 +3133,45 @@ function renderInvSummary(){
       document.getElementById('kpiPO').textContent=pend+part;
     });
   }).catch(function(){document.getElementById('kpiPO').textContent='?';});
+}
+function openNewMatDocModal(){
+  var errEl=document.getElementById('mdFormErr');
+  if(errEl)errEl.style.display='none';
+  var byEl=document.getElementById('mdBy');
+  if(byEl&&!byEl.value)byEl.value=_USER||'';
+  openModal('newMatDocModal');
+}
+function submitMatDoc(e){
+  e.preventDefault();
+  var type=document.getElementById('mdType').value||'GI';
+  var item=(document.getElementById('mdItem').value||'').trim();
+  var qty=parseFloat(document.getElementById('mdQty').value||'0');
+  var job=(document.getElementById('mdJob').value||'').trim();
+  var ref=(document.getElementById('mdRef').value||'').trim();
+  var by=(document.getElementById('mdBy').value||'').trim()||(_USER||'Unknown');
+  var notes=(document.getElementById('mdNotes').value||'').trim();
+  var errEl=document.getElementById('mdFormErr');
+  if(!item){
+    errEl.textContent='Item / Material is required.';errEl.style.display='block';
+    document.getElementById('mdItem').focus();return;
+  }
+  if(!qty||qty<=0){
+    errEl.textContent='Qty must be greater than 0.';errEl.style.display='block';
+    document.getElementById('mdQty').focus();return;
+  }
+  errEl.style.display='none';
+  fetch('/api/material-documents',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({mvt_type:type,item_name:item,qty:qty,job_name:job||null,ref_id:ref||null,performed_by:by,notes:notes||null})
+  }).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){
+      closeModal('newMatDocModal');
+      document.getElementById('matDocForm').reset();
+      toast('Document entry saved.','ok');
+      loadMatDocs();
+    } else {
+      errEl.textContent=d.error||'Save failed.';errEl.style.display='block';
+    }
+  }).catch(function(){errEl.textContent='Network error.';errEl.style.display='block';});
 }
 function loadMatDocs(){
   var mvt=(document.getElementById('mdMvtFilter')||{value:''}).value;

@@ -2521,6 +2521,30 @@ def list_mat_docs():
     return jsonify(r.json() if r.ok else [])
 
 # ── Material requests ────────────────────────────────────────────
+@app.route("/api/material-documents", methods=["POST"])
+def create_mat_doc():
+    data = request.get_json(silent=True) or {}
+    payload = {
+        "mvt_type":     (data.get("mvt_type") or "GI").upper()[:2],
+        "item_name":    (data.get("item_name") or "").strip() or None,
+        "item_id":       data.get("item_id") or None,
+        "qty":           float(data.get("qty") or 0),
+        "job_name":     (data.get("job_name") or "").strip() or None,
+        "ref_id":       (data.get("ref_id") or "").strip() or None,
+        "performed_by": (data.get("performed_by") or "").strip() or "Unknown",
+        "notes":        (data.get("notes") or "").strip() or None,
+    }
+    r = requests.post(
+        f"{SUPABASE_URL}/rest/v1/material_documents",
+        json=payload,
+        headers={**sb_headers(), "Prefer": "return=representation"},
+        timeout=15
+    )
+    if r.ok:
+        rows = r.json()
+        return jsonify({"ok": True, "doc": rows[0] if rows else {}})
+    return jsonify({"error": f"Supabase {r.status_code}: {r.text[:300]}"}), 400
+
 @app.route("/api/material-requests", methods=["GET"])
 def get_material_requests():
     status  = request.args.get("status")
