@@ -2498,6 +2498,29 @@ function printItemLabels(){
   w.document.write(html);w.document.close();
 }
 
+function camelToWords(s){
+  return s.replace(/([A-Z][a-z]+)/g,' $1').replace(/([A-Z]{2,})/g,' $1').trim().replace(/\s+/g,' ');
+}
+function parsePoFilename(fname){
+  var result={};
+  var base=fname.replace(/\.[^.]+$/,'');
+  var parts=base.split(/[_\-\s]+/);
+  if(parts.length>=2){
+    var first=parts[0].toUpperCase().replace(/\.+/g,'');
+    if(first==='PO'||first==='PO'){
+      result.po_number='PO-'+parts[1];
+      if(parts.length>2)result.supplier=camelToWords(parts.slice(2).join(' '));
+    } else if(/^INV/i.test(parts[0])){
+      result.so_number=parts[0]+'-'+parts[1];
+      if(parts.length>2)result.supplier=camelToWords(parts.slice(2).join(' '));
+    }
+  }
+  if(!result.po_number){
+    var m=base.match(/^PO[\-_]?(\d+)[\-_]?(.+)?$/i);
+    if(m){result.po_number='PO-'+m[1];if(m[2])result.supplier=camelToWords(m[2]);}
+  }
+  return result;
+}
 function showPoOcrStatus(msg,type){
   var el=document.getElementById('poOcrStatus');
   if(!el)return;
@@ -2563,7 +2586,17 @@ function handlePoDoc(e){
       else showPoOcrStatus('⚠ No text detected. Fill fields manually.','error');
     }).catch(function(){showPoOcrStatus('Could not read image. Fill fields manually.','error');});
   } else if(f.type==='application/pdf'){
-    showPoOcrStatus('📄 PDF attached — fill fields manually or type them in.','');
+    // Parse filename to auto-fill fields
+    var parsed=parsePoFilename(f.name);
+    var filled=[];
+    var pn=document.getElementById('po_number');
+    if(pn&&!pn.value.trim()&&parsed.po_number){pn.value=parsed.po_number;filled.push('PO #');}
+    var so=document.getElementById('po_so_number');
+    if(so&&!so.value.trim()&&parsed.so_number){so.value=parsed.so_number;filled.push('S.O.');}
+    var sup=document.getElementById('po_supplier');
+    if(sup&&!sup.value.trim()&&parsed.supplier){sup.value=parsed.supplier;filled.push('Supplier');}
+    if(filled.length){showPoOcrStatus('✅ Auto-filled from filename: '+filled.join(', ')+' — verify before saving','ok');}
+    else showPoOcrStatus('📄 PDF attached — fill PO Number and other fields manually.','');
   }
 }
 
