@@ -2136,6 +2136,8 @@ function loadPOs(){
       }
       if(po.status==='received'||po.status==='partial'){
         html += '<button onclick="openAllocatePO(\''+po.id+'\')" style="height:26px;padding:0 8px;font-size:11px;border:none;border-radius:6px;background:#7c3aed;color:#fff;cursor:pointer;">📋 Allocate</button>';
+        var _poInvRef='openFactForPO('+JSON.stringify(po.po_number||'')+','+JSON.stringify(po.supplier||'')+')';
+        html += '<button onclick="'+_poInvRef+'" style="height:26px;padding:0 8px;font-size:11px;border:1px solid #0e7490;border-radius:6px;background:#ecfeff;color:#0e7490;cursor:pointer;font-weight:600;">🧾 Invoice</button>';
       }
       if(!canReceive && po.status!=='received' && po.status!=='partial'){
         html += '<button onclick="openReceivePO(\''+po.id+'\')" style="height:26px;padding:0 8px;font-size:11px;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;color:#475569;cursor:pointer;">View</button>';
@@ -3785,6 +3787,16 @@ function deleteFact(id){
   }).catch(function(){toast('Network error','error');});
 }
 
+function openFactForPO(poNumber, supplier){
+  resetFactForm();
+  var sup=document.getElementById('factProveedor');
+  if(sup&&supplier)sup.value=supplier;
+  var specs=document.getElementById('factSpecs');
+  if(specs)specs.value='PO Ref: '+poNumber;
+  var num=document.getElementById('factNumero');
+  if(num&&!num.value)num.value=poNumber;
+  openModal('factModal');
+}
 function resetFactForm(){
   var form=document.getElementById('factForm');if(form)form.reset();
   var prev=document.getElementById('factPreview');if(prev)prev.style.display='none';
