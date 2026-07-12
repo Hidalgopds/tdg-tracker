@@ -1869,7 +1869,7 @@ function openLowStockModal(){
       } else {
         daysCell='<span style="'+chipStyle+'background:#fee2e2;color:#dc2626;">'+daysAgo+'d</span>';
       }
-      html+='<tr style="transition:background .1s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">'
+      html+='<tr>';
         +'<td style="padding:8px;border-bottom:1px solid var(--border);"><div style="font-weight:700;color:#0f172a;">'+safeHtml(it.name||'')+'</div>'
         +'<div style="color:var(--muted);font-size:10px;">'+safeHtml(it.category||'')+'</div></td>'
         +'<td style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:#f87171;font-weight:800;">'+it.qty_on_hand+'</td>'
