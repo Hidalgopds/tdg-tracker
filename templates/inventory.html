@@ -3641,8 +3641,8 @@ async function saveNewUnit(){
       headers:{'Content-Type':'application/json'},body:JSON.stringify({unit_name:name})});
     var d=await r.json();
     if(d.ok){umUnits.push(d.unit);umLoaded=true;renderUnitBar();selectUnit(d.unit.id,d.unit.unit_name);}
-    else{alert('Error: '+(d.error||'unknown'));}
-  }catch(e){alert('Network error.');}
+    else{toast('Error: '+(d.error||'unknown'),'error');}
+  }catch(e){toast('Network error.','error');}
 }
 
 
@@ -3835,7 +3835,7 @@ async function renameUnit(id,oldName){
       }
       renderUnitBar();
     }
-  }catch(e){alert('Network error.');}
+  }catch(e){toast('Network error.','error');}
 }
 
 async function doCompleteUnit(id){
@@ -3850,7 +3850,7 @@ async function doCompleteUnit(id){
       if(umCurrentUnitId===id)selectUnit(id,u?u.unit_name:'');
       else renderUnitBar();
     }
-  }catch(e){alert('Network error.');}
+  }catch(e){toast('Network error.','error');}
 }
 
 function completeUnit(){if(umCurrentUnitId)doCompleteUnit(umCurrentUnitId);}
@@ -3866,7 +3866,7 @@ async function doReopenUnit(id){
       if(umCurrentUnitId===id)selectUnit(id,u?u.unit_name:'');
       else renderUnitBar();
     }
-  }catch(e){alert('Network error.');}
+  }catch(e){toast('Network error.','error');}
 }
 
 function reopenUnit(){if(umCurrentUnitId)doReopenUnit(umCurrentUnitId);}
@@ -3885,7 +3885,7 @@ async function doDeleteUnit(id,name){
       }
       renderUnitBar();
     }
-  }catch(e){alert('Network error.');}
+  }catch(e){toast('Network error.','error');}
 }
 
 // ── Materials CRUD ─────────────────────────────────────────────────────────
@@ -3975,15 +3975,15 @@ async function saveMaterial(){
     date:document.getElementById('umDate').value,
     notes:document.getElementById('umNotes').value.trim()
   };
-  if(!payload.material){alert('Material name required.');return;}
+  if(!payload.material){toast('Material name is required.','warn');return;}
   var url=id?'/api/unit-materials/'+id:'/api/unit-materials';
   var method=id?'PATCH':'POST';
   try{
     var r=await fetch(url,{method:method,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     var d=await r.json();
     if(d.ok){closeMatForm();loadUMTable(umCurrentUnit.unit_name);}
-    else{alert('Error: '+(d.error||'unknown'));}
-  }catch(e){alert('Network error.');}
+    else{toast('Error: '+(d.error||'unknown'),'error');}
+  }catch(e){toast('Network error.','error');}
 }
 
 async function deleteMaterial(id){
@@ -3992,7 +3992,7 @@ async function deleteMaterial(id){
     var r=await fetch('/api/unit-materials/'+id,{method:'DELETE'});
     var d=await r.json();
     if(d.ok)loadUMTable(umCurrentUnit.unit_name);
-  }catch(e){alert('Network error.');}
+  }catch(e){toast('Network error.','error');}
 }
 
 </script>
