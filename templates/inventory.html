@@ -1078,6 +1078,17 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <input type="hidden" id="sigReqId">
 </div></div>
 
+<!-- DISPATCH DETAIL MODAL -->
+<div class="modal-bg" id="dispDetailModal" onclick="if(event.target===this)closeModal('dispDetailModal')">
+<div class="modal" style="max-width:520px;">
+  <div class="mhandle"></div>
+  <div id="ddContent" style="padding-bottom:8px;"></div>
+  <div style="display:flex;gap:8px;margin-top:10px;">
+    <button onclick="printDispDetail()" style="flex:1;height:36px;font-size:13px;font-weight:600;border:none;border-radius:8px;background:#1a6bc4;color:#fff;cursor:pointer;">🖨 Print Receipt</button>
+    <button onclick="closeModal('dispDetailModal')" style="height:36px;padding:0 16px;font-size:13px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;color:#475569;cursor:pointer;">Close</button>
+  </div>
+</div></div>
+
 <!-- EXPORT MODAL -->
 <div class="modal-bg" id="exportModal">
 <div class="modal">
@@ -2592,7 +2603,9 @@ function renderQueryResults(results){
     +'<th style="padding:8px 6px;text-align:center;color:var(--muted);font-size:10px;">STATUS</th>'
     +'</tr></thead><tbody>';
   var cls={Pending:'sb-pend',Approved:'sb-appr',Rejected:'sb-rej',Delivered:'sb-deliv'};
+  window._dispMap={};
   results.forEach(function(r){
+    window._dispMap[r.id]=r;
     var rn='REQ-'+(r.id?String(r.id).replace(/-/g,'').substring(0,8).toUpperCase():'????');
     var mats=[];
     if(r.materials_json){try{mats=JSON.parse(r.materials_json);}catch(e){}}
@@ -2601,7 +2614,7 @@ function renderQueryResults(results){
       return '<div>'+safeHtml(m.item_name||'')+' <span style="color:var(--muted);">x'+m.qty_needed+'</span></div>';
     }).join('');
     var dt=r.created_at?r.created_at.substring(0,10):'';
-    html+='<tr style="border-bottom:1px solid var(--border);">'
+    html+='<tr data-rid="'+r.id+'" style="border-bottom:1px solid var(--border);cursor:pointer;">'
       +'<td style="padding:8px 6px;color:var(--muted);font-size:10px;white-space:nowrap;">'+rn+'</td>'
       +'<td style="padding:8px 6px;color:#0f172a;">'+matCell+'</td>'
       +'<td style="padding:8px 6px;color:#0f172a;white-space:nowrap;">'+safeHtml(r.requester_name||'')+'</td>'
@@ -2613,6 +2626,11 @@ function renderQueryResults(results){
   });
   html+='</tbody></table></div>';
   el.innerHTML=html;
+  el.querySelectorAll('tr[data-rid]').forEach(function(row){
+    row.onmouseover=function(){this.style.background='#f1f5f9';};
+    row.onmouseout=function(){this.style.background='';};
+    row.onclick=function(){openDispDetail(window._dispMap[this.dataset.rid]);};
+  });
 }
 function exportQueryCSV(){
   var cnt=document.getElementById('queryCount');
@@ -2654,6 +2672,96 @@ function exportQueryCSV(){
   a.click();
 }
 function safeHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+var _ddReq=null;
+function openDispDetail(r){
+  if(!r)return;
+  _ddReq=r;
+  var rn='REQ-'+(r.id?String(r.id).replace(/-/g,'').substring(0,8).toUpperCase():'????');
+  var cls={Pending:'sb-pend',Approved:'sb-appr',Rejected:'sb-rej',Delivered:'sb-deliv'};
+  var mats=[];
+  if(r.materials_json){try{mats=JSON.parse(r.materials_json);}catch(e){}}
+  if(!mats.length)mats=[{item_name:r.item_name||'—',qty_needed:r.qty_needed||0,building:r.building||''}];
+  var matsHtml='<table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:6px;">'
+    +'<tr style="border-bottom:1px solid #e2e8f0;"><th style="text-align:left;padding:4px 6px;color:#64748b;font-weight:600;font-size:11px;">Material</th><th style="text-align:right;padding:4px 6px;color:#64748b;font-weight:600;font-size:11px;">Qty</th></tr>';
+  mats.forEach(function(m){
+    matsHtml+='<tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:5px 6px;color:#0f172a;">'+safeHtml(m.item_name||'—')+'</td>'
+      +'<td style="padding:5px 6px;text-align:right;font-weight:700;color:#0f172a;">'+m.qty_needed+'</td></tr>';
+  });
+  matsHtml+='</table>';
+  function fmtDate(s){if(!s)return '—';return s.substring(0,10)+(s.length>10?' '+s.substring(11,16):'');}
+  var pickupHtml=r.pickup_by
+    ?'<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:10px;margin-top:6px;">'
+      +'<div style="font-size:10px;font-weight:700;color:#15803d;margin-bottom:4px;">✅ SIGNED / PICKED UP BY</div>'
+      +'<div style="font-size:15px;font-weight:700;color:#166534;">'+safeHtml(r.pickup_by)+'</div>'
+      +(r.delivered_at?'<div style="font-size:11px;color:#16a34a;margin-top:2px;">'+fmtDate(r.delivered_at)+'</div>':'')
+      +'</div>'
+    :'<div style="background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:8px;margin-top:6px;font-size:12px;color:#854d0e;">⏳ Not yet picked up</div>';
+  var h='<div style="font-size:18px;font-weight:800;color:#0f172a;margin-bottom:4px;">'+rn+'</div>'
+    +'<div style="margin-bottom:14px;"><span class="sbadge '+(cls[r.status]||'sb-pend')+'">'+r.status+'</span></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">'
+      +'<div><div style="font-size:10px;color:#64748b;font-weight:700;margin-bottom:2px;">REQUESTER</div>'
+        +'<div style="font-size:13px;font-weight:700;color:#0f172a;">'+safeHtml(r.requester_name||'—')+'</div>'
+        +'<div style="font-size:11px;color:#64748b;">'+safeHtml(r.contractor_company||'—')+'</div></div>'
+      +'<div><div style="font-size:10px;color:#64748b;font-weight:700;margin-bottom:2px;">REQUESTED</div>'
+        +'<div style="font-size:13px;color:#0f172a;">'+fmtDate(r.created_at)+'</div></div>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">'
+      +'<div><div style="font-size:10px;color:#64748b;font-weight:700;margin-bottom:2px;">JOB / UNIT</div>'
+        +'<div style="font-size:13px;color:#0f172a;">'+safeHtml(r.job_name||'—')+'</div></div>'
+      +'<div><div style="font-size:10px;color:#64748b;font-weight:700;margin-bottom:2px;">DELIVER TO</div>'
+        +'<div style="font-size:13px;color:#0f172a;">'+safeHtml(r.building||mats[0].building||'—')+'</div></div>'
+    +'</div>'
+    +'<div style="font-size:10px;color:#64748b;font-weight:700;margin-bottom:4px;">MATERIALS</div>'
+    +matsHtml
+    +(r.notes?'<div style="margin-top:8px;font-size:12px;color:#475569;background:#f8fafc;border-radius:6px;padding:8px;">📝 '+safeHtml(r.notes)+'</div>':'')
+    +'<hr style="border:none;border-top:1px solid #e2e8f0;margin:12px 0;">'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;">'
+      +'<div><div style="font-size:10px;color:#64748b;font-weight:700;margin-bottom:2px;">APPROVED BY</div>'
+        +'<div style="font-size:12px;color:#0f172a;">'+safeHtml(r.approved_by||'—')+'</div>'
+        +(r.approved_at?'<div style="font-size:10px;color:#64748b;">'+fmtDate(r.approved_at)+'</div>':'')
+        +'</div>'
+      +'<div><div style="font-size:10px;color:#64748b;font-weight:700;margin-bottom:2px;">DELIVERED BY</div>'
+        +'<div style="font-size:12px;color:#0f172a;">'+safeHtml(r.delivered_by||'—')+'</div>'
+        +(r.delivered_at?'<div style="font-size:10px;color:#64748b;">'+fmtDate(r.delivered_at)+'</div>':'')
+        +'</div>'
+    +'</div>'
+    +pickupHtml;
+  document.getElementById('ddContent').innerHTML=h;
+  openModal('dispDetailModal');
+}
+function printDispDetail(){
+  if(!_ddReq)return;
+  var r=_ddReq;
+  var rn='REQ-'+(r.id?String(r.id).replace(/-/g,'').substring(0,8).toUpperCase():'????');
+  var mats=[];
+  if(r.materials_json){try{mats=JSON.parse(r.materials_json);}catch(e){}}
+  if(!mats.length)mats=[{item_name:r.item_name||'—',qty_needed:r.qty_needed||0}];
+  function fmtDate(s){if(!s)return '—';return s.substring(0,10)+(s.length>10?' '+s.substring(11,16):'');}
+  var matsRows=mats.map(function(m){return '<tr><td style="padding:4px 8px;border-bottom:1px solid #e5e7eb;">'+safeHtml(m.item_name||'')+'</td><td style="padding:4px 8px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:700;">'+m.qty_needed+'</td></tr>';}).join('');
+  var win=window.open('','_blank');
+  win.document.write('<!DOCTYPE html><html><head><title>'+rn+'<\/title>'
+    +'<style>body{font-family:system-ui,sans-serif;max-width:420px;margin:0 auto;padding:20px;font-size:13px;color:#0f172a;}'
+    +'h1{font-size:18px;margin:0 0 4px;}table{width:100%;border-collapse:collapse;}th{background:#f3f4f6;padding:6px 8px;text-align:left;font-size:11px;font-weight:700;}'
+    +'@media print{body{padding:0;}}<\/style><\/head><body>'
+    +'<h1>BSynch — Material Receipt<\/h1>'
+    +'<p style="color:#64748b;margin:0 0 16px;font-size:12px;">'+rn+' · '+r.status+'<\/p>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">'
+      +'<div><b>Requester:<\/b><br>'+safeHtml(r.requester_name||'—')+'<br><span style="color:#64748b;">'+safeHtml(r.contractor_company||'')+'<\/span><\/div>'
+      +'<div><b>Job\/Unit:<\/b><br>'+safeHtml(r.job_name||'—')+'<br><b>Deliver To:<\/b><br>'+safeHtml(r.building||'—')+'<\/div>'
+    +'<\/div>'
+    +'<table><thead><tr><th>Material<\/th><th style="text-align:right;">Qty<\/th><\/tr><\/thead><tbody>'+matsRows+'<\/tbody><\/table>'
+    +'<div style="margin-top:16px;padding:10px;background:#f0fdf4;border-radius:6px;">'
+      +'<b>Picked Up By:<\/b> '+(r.pickup_by||'_________________________')+'<br>'
+      +'<b>Date:<\/b> '+(r.delivered_at?fmtDate(r.delivered_at):'_________________________')
+    +'<\/div>'
+    +'<div style="margin-top:12px;padding:10px;background:#f8fafc;border-radius:6px;font-size:11px;color:#64748b;">'
+      +'Approved by: '+(r.approved_by||'—')+' · '+fmtDate(r.approved_at)+'<br>'
+      +'Delivered by: '+(r.delivered_by||'—')+' · '+fmtDate(r.delivered_at)
+    +'<\/div>'
+    +'<\/body><\/html>');
+  win.document.close();
+  win.print();
+}
 function initSigCanvas(){
   _sigCanvas=document.getElementById('sigCanvas');if(!_sigCanvas)return;
   _sigCtx=_sigCanvas.getContext('2d');var rect=_sigCanvas.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
