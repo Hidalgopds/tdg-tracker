@@ -1,6 +1,7 @@
 import os
 import csv
 import io
+import logging
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -8,6 +9,9 @@ from datetime import date, datetime, timezone, timedelta
 from flask import Flask, request, jsonify, render_template, Response, session
 import requests
 import uuid
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+logger = logging.getLogger(__name__)
 
 # ── Kiosk IP restriction ─────────────────────────────────────────────────────
 KIOSK_PASS = os.environ.get("KIOSK_ADMIN_PASS", "MBR2026admin")
@@ -152,7 +156,7 @@ def send_registration_email(to_email, name, username, role="worker"):
             srv.sendmail(SMTP_EMAIL, [to_email], msg.as_string())
             srv.sendmail(SMTP_EMAIL, [ADMIN_EMAIL], admin_msg.as_string())
     except Exception as e:
-        print(f"[Email] Error: {e}")
+        logger.error("[Email] %s", e)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "mbr-kiosk-2026")
@@ -368,7 +372,7 @@ def forgot_password():
                 srv.sendmail(SMTP_EMAIL, [email], msg.as_string())
             email_sent = True
         except Exception as e:
-            print(f"[Reset email error] {e}")
+            logger.error("[Reset email] %s", e)
     return jsonify({"ok": True, "email_sent": email_sent, "temp_pw": temp_pw if not email_sent else None})
 
 
@@ -1352,7 +1356,7 @@ def urgency_report():
         pos = r.get("position",""); mbr = r.get("mbr_number","")
         if pos and str(mbr).strip():
             try: mbr_map[pos] = int(str(mbr).strip())
-            except: pass
+            except (ValueError, TypeError): pass
 
     if not mbr_map:
         return jsonify([])
@@ -3852,7 +3856,7 @@ def contractor_hours():
         from datetime import date, datetime, timezone, timedelta, timedelta, datetime
         ws = date.fromisoformat(week_start)
         we = ws + timedelta(days=6)
-    except:
+    except (ValueError, TypeError):
         return jsonify({"error":"invalid week_start"}),400
 
     r = requests.get(
@@ -3879,7 +3883,7 @@ def contractor_hours():
                 mins = max(0, int((co_dt - ci_dt).total_seconds() / 60))
                 hrs = round(mins / 60, 2)
                 total_mins += mins
-            except:
+            except (ValueError, TypeError, AttributeError):
                 pass
         days.append({
             "date": row["date"],
@@ -4123,7 +4127,7 @@ def build_location_pdf(target_date=None):
             dt_utc = datetime.fromisoformat(ts.replace("Z","+00:00"))
             dt_ct  = dt_utc.replace(tzinfo=None)
             time_str = dt_ct.strftime("%I:%M:%S %p")
-        except:
+        except (ValueError, AttributeError):
             time_str = ts[11:19] if len(ts) > 18 else ts
 
         if alt:
@@ -4212,15 +4216,15 @@ def _nightly_report_and_reset():
     from email import encoders
 
     today = dt.date.today().isoformat()
-    print(f"[APScheduler] nightly_report_and_reset starting for {today}")
+    logger.info("[APScheduler] nightly_report_and_reset starting for %s", today)
 
     # 1. Build PDF
     try:
         buf, report_date, row_count = build_location_pdf(today)
         pdf_bytes = buf.getvalue()
-        print(f"[APScheduler] PDF built — {row_count} movements for {report_date}")
+        logger.info("[APScheduler] PDF built — %s movements for %s", row_count, report_date)
     except Exception as e:
-        print(f"[APScheduler] PDF generation failed: {e}")
+        logger.error("[APScheduler] PDF generation failed: %s", e)
         pdf_bytes = None
         report_date = today
         row_count = 0
@@ -4258,15 +4262,15 @@ def _nightly_report_and_reset():
             with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=15) as srv:
                 srv.login(SMTP_EMAIL, SMTP_PASSWORD)
                 srv.sendmail(SMTP_EMAIL, [ADMIN_EMAIL], msg.as_string())
-            print(f"[APScheduler] Report emailed to {ADMIN_EMAIL}")
+            logger.info("[APScheduler] Report emailed to %s", ADMIN_EMAIL)
         except Exception as e:
-            print(f"[APScheduler] Email failed: {e}")
+            logger.error("[APScheduler] Email failed: %s", e)
     else:
-        print("[APScheduler] Email skipped — SMTP not configured")
+        logger.info("[APScheduler] Email skipped — SMTP not configured")
 
     # 3. Reset locations table
     ok = _do_reset_locations()
-    print(f"[APScheduler] Location table reset: {'OK' if ok else 'FAILED'}")
+    logger.info("[APScheduler] Location table reset: %s", "OK" if ok else "FAILED")
 
 
 # Start APSche
