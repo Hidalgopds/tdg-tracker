@@ -1951,7 +1951,15 @@ def email_low_stock():
         if q <= 0: return True
         if s > 0: return q <= s
         return q < 10
-    items = [it for it in r.json() if _alert(it)]
+    all_items = [it for it in r.json() if _alert(it)]
+    # Optional: filter to only selected item_ids sent from frontend
+    body = request.get_json(silent=True) or {}
+    sel_ids = body.get("item_ids")
+    if sel_ids:
+        sel_set = set(str(i) for i in sel_ids)
+        items = [it for it in all_items if str(it.get("id","")) in sel_set]
+    else:
+        items = all_items
     if not items:
         return jsonify({"ok": True, "count": 0, "message": "No low-stock items"})
     rows = "".join(

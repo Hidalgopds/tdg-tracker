@@ -911,7 +911,11 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 <div class="modal" style="max-width:560px;">
   <div class="mhandle"></div>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-    <div class="mtitle" style="margin:0;">⚠️ Low Stock Items</div>
+    <div>
+      <div class="mtitle" style="margin:0 0 2px;">⚠️ Low Stock Items</div>
+      <span id="lsSelCount" style="font-size:11px;color:var(--muted);"></span>
+      <a href="#" onclick="lsToggleAll();return false;" id="lsToggleLink" style="font-size:11px;color:#1a6bc4;margin-left:8px;text-decoration:none;">Deselect All</a>
+    </div>
     <button onclick="sendLowStockEmail()" id="lsEmailBtn"
       style="height:32px;padding:0 12px;background:rgba(251,146,60,.15);border:1px solid rgba(251,146,60,.4);
       border-radius:8px;color:#fb923c;font-size:12px;font-weight:700;cursor:pointer;">📧 Send Alert Email</button>
@@ -1839,25 +1843,44 @@ function loadLowStock(){
     }
   }).catch(function(){});
 }
+var _lsItems=[];
+function lsUpdateSelCount(){
+  var total=document.querySelectorAll('.ls-chk').length;
+  var sel=document.querySelectorAll('.ls-chk:checked').length;
+  var sc=document.getElementById('lsSelCount');
+  var tl=document.getElementById('lsToggleLink');
+  if(sc)sc.textContent=sel+' of '+total+' selected';
+  if(tl)tl.textContent=sel===total?'Deselect All':'Select All';
+}
+function lsToggleAll(){
+  var boxes=document.querySelectorAll('.ls-chk');
+  var allChecked=document.querySelectorAll('.ls-chk:checked').length===boxes.length;
+  boxes.forEach(function(b){b.checked=!allChecked;});
+  lsUpdateSelCount();
+}
 function openLowStockModal(){
   fetch('/api/inventory/low-stock').then(function(r){return r.json();}).then(function(items){
+    _lsItems=items||[];
     var el=document.getElementById('lowStockList');
     if(!el)return;
-    if(!items.length){el.innerHTML='<div style="color:var(--muted);text-align:center;padding:24px;">All items are above their safe quantity. ✅</div>';openModal('lowStockModal');return;}
+    if(!items.length){
+      el.innerHTML='<div style="color:var(--muted);text-align:center;padding:24px;">All items are above their safe quantity. ✅</div>';
+      var sc=document.getElementById('lsSelCount');if(sc)sc.textContent='';
+      openModal('lowStockModal');return;
+    }
     var TH='padding:6px 8px;color:var(--muted);font-size:10px;border-bottom:1px solid var(--border);font-weight:700;letter-spacing:.04em;';
     var html='<table style="width:100%;border-collapse:collapse;font-size:12px;">'
       +'<thead><tr>'
+      +'<th style="'+TH+'width:28px;"></th>'
       +'<th style="text-align:left;'+TH+'">ITEM</th>'
       +'<th style="text-align:center;'+TH+'">ON HAND</th>'
       +'<th style="text-align:center;'+TH+'">SAFE QTY</th>'
       +'<th style="text-align:center;'+TH+'">LAST REQUESTED</th>'
       +'<th style="text-align:center;'+TH+'">DAYS AGO</th>'
       +'</tr></thead><tbody>';
-    var today=new Date();
-    items.forEach(function(it){
+    items.forEach(function(it,idx){
       var reqDate=it.last_requested_at?it.last_requested_at.substring(0,10):null;
       var daysAgo=it.days_since_request;
-      // Days-ago chip color
       var chipStyle='display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;';
       var daysCell;
       if(daysAgo===null||daysAgo===undefined){
@@ -1874,6 +1897,8 @@ function openLowStockModal(){
         :(s>0&&q<=s?'<span style="font-size:9px;background:#fff7ed;color:#ea580c;border-radius:4px;padding:1px 5px;margin-left:4px;font-weight:700;">ALERT</span>'
         :'<span style="font-size:9px;background:#fef9c3;color:#ca8a04;border-radius:4px;padding:1px 5px;margin-left:4px;font-weight:700;">LOW</span>');
       html+='<tr>'
+        +'<td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle;">'
+        +'<input type="checkbox" class="ls-chk" data-idx="'+idx+'" checked onchange="lsUpdateSelCount()" style="width:15px;height:15px;cursor:pointer;accent-color:#1a6bc4;"></td>'
         +'<td style="padding:8px;border-bottom:1px solid var(--border);"><div style="font-weight:700;color:#0f172a;">'+safeHtml(it.name||'')+'</div>'
         +'<div style="color:var(--muted);font-size:10px;">'+safeHtml(it.category||'')+'</div></td>'
         +'<td style="padding:8px;text-align:center;border-bottom:1px solid var(--border);"><span style="color:#f87171;font-weight:800;">'+q+'</span>'+badge+'</td>'
@@ -1884,15 +1909,23 @@ function openLowStockModal(){
     });
     html+='</tbody></table>';
     el.innerHTML=html;
+    lsUpdateSelCount();
     openModal('lowStockModal');
   }).catch(function(){toast('Failed to load low stock','error');});
 }
 function sendLowStockEmail(){
-  var btn=document.getElementById('lsEmailBtn');if(btn)btn.textContent='Sending...';
-  fetch('/api/inventory/low-stock/email',{method:'POST'})
+  var selected=[];
+  document.querySelectorAll('.ls-chk:checked').forEach(function(cb){
+    var it=_lsItems[parseInt(cb.dataset.idx)];
+    if(it)selected.push(it.id);
+  });
+  if(!selected.length){toast('Select at least one item','error');return;}
+  var btn=document.getElementById('lsEmailBtn');
+  if(btn)btn.textContent='Sending...';
+  fetch('/api/inventory/low-stock/email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_ids:selected})})
     .then(function(r){return r.json();})
     .then(function(d){
-      if(d.ok){toast('Alert email sent ('+d.count+' items)','success');}
+      if(d.ok){toast('Alert sent for '+d.count+' item(s)','success');}
       else{toast(d.error||'Send failed','error');}
       if(btn)btn.textContent='📧 Send Alert Email';
     }).catch(function(){toast('Send failed','error');if(btn)btn.textContent='📧 Send Alert Email';});
