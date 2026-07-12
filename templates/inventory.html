@@ -1339,6 +1339,8 @@ function mkCard(it){
       '<input class="qty-inp" id="q-'+it.id+'" type="number" min="0" value="'+qty+'" title="On Hand" oninput="markDirty(this)">'+
       '<input class="qty-inp" id="sq-'+it.id+'" type="number" min="0" placeholder="Safe" title="Safe qty" oninput="markDirty(this)" value="'+(safeQ||'')+'">'+
       '<input class="loc-inp" id="loc-'+it.id+'" type="text" placeholder="Location (e.g. A-01)" title="Location" oninput="markDirty(this)" value="'+(it.location_code||'')+'">'+
+      '<input class="qty-inp" id="uc-'+it.id+'" type="number" min="0" step="0.01" placeholder="$ Cost" title="Unit cost" oninput="markDirty(this)" value="'+(it.unit_cost||'')+'">'+
+
       '<button class="ic-del" onclick="delItem(\''+it.id+'\',\''+esc(it.name).replace(/'/g,"\\'")+ '\')" title="Delete">🗑️</button>'+
     '</div>'+
     '<div class="ic-cat-edit">'+
@@ -2117,7 +2119,7 @@ function submitNewPO(e){
   var fetchUrl = isEdit ? '/api/po/'+_editPoId : '/api/po';
   var fetchMethod = isEdit ? 'PATCH' : 'POST';
   fetch(fetchUrl,{method:fetchMethod,headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({po_number:poNum,so_number:soNum||null,supplier:supplier||null,expected_date:date,notes:notes||null,items:items,created_by:user})})
+    body:JSON.stringify({po_number:poNum,so_number:soNum||null,supplier:supplier||null,expected_date:date,notes:notes||null,items:items,created_by:user,po_doc:(!isEdit&&_poDocData)?_poDocData:undefined})})
   .then(function(r){return r.json();}).then(function(d){
     if(d.ok){
       toast(isEdit ? 'PO updated ✓' : 'PO created ✓');
@@ -3119,7 +3121,7 @@ function doWhatsApp(){window.open('https://wa.me/?text='+encodeURIComponent(docu
 
 // ── Inventory editing ────────────────────────────────────────────────────────
 function markDirty(inp){
-  var id=(inp&&inp.id)?inp.id.replace(/^(q-|sq-|loc-)/,''):(inp||'');
+  var id=(inp&&inp.id)?inp.id.replace(/^(q-|sq-|loc-|uc-)/,''):(inp||'');
   if(!id)return;
   _dirty[id]=true;
   var btn=document.getElementById('saveAllBtn');
@@ -3146,9 +3148,11 @@ function saveAll(){
     var sqEl=document.getElementById('sq-'+id);
     var locEl=document.getElementById('loc-'+id);
     if(!qEl){next(i+1);return;}
+    var ucEl=document.getElementById('uc-'+id);
     var payload={qty_on_hand:parseFloat(qEl.value)||0,editor:edUser,updated_by:localStorage.getItem('mbrAuth')||edUser};
     if(sqEl)payload.safe_qty=parseInt(sqEl.value)||0;
     if(locEl)payload.location_code=(locEl.value||'').trim().toUpperCase()||null;
+    if(ucEl&&ucEl.value!=='')payload.unit_cost=parseFloat(ucEl.value)||0;
     fetch('/api/inventory/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
     .then(function(r){return r.json();}).then(function(d){d.ok?done++:errs++;next(i+1);})
     .catch(function(){errs++;next(i+1);});
@@ -3374,40 +3378,52 @@ async function saveNewUnit(){
 
 
 // ══ FACTURAS ══════════════════════════════════════════════════════
-var FACT_KEY='inv_facturas';
+// Facturas stored in Supabase (replaced localStorage)
 
-function loadFacts(){try{return JSON.parse(localStorage.getItem(FACT_KEY))||[];}catch(e){return[];}}
-function saveFacts(list){localStorage.setItem(FACT_KEY,JSON.stringify(list));}
-
-function renderFacts(){
-  var list=loadFacts();
+function renderFacts(list){
   var el=document.getElementById('factList');
   if(!el)return;
-  if(!list.length){
-    el.innerHTML='<div class="fact-empty">📭 Aún no hay facturas.<br>Toca "+ Nueva factura" para agregar la primera.</div>';
+  if(!list||!list.length){
+    el.innerHTML='<div class="fact-empty">\u{1F4AB} A\xfan no hay facturas.<br>Toca "+ Nueva factura" para agregar la primera.</div>';
     return;
   }
   el.innerHTML='';
   list.forEach(function(f){
     var card=document.createElement('div');card.className='fact-card';
-    var img=document.createElement('img');img.className='fact-card__img';img.src=f.foto;
-    img.onclick=function(){var w=window.open();if(w)w.document.write('<img src="'+f.foto+'" style="max-width:100%">');};
+    if(f.foto){
+      var img=document.createElement('img');img.className='fact-card__img';img.src=f.foto;
+      img.onclick=function(){var w=window.open();if(w)w.document.write('<img src="'+f.foto+'" style="max-width:100%">');};
+      card.appendChild(img);
+    }
     var body=document.createElement('div');body.className='fact-card__body';
+    var fid=String(f.id||'');
     body.innerHTML=
-      '<div class="fact-card__num">'+(f.numero?'Factura '+esc(f.numero):'Sin número')+'</div>'+
-      (f.proveedor?'<div class="fact-card__row">🏪 '+esc(f.proveedor)+'</div>':'')+
-      (f.monto?'<div class="fact-card__row">💵 '+esc(f.monto)+'</div>':'')+
+      '<div class="fact-card__num">'+(f.numero?'Factura '+esc(f.numero):'Sin numero')+'</div>'+
+      (f.proveedor?'<div class="fact-card__row">\U0001F3EA '+esc(f.proveedor)+'</div>':'')+
+      (f.monto?'<div class="fact-card__row">\U0001F4B5 '+esc(f.monto)+'</div>':'')+
       (f.specs?'<div class="fact-card__specs">'+esc(f.specs)+'</div>':'')+
-      '<div class="fact-card__meta"><span>'+esc(f.uploader)+' · '+new Date(f.date).toLocaleDateString('es-US')+'</span>'+
-      '<button class="fact-card__del" onclick="deleteFact(\'+'+f.id+'+\')">Eliminar</button></div>';
-    card.append(img,body);el.appendChild(card);
+      '<div class="fact-card__meta"><span>'+esc(f.uploader||'')+'</span>'+
+      '<button class="fact-card__del" onclick="deleteFact(\''+fid+'\')">Eliminar</button></div>';
+    card.appendChild(body);el.appendChild(card);
+  });
+}
+
+function loadAndRenderFacts(){
+  var el=document.getElementById('factList');
+  if(el)el.innerHTML='<div class="fact-empty">Cargando...</div>';
+  fetch('/api/facturas').then(function(r){return r.json();}).then(function(d){
+    renderFacts(d.facturas||[]);
+  }).catch(function(){
+    if(el)el.innerHTML='<div class="fact-empty">Error al cargar facturas.</div>';
   });
 }
 
 function deleteFact(id){
-  if(!confirm('¿Eliminar esta factura?'))return;
-  saveFacts(loadFacts().filter(function(x){return x.id!==id;}));
-  renderFacts();
+  if(!confirm('Eliminar esta factura?'))return;
+  fetch('/api/facturas/'+id,{method:'DELETE'}).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){toast('Factura eliminada');loadAndRenderFacts();}
+    else toast(d.error||'Error al eliminar','error');
+  }).catch(function(){toast('Error de red','error');});
 }
 
 function resetFactForm(){
@@ -3457,7 +3473,7 @@ function autofillFact(text){
 
 document.addEventListener('DOMContentLoaded',function(){
   var factBtn=document.getElementById('factNewBtn');
-  if(factBtn)factBtn.addEventListener('click',function(){renderFacts();openModal('factListModal');});
+  if(factBtn)factBtn.addEventListener('click',function(){loadAndRenderFacts();openModal('factListModal');});
 
   var uz=document.getElementById('factUploadZone');
   if(uz)uz.addEventListener('click',function(){var f=document.getElementById('factFoto');if(f)f.click();});
@@ -3516,19 +3532,19 @@ document.addEventListener('DOMContentLoaded',function(){
     if(!file){toast('Selecciona la foto de la factura','warn');return;}
     var reader=new FileReader();
     reader.onload=function(ev){
-      var nueva={
-        id:Date.now().toString(),
+      var payload={
         foto:ev.target.result,
         numero:((document.getElementById('factNumero')||{}).value||'').trim(),
         proveedor:((document.getElementById('factProveedor')||{}).value||'').trim(),
         monto:((document.getElementById('factMonto')||{}).value||'').trim(),
         specs:((document.getElementById('factSpecs')||{}).value||'').trim(),
-        uploader:localStorage.getItem('mbrAuth')||'Unknown',
-        date:new Date().toISOString()
+        uploader:localStorage.getItem('mbrAuth')||edUser||'Unknown'
       };
-      var list=loadFacts();list.unshift(nueva);saveFacts(list);
-      closeModal('factModal');resetFactForm();renderFacts();
-      toast('Factura guardada','ok');
+      fetch('/api/facturas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+      .then(function(r){return r.json();}).then(function(d){
+        if(d.ok){closeModal('factModal');resetFactForm();loadAndRenderFacts();toast('Factura guardada','ok');}
+        else toast(d.error||'Error al guardar','error');
+      }).catch(function(){toast('Error de red','error');});
     };
     reader.readAsDataURL(file);
   });

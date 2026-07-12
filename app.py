@@ -1833,6 +1833,7 @@ def update_inventory_item(item_id):
     if "notes" in data: payload["notes"] = data["notes"]
     if "safe_qty" in data: payload["safe_qty"] = data["safe_qty"]
     if "location_code" in data: payload["location_code"] = data["location_code"]
+    if "unit_cost" in data: payload["unit_cost"] = data["unit_cost"]
     if data.get("updated_by"): payload["updated_by"] = data["updated_by"]
     payload["updated_at"] = "now()"
     url = f"{SUPABASE_URL}/rest/v1/inventory_items?id=eq.{item_id}"
@@ -2007,6 +2008,55 @@ def email_low_stock():
 
 
 
+
+
+# ══════════════════════════════════════════════════════════════════
+#  FACTURAS  (Supplier invoices / receipts)
+# ══════════════════════════════════════════════════════════════════
+
+@app.route("/api/facturas", methods=["GET"])
+def list_facturas():
+    url = f"{SUPABASE_URL}/rest/v1/facturas?order=created_at.desc&limit=200"
+    r = requests.get(url, headers=sb_headers())
+    if not r.ok:
+        return jsonify({"ok": False, "facturas": [], "error": r.text}), 500
+    return jsonify({"ok": True, "facturas": r.json()})
+
+
+@app.route("/api/facturas", methods=["POST"])
+def create_factura():
+    data = request.get_json(silent=True) or {}
+    payload = {
+        "numero":    (data.get("numero") or "").strip() or None,
+        "proveedor": (data.get("proveedor") or "").strip() or None,
+        "monto":     (data.get("monto") or "").strip() or None,
+        "specs":     (data.get("specs") or "").strip() or None,
+        "foto":      data.get("foto") or None,
+        "uploader":  (data.get("uploader") or "").strip() or "Unknown",
+    }
+    r = requests.post(
+        f"{SUPABASE_URL}/rest/v1/facturas",
+        json=payload,
+        headers={**sb_headers(), "Prefer": "return=representation"},
+        timeout=15
+    )
+    if r.ok:
+        rows = r.json()
+        return jsonify({"ok": True, "factura": rows[0] if rows else {}})
+    return jsonify({"error": f"Supabase {r.status_code}: {r.text[:300]}"}), 400
+
+
+@app.route("/api/facturas/<factura_id>", methods=["DELETE"])
+def delete_factura(factura_id):
+    r = requests.delete(
+        f"{SUPABASE_URL}/rest/v1/facturas?id=eq.{factura_id}",
+        headers=sb_headers(),
+        timeout=10
+    )
+    if r.ok:
+        return jsonify({"ok": True})
+    return jsonify({"error": r.text}), 400
+
 # ══════════════════════════════════════════════════════════════════
 #  PURCHASE ORDERS  (Albaranes / Receiving)
 # ══════════════════════════════════════════════════════════════════
@@ -2047,6 +2097,10 @@ def create_po():
             "notes":         (data.get("notes") or "").strip() or None,
             "created_by":    data.get("created_by") or "",
         }
+        # Attach po_doc (base64 image/pdf) as first photo if provided
+        po_doc = data.get("po_doc")
+        if po_doc and isinstance(po_doc, dict) and po_doc.get("data"):
+            payload["photos"] = [po_doc]
     except Exception as e:
         return jsonify({"error": f"Payload error: {str(e)}"}), 400
     try:
