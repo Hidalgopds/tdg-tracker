@@ -1881,9 +1881,23 @@ def get_low_stock():
 
 @app.route("/api/inventory/low-stock/email", methods=["POST"])
 def email_low_stock():
-    """Send low-stock alert email to admin."""
-    if not SMTP_EMAIL or not SMTP_PASSWORD or not ADMIN_EMAIL:
+    """Send low-stock alert email to admin (or configured alert_email)."""
+    if not SMTP_EMAIL or not SMTP_PASSWORD:
         return jsonify({"error": "Email not configured"}), 500
+    # Prefer alert_email from app_settings, fall back to ADMIN_EMAIL env var
+    _ae_r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/app_settings?key=eq.alert_email&select=value&limit=1",
+        headers=sb_headers(), timeout=4)
+    _ae_rows = _ae_r.json() if _ae_r.ok else []
+    _to_email = (_ae_rows[0]["value"].strip() if _ae_rows else "") or ADMIN_EMAIL
+    _cc_r = requests.get(
+        f"{SUPABASE_URL}/rest/v1/app_settings?key=eq.alert_cc&select=value&limit=1",
+        headers=sb_headers(), timeout=4)
+    _cc_rows = _cc_r.json() if _cc_r.ok else []
+    _cc_raw = _cc_rows[0]["value"].strip() if _cc_rows else ""
+    _cc_list = [e.strip() for e in _cc_raw.split(",") if e.strip()] if _cc_raw else []
+    if not _to_email:
+        return jsonify({"error": "No alert email configured"}), 500
     # Fetch low-stock items
     url = f"{SUPABASE_URL}/rest/v1/inventory_items?safe_qty=gt.0&order=category.asc,name.asc&select=*&limit=500"
     r = requests.get(url, headers=sb_headers())
@@ -1922,13 +1936,16 @@ def email_low_stock():
     msg = MIMEMultipart("alternative")
     msg["Subject"] = f"⚠️ Low Stock Alert — {len(items)} item(s) need restocking"
     msg["From"] = SMTP_EMAIL
-    msg["To"] = ADMIN_EMAIL
+    msg["To"] = _to_email
+    if _cc_list:
+        msg["Cc"] = ", ".join(_cc_list)
     msg.attach(MIMEText(html, "html"))
+    _all_recipients = [_to_email] + _cc_list
     try:
         with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as srv:
             srv.login(SMTP_EMAIL, SMTP_PASSWORD)
-            srv.sendmail(SMTP_EMAIL, [ADMIN_EMAIL], msg.as_string())
-        return jsonify({"ok": True, "count": len(items)})
+            srv.sendmail(SMTP_EMAIL, _all_recipients, msg.as_string())
+        return jsonify({"ok": True, "count": len(items), "sent_to": _all_recipients})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -4119,3 +4136,51 @@ def _nightly_report_and_reset():
 
 
 # Start APSche
+# ── Ops Settings (alert email, etc.) ─────────────────────────────────────────
+OPS_ALLOWED_KEYS = {"alert_email", "alert_cc", "alert_enabled"}
+
+@app.route("/api/ops-settings", methods=["GET"])
+def get_ops_settings():
+    """Return ops-related app_settings keys as a flat dict."""
+    url = f"{SUPABASE_URL}/rest/v1/app_settings?select=key,value"
+    r = requests.get(url, headers=sb_headers(), timeout=5)
+    rows = r.json() if r.ok else []
+    result = {}
+    for row in rows:
+        if row.get("key") in OPS_ALLOWED_KEYS:
+            result[row["key"]] = row.get("value", "")
+    return jsonify(result)
+
+@app.route("/api/ops-settings", methods=["PUT"])
+def put_ops_settings():
+    """Upsert one or more ops settings keys. Admin only."""
+    data = request.get_json() or {}
+    caller = data.get("caller_name", "").strip()
+    if not _verify_caller_is_admin(caller):
+        return jsonify({"error": "Admin access required"}), 403
+    updates = {k: v for k, v in data.items() if k in OPS_ALLOWED_KEYS}
+    if not updates:
+        return jsonify({"error": "No valid keys provided"}), 400
+    errors = []
+    for key, value in updates.items():
+        # Try update first
+        patch_r = requests.patch(
+            f"{SUPABASE_URL}/rest/v1/app_settings?key=eq.{key}",
+            json={"value": str(value)},
+            headers={**sb_headers(), "Prefer": "return=representation"},
+            timeout=5
+        )
+        patched = patch_r.json() if patch_r.ok else []
+        if not patched:
+            # Row doesn't exist — insert it
+            post_r = requests.post(
+                f"{SUPABASE_URL}/rest/v1/app_settings",
+                json={"key": key, "value": str(value)},
+                headers={**sb_headers(), "Prefer": "return=minimal"},
+                timeout=5
+            )
+            if not post_r.ok:
+                errors.append(key)
+    if errors:
+        return jsonify({"error": f"Failed to save: {errors}"}), 500
+    return jsonify({"ok": True, "saved": list(updates.keys())})

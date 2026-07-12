@@ -533,7 +533,7 @@ function timeAgo(iso){
     <button class="tab-btn active" id="tab-btn-users" onclick="switchTab('users',this)">👥 Users &amp; Roles</button>
     <button class="tab-btn" id="tab-btn-hours" onclick="switchTab('hours',this)">🕐 Hours</button>
     <button class="tab-btn" id="tab-btn-roles" onclick="switchTab('roles',this)">🔑 Role Access</button>
-    <button class="tab-btn" id="tab-btn-notifs" onclick="switchTab('notifs',this);loadAllNotifs()" style="display:none;">🔔 Notifications</button>
+    <button class="tab-btn" id="tab-btn-notifs" onclick="switchTab('notifs',this);loadAllNotifs();loadOpsSettings()" style="display:none;">🔔 Notifications</button>
     <button class="tab-btn" id="tab-btn-contractor" onclick="switchTab('contractor',this)">👤 My Profile</button>
   </div>
 
@@ -690,6 +690,30 @@ function timeAgo(iso){
 
   <!-- ═══ NOTIFICATIONS ═══ (Boss / Admin only) -->
   <div id="tab-notifs" class="tab-panel">
+
+    <!-- ── Operations Alert Email (admin only) ── -->
+    <div class="section-card" id="opsAlertCard" style="margin-bottom:20px;display:none;">
+      <div class="section-header" style="margin-bottom:14px;">
+        <h3>📧 Operations Alert Email</h3>
+        <span style="font-size:11px;color:var(--muted);">Who receives low-stock and inventory alerts</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px;">Primary Recipient</label>
+          <input id="opsAlertEmail" type="email" placeholder="e.g. manager@company.com"
+            style="width:100%;padding:9px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface,#fff);color:var(--text);font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px;">CC (optional — comma separated)</label>
+          <input id="opsAlertCC" type="text" placeholder="e.g. ops@company.com, boss@company.com"
+            style="width:100%;padding:9px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface,#fff);color:var(--text);font-size:13px;box-sizing:border-box;">
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:2px;">
+          <button onclick="saveOpsSettings()" style="padding:9px 22px;background:#1a6bc4;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">💾 Save</button>
+          <span id="opsAlertStatus" style="font-size:12px;color:var(--muted);"></span>
+        </div>
+      </div>
+    </div>
 
     <!-- Send new notification -->
     <div class="section-card" style="margin-bottom:20px;">
@@ -1514,6 +1538,9 @@ function showToast(msg,err){var t=document.getElementById('toast');t.textContent
     if(notifsBtn) notifsBtn.style.display = 'inline-block';
     var fls = document.getElementById('forceLogoutSection');
     if(fls) fls.style.display = 'block';
+    // Show ops alert config (admin only)
+    var opsCard = document.getElementById('opsAlertCard');
+    if(opsCard) opsCard.style.display = 'block';
     setTimeout(function(){loadContractorArea();},0);
   }
 })();
@@ -1522,6 +1549,37 @@ function showToast(msg,err){var t=document.getElementById('toast');t.textContent
 // ── Notifications Admin Tab ───────────────────────────────────────────────────
 // Store notifs globally for click handlers
 var _allNotifs = [];
+
+// ── Ops Alert Settings ────────────────────────────────────────────────────────
+function loadOpsSettings(){
+  fetch('/api/ops-settings').then(function(r){return r.json();}).then(function(d){
+    var eEl=document.getElementById('opsAlertEmail');
+    var cEl=document.getElementById('opsAlertCC');
+    if(eEl) eEl.value = d.alert_email || '';
+    if(cEl) cEl.value = d.alert_cc || '';
+  }).catch(function(){});
+}
+
+function saveOpsSettings(){
+  var email = (document.getElementById('opsAlertEmail')||{}).value||'';
+  var cc    = (document.getElementById('opsAlertCC')||{}).value||'';
+  var st    = document.getElementById('opsAlertStatus');
+  if(!email){if(st){st.textContent='Enter a primary email.';st.style.color='#ef4444';}return;}
+  var who = localStorage.getItem('mbrAuth')||'';
+  if(st){st.textContent='Saving…';st.style.color='var(--muted)';}
+  fetch('/api/ops-settings',{
+    method:'PUT',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({caller_name:who, alert_email:email.trim(), alert_cc:cc.trim()})
+  }).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){
+      if(st){st.textContent='✓ Saved';st.style.color='#16a34a';}
+      setTimeout(function(){if(st)st.textContent='';},3000);
+    } else {
+      if(st){st.textContent=d.error||'Error saving';st.style.color='#ef4444';}
+    }
+  }).catch(function(){if(st){st.textContent='Network error';st.style.color='#ef4444';}});
+}
 
 async function loadAllNotifs(){
   var list = document.getElementById('notif-admin-list');
