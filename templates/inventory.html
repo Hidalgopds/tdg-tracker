@@ -910,17 +910,18 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 <div class="modal-bg" id="lowStockModal">
 <div class="modal" style="max-width:560px;">
   <div class="mhandle"></div>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-    <div>
-      <div class="mtitle" style="margin:0 0 2px;">⚠️ Low Stock Items</div>
-      <span id="lsSelCount" style="font-size:11px;color:var(--muted);"></span>
-      <a href="#" onclick="lsToggleAll();return false;" id="lsToggleLink" style="font-size:11px;color:#1a6bc4;margin-left:8px;text-decoration:none;">Deselect All</a>
-    </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <div class="mtitle" style="margin:0;">⚠️ Low Stock Items</div>
     <button onclick="sendLowStockEmail()" id="lsEmailBtn"
       style="height:32px;padding:0 12px;background:rgba(251,146,60,.15);border:1px solid rgba(251,146,60,.4);
       border-radius:8px;color:#fb923c;font-size:12px;font-weight:700;cursor:pointer;">📧 Send Alert Email</button>
   </div>
-  <div id="lowStockList" style="max-height:360px;overflow-y:auto;"></div>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+    <input id="lsSearch" type="text" placeholder="🔍  Search items..." oninput="lsRender()"
+      style="flex:1;padding:7px 10px;border-radius:8px;border:1px solid var(--border);font-size:12px;background:var(--surface,#fff);color:var(--text);">
+    <span id="lsSelCount" style="font-size:11px;color:var(--muted);white-space:nowrap;"></span>
+  </div>
+  <div id="lowStockList" style="max-height:340px;overflow-y:auto;"></div>
   <button class="btn-s" style="margin-top:12px;" onclick="closeModal('lowStockModal')">Close</button>
 </div></div>
 
@@ -1843,24 +1844,96 @@ function loadLowStock(){
     }
   }).catch(function(){});
 }
-var _lsItems=[];
+var _lsItems=[], _lsSortDir=1;
 function lsUpdateSelCount(){
   var total=document.querySelectorAll('.ls-chk').length;
   var sel=document.querySelectorAll('.ls-chk:checked').length;
   var sc=document.getElementById('lsSelCount');
-  var tl=document.getElementById('lsToggleLink');
   if(sc)sc.textContent=sel+' of '+total+' selected';
-  if(tl)tl.textContent=sel===total?'Deselect All':'Select All';
+  var hdrChk=document.getElementById('lsAllChk');
+  if(hdrChk){hdrChk.checked=sel===total&&total>0;hdrChk.indeterminate=sel>0&&sel<total;}
 }
 function lsToggleAll(){
-  var boxes=document.querySelectorAll('.ls-chk');
-  var allChecked=document.querySelectorAll('.ls-chk:checked').length===boxes.length;
-  boxes.forEach(function(b){b.checked=!allChecked;});
+  var hdrChk=document.getElementById('lsAllChk');
+  var check=hdrChk?hdrChk.checked:true;
+  document.querySelectorAll('.ls-chk').forEach(function(b){b.checked=check;});
+  lsUpdateSelCount();
+}
+function lsSortDays(){
+  _lsSortDir*=-1;
+  _lsItems.sort(function(a,b){
+    var da=a.days_since_request===null||a.days_since_request===undefined?99999:a.days_since_request;
+    var db=b.days_since_request===null||b.days_since_request===undefined?99999:b.days_since_request;
+    return _lsSortDir*(da-db);
+  });
+  var arrow=_lsSortDir===1?'▲':'▼';
+  var dh=document.getElementById('lsDaysHdr');
+  if(dh)dh.textContent='DAYS AGO '+arrow;
+  lsRender();
+}
+function lsRender(){
+  var el=document.getElementById('lowStockList');
+  if(!el)return;
+  var q=(document.getElementById('lsSearch')||{}).value||'';
+  var filtered=q?_lsItems.filter(function(it){
+    return (it.name||'').toLowerCase().indexOf(q.toLowerCase())>=0
+      ||(it.category||'').toLowerCase().indexOf(q.toLowerCase())>=0;
+  }):_lsItems;
+  // Remember which item ids were checked
+  var checked={};
+  document.querySelectorAll('.ls-chk').forEach(function(cb){
+    if(cb.checked){var it=_lsItems[parseInt(cb.dataset.idx)];if(it)checked[it.id]=true;}
+  });
+  var TH='padding:6px 8px;color:var(--muted);font-size:10px;border-bottom:1px solid var(--border);font-weight:700;letter-spacing:.04em;';
+  var chipStyle='display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;';
+  var html='<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+    +'<thead><tr>'
+    +'<th style="'+TH+'width:28px;text-align:center;"><input type="checkbox" id="lsAllChk" checked onchange="lsToggleAll()" style="width:14px;height:14px;cursor:pointer;accent-color:#1a6bc4;"></th>'
+    +'<th style="text-align:left;'+TH+'">ITEM</th>'
+    +'<th style="text-align:center;'+TH+'">ON HAND</th>'
+    +'<th style="text-align:center;'+TH+'">SAFE QTY</th>'
+    +'<th style="text-align:center;'+TH+'">LAST REQUESTED</th>'
+    +'<th id="lsDaysHdr" onclick="lsSortDays()" style="text-align:center;'+TH+'cursor:pointer;user-select:none;" title="Sort by days ago">DAYS AGO ▲</th>'
+    +'</tr></thead><tbody>';
+  filtered.forEach(function(it){
+    var realIdx=_lsItems.indexOf(it);
+    var reqDate=it.last_requested_at?it.last_requested_at.substring(0,10):null;
+    var daysAgo=it.days_since_request;
+    var daysCell;
+    if(daysAgo===null||daysAgo===undefined){
+      daysCell='<span style="'+chipStyle+'background:#f1f5f9;color:#94a3b8;">Never</span>';
+    } else if(daysAgo<=3){
+      daysCell='<span style="'+chipStyle+'background:#dcfce7;color:#16a34a;">'+daysAgo+'d</span>';
+    } else if(daysAgo<=14){
+      daysCell='<span style="'+chipStyle+'background:#fef9c3;color:#ca8a04;">'+daysAgo+'d</span>';
+    } else {
+      daysCell='<span style="'+chipStyle+'background:#fee2e2;color:#dc2626;">'+daysAgo+'d</span>';
+    }
+    var q=it.qty_on_hand||0,s=it.safe_qty||0;
+    var badge=q<=0?'<span style="font-size:9px;background:#fee2e2;color:#dc2626;border-radius:4px;padding:1px 5px;margin-left:4px;font-weight:700;">OUT</span>'
+      :(s>0&&q<=s?'<span style="font-size:9px;background:#fff7ed;color:#ea580c;border-radius:4px;padding:1px 5px;margin-left:4px;font-weight:700;">ALERT</span>'
+      :'<span style="font-size:9px;background:#fef9c3;color:#ca8a04;border-radius:4px;padding:1px 5px;margin-left:4px;font-weight:700;">LOW</span>');
+    var isChecked=checked[it.id]!==undefined?checked[it.id]:true;
+    html+='<tr>'
+      +'<td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle;">'
+      +'<input type="checkbox" class="ls-chk" data-idx="'+realIdx+'" '+(isChecked?'checked':'')+' onchange="lsUpdateSelCount()" style="width:15px;height:15px;cursor:pointer;accent-color:#1a6bc4;"></td>'
+      +'<td style="padding:8px;border-bottom:1px solid var(--border);"><div style="font-weight:700;color:#0f172a;">'+safeHtml(it.name||'')+'</div>'
+      +'<div style="color:var(--muted);font-size:10px;">'+safeHtml(it.category||'')+'</div></td>'
+      +'<td style="padding:8px;text-align:center;border-bottom:1px solid var(--border);"><span style="color:#f87171;font-weight:800;">'+q+'</span>'+badge+'</td>'
+      +'<td style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:#fb923c;">'+(it.safe_qty||'—')+'</td>'
+      +'<td style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--muted);font-size:11px;">'+(reqDate||'—')+'</td>'
+      +'<td style="padding:8px;text-align:center;border-bottom:1px solid var(--border);">'+daysCell+'</td>'
+      +'</tr>';
+  });
+  html+='</tbody></table>';
+  el.innerHTML=html;
   lsUpdateSelCount();
 }
 function openLowStockModal(){
   fetch('/api/inventory/low-stock').then(function(r){return r.json();}).then(function(items){
     _lsItems=items||[];
+    _lsSortDir=1;
+    var srch=document.getElementById('lsSearch');if(srch)srch.value='';
     var el=document.getElementById('lowStockList');
     if(!el)return;
     if(!items.length){
@@ -1868,48 +1941,7 @@ function openLowStockModal(){
       var sc=document.getElementById('lsSelCount');if(sc)sc.textContent='';
       openModal('lowStockModal');return;
     }
-    var TH='padding:6px 8px;color:var(--muted);font-size:10px;border-bottom:1px solid var(--border);font-weight:700;letter-spacing:.04em;';
-    var html='<table style="width:100%;border-collapse:collapse;font-size:12px;">'
-      +'<thead><tr>'
-      +'<th style="'+TH+'width:28px;"></th>'
-      +'<th style="text-align:left;'+TH+'">ITEM</th>'
-      +'<th style="text-align:center;'+TH+'">ON HAND</th>'
-      +'<th style="text-align:center;'+TH+'">SAFE QTY</th>'
-      +'<th style="text-align:center;'+TH+'">LAST REQUESTED</th>'
-      +'<th style="text-align:center;'+TH+'">DAYS AGO</th>'
-      +'</tr></thead><tbody>';
-    items.forEach(function(it,idx){
-      var reqDate=it.last_requested_at?it.last_requested_at.substring(0,10):null;
-      var daysAgo=it.days_since_request;
-      var chipStyle='display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;';
-      var daysCell;
-      if(daysAgo===null||daysAgo===undefined){
-        daysCell='<span style="'+chipStyle+'background:#f1f5f9;color:#94a3b8;">Never</span>';
-      } else if(daysAgo<=3){
-        daysCell='<span style="'+chipStyle+'background:#dcfce7;color:#16a34a;">'+daysAgo+'d</span>';
-      } else if(daysAgo<=14){
-        daysCell='<span style="'+chipStyle+'background:#fef9c3;color:#ca8a04;">'+daysAgo+'d</span>';
-      } else {
-        daysCell='<span style="'+chipStyle+'background:#fee2e2;color:#dc2626;">'+daysAgo+'d</span>';
-      }
-      var q=it.qty_on_hand||0,s=it.safe_qty||0;
-      var badge=q<=0?'<span style="font-size:9px;background:#fee2e2;color:#dc2626;border-radius:4px;padding:1px 5px;margin-left:4px;font-weight:700;">OUT</span>'
-        :(s>0&&q<=s?'<span style="font-size:9px;background:#fff7ed;color:#ea580c;border-radius:4px;padding:1px 5px;margin-left:4px;font-weight:700;">ALERT</span>'
-        :'<span style="font-size:9px;background:#fef9c3;color:#ca8a04;border-radius:4px;padding:1px 5px;margin-left:4px;font-weight:700;">LOW</span>');
-      html+='<tr>'
-        +'<td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle;">'
-        +'<input type="checkbox" class="ls-chk" data-idx="'+idx+'" checked onchange="lsUpdateSelCount()" style="width:15px;height:15px;cursor:pointer;accent-color:#1a6bc4;"></td>'
-        +'<td style="padding:8px;border-bottom:1px solid var(--border);"><div style="font-weight:700;color:#0f172a;">'+safeHtml(it.name||'')+'</div>'
-        +'<div style="color:var(--muted);font-size:10px;">'+safeHtml(it.category||'')+'</div></td>'
-        +'<td style="padding:8px;text-align:center;border-bottom:1px solid var(--border);"><span style="color:#f87171;font-weight:800;">'+q+'</span>'+badge+'</td>'
-        +'<td style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:#fb923c;">'+(it.safe_qty||'—')+'</td>'
-        +'<td style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--muted);font-size:11px;">'+(reqDate||'—')+'</td>'
-        +'<td style="padding:8px;text-align:center;border-bottom:1px solid var(--border);">'+daysCell+'</td>'
-        +'</tr>';
-    });
-    html+='</tbody></table>';
-    el.innerHTML=html;
-    lsUpdateSelCount();
+    lsRender();
     openModal('lowStockModal');
   }).catch(function(){toast('Failed to load low stock','error');});
 }
