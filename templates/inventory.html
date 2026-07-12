@@ -21,6 +21,9 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .editor-btn.active{background:#1a3a6c;border-color:var(--accent);}
 .cat-bar{padding:8px 12px;display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--border);}
 .cat-bar::-webkit-scrollbar{display:none;}
+.inv-kpi{border-radius:10px;padding:8px 14px;min-width:90px;text-align:center;border:1px solid var(--border);display:inline-block;vertical-align:top;}
+.inv-kpi-val{font-size:20px;font-weight:800;color:var(--text);line-height:1.1;}
+.inv-kpi-lbl{font-size:10px;color:var(--muted);font-weight:600;margin-top:2px;white-space:nowrap;}
 .chip{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;flex-shrink:0;}
 @media(max-width:640px){.chip{font-size:10px;padding:4px 9px;}}
 .chip.active{background:var(--accent);color:#fff;border-color:var(--accent);}
@@ -478,6 +481,31 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <button class="inv-tab" id="itab-matdocs" onclick="switchInvTab('matdocs')" style="display:none;">📋 Mat. Docs</button>
 </div>
 <div id="inv-tab-content">
+<!-- INVENTORY SUMMARY BAR -->
+<div id="invSummary" style="display:none;overflow-x:auto;white-space:nowrap;padding:10px 12px 2px;border-bottom:1px solid var(--border);">
+  <div style="display:inline-flex;gap:8px;">
+    <div class="inv-kpi" id="kpi-total" style="background:#f8fafc;">
+      <div class="inv-kpi-val" id="kpiTotal">—</div>
+      <div class="inv-kpi-lbl">Total SKUs</div>
+    </div>
+    <div class="inv-kpi" id="kpi-out" style="background:#fff1f2;">
+      <div class="inv-kpi-val" id="kpiOut" style="color:#dc2626;">—</div>
+      <div class="inv-kpi-lbl">Out of Stock</div>
+    </div>
+    <div class="inv-kpi" id="kpi-low" style="background:#fff7ed;">
+      <div class="inv-kpi-val" id="kpiLow" style="color:#ea580c;">—</div>
+      <div class="inv-kpi-lbl">Low Stock</div>
+    </div>
+    <div class="inv-kpi" id="kpi-val" style="background:#f0fdf4;">
+      <div class="inv-kpi-val" id="kpiVal" style="color:#16a34a;">—</div>
+      <div class="inv-kpi-lbl">Stock Value</div>
+    </div>
+    <div class="inv-kpi" id="kpi-po" style="background:#eff6ff;cursor:pointer;" onclick="switchInvTab('receiving')">
+      <div class="inv-kpi-val" id="kpiPO" style="color:#1d4ed8;">—</div>
+      <div class="inv-kpi-lbl">Open POs ↗</div>
+    </div>
+  </div>
+</div>
 <!-- CATEGORY CHIPS -->
 <div class="cat-bar" id="catBar"></div>
 
@@ -1247,7 +1275,7 @@ document.addEventListener('DOMContentLoaded',function(){
 // ── Inventory ────────────────────────────────────────────────────────────────
 function loadInv(){
   fetch('/api/inventory').then(function(r){return r.json();}).then(function(d){
-    ITEMS=d||[];buildChips();renderGrid();
+    ITEMS=d||[];buildChips();renderGrid();renderInvSummary();
   }).catch(function(){ITEMS=[];renderGrid();});
 }
 
@@ -2651,6 +2679,31 @@ function renderQueryResults(results){
     row.onmouseout=function(){this.style.background='';};
     row.onclick=function(){openDispDetail(window._dispMap[this.dataset.rid]);};
   });
+}
+function renderInvSummary(){
+  var el=document.getElementById('invSummary');
+  if(!el||!ITEMS.length)return;
+  el.style.display='';
+  var total=ITEMS.length;
+  var outCt=ITEMS.filter(function(it){return (it.qty_on_hand||0)<=0;}).length;
+  var lowCt=ITEMS.filter(function(it){
+    var q=it.qty_on_hand||0,s=it.safe_qty||0;
+    return q>0&&s>0&&q<=s;
+  }).length;
+  var hasVal=ITEMS.some(function(it){return it.unit_cost>0;});
+  var totalVal=hasVal?ITEMS.reduce(function(sum,it){return sum+(it.unit_cost||0)*(it.qty_on_hand||0);},0):null;
+  document.getElementById('kpiTotal').textContent=total;
+  document.getElementById('kpiOut').textContent=outCt;
+  document.getElementById('kpiLow').textContent=lowCt;
+  document.getElementById('kpiVal').textContent=totalVal!=null?'$'+totalVal.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}):'—';
+  // Fetch open PO count async
+  fetch('/api/po?status=pending').then(function(r){return r.json();}).then(function(d){
+    var pend=(d.pos||[]).length;
+    return fetch('/api/po?status=partial').then(function(r2){return r2.json();}).then(function(d2){
+      var part=(d2.pos||[]).length;
+      document.getElementById('kpiPO').textContent=pend+part;
+    });
+  }).catch(function(){document.getElementById('kpiPO').textContent='?';});
 }
 function loadMatDocs(){
   var mvt=(document.getElementById('mdMvtFilter')||{value:''}).value;
