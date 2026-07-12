@@ -3693,7 +3693,7 @@ function deleteFact(id){
   fetch('/api/facturas/'+id,{method:'DELETE'}).then(function(r){return r.json();}).then(function(d){
     if(d.ok){toast('Invoice deleted');loadAndRenderFacts();}
     else toast(d.error||'Error deleting','error');
-  }).catch(function(){toast('Error de red','error');});
+  }).catch(function(){toast('Network error','error');});
 }
 
 function resetFactForm(){
@@ -3814,7 +3814,7 @@ document.addEventListener('DOMContentLoaded',function(){
       .then(function(r){return r.json();}).then(function(d){
         if(d.ok){closeModal('factModal');resetFactForm();loadAndRenderFacts();toast('Invoice saved','ok');}
         else toast(d.error||'Error saving','error');
-      }).catch(function(){toast('Error de red','error');});
+      }).catch(function(){toast('Network error','error');});
     };
     reader.readAsDataURL(file);
   });
@@ -4028,8 +4028,8 @@ async function deleteMaterial(id){
       </div>
 
       <div id="factOcrField" style="display:none;margin-bottom:8px;">
-        <label class="fact-field-label">Texto detectado (edita si hace falta)</label>
-        <textarea id="factOcrText" class="fact-textarea" rows="3" placeholder="Aquí aparece el texto leído..."></textarea>
+        <label class="fact-field-label">Detected text (edit if needed)</label>
+        <textarea id="factOcrText" class="fact-textarea" rows="3" placeholder="Text will appear here after scanning..."></textarea>
       </div>
 
       <label class="fact-field-label">Invoice Number</label>
