@@ -487,7 +487,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
   <div style="display:inline-flex;gap:8px;">
     <div class="inv-kpi" id="kpi-total" style="background:#f8fafc;cursor:pointer;" onclick="setSummaryFilter('')" title="Show all items">
       <div class="inv-kpi-val" id="kpiTotal">—</div>
-      <div class="inv-kpi-lbl">Total SKUs</div>
+      <div class="inv-kpi-lbl" id="kpiTotalLbl">Total SKUs</div>
     </div>
     <div class="inv-kpi" id="kpi-out" style="background:#fff1f2;cursor:pointer;" onclick="setSummaryFilter('out')" title="Filter: Out of Stock">
       <div class="inv-kpi-val" id="kpiOut" style="color:#dc2626;">—</div>
@@ -499,7 +499,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
     </div>
     <div class="inv-kpi" id="kpi-val" style="background:#f0fdf4;">
       <div class="inv-kpi-val" id="kpiVal" style="color:#16a34a;">—</div>
-      <div class="inv-kpi-lbl">Stock Value</div>
+      <div class="inv-kpi-lbl" id="kpiValLbl">Stock Value</div>
     </div>
     <div class="inv-kpi" id="kpi-po" style="background:#eff6ff;cursor:pointer;" onclick="switchInvTab('receiving')">
       <div class="inv-kpi-val" id="kpiPO" style="color:#1d4ed8;">—</div>
@@ -1418,7 +1418,7 @@ document.addEventListener('DOMContentLoaded',function(){
 // ── Inventory ────────────────────────────────────────────────────────────────
 function loadInv(){
   fetch('/api/inventory').then(function(r){return r.json();}).then(function(d){
-    ITEMS=d||[];buildChips();renderGrid();renderInvSummary();
+    window._poCountLoaded=false;ITEMS=d||[];buildChips();renderGrid();
   }).catch(function(){ITEMS=[];renderGrid();});
 }
 
@@ -1451,6 +1451,7 @@ function renderGrid(){
   var toolbar=document.getElementById('invToolbar');
   if(toolbar)toolbar.style.display=edUser?'flex':'none';
   f.forEach(function(it){g.appendChild(mkCard(it));});
+  renderInvSummary();
 }
 
 function mkCard(it){
@@ -3114,26 +3115,48 @@ function renderInvSummary(){
   var el=document.getElementById('invSummary');
   if(!el||!ITEMS.length)return;
   el.style.display='';
-  var total=ITEMS.length;
-  var outCt=ITEMS.filter(function(it){return (it.qty_on_hand||0)<=0;}).length;
-  var lowCt=ITEMS.filter(function(it){
-    var q=it.qty_on_hand||0,s=it.safe_qty||0;
-    return q>0&&(s>0?q<=s:q<10);
-  }).length;
-  var hasVal=ITEMS.some(function(it){return it.unit_cost>0;});
-  var totalVal=hasVal?ITEMS.reduce(function(sum,it){return sum+(it.unit_cost||0)*(it.qty_on_hand||0);},0):null;
-  document.getElementById('kpiTotal').textContent=total;
+  // Scope: items in active category (or all)
+  var scope=(activeCat==='All')?ITEMS:ITEMS.filter(function(it){return it.category===activeCat;});
+  // Filtered view: apply summaryFilter on top of scope
+  var filtered=scope.filter(function(it){
+    if(summaryFilter==='out')return (it.qty_on_hand||0)<=0;
+    if(summaryFilter==='low'){var _q=it.qty_on_hand||0,_s=it.safe_qty||0;return _q>0&&(_s>0?_q<=_s:_q<10);}
+    return true;
+  });
+  var outCt=scope.filter(function(it){return (it.qty_on_hand||0)<=0;}).length;
+  var lowCt=scope.filter(function(it){var q=it.qty_on_hand||0,s=it.safe_qty||0;return q>0&&(s>0?q<=s:q<10);}).length;
+  var hasVal=filtered.some(function(it){return it.unit_cost>0;});
+  var totalVal=hasVal?filtered.reduce(function(sum,it){return sum+(it.unit_cost||0)*(it.qty_on_hand||0);},0):null;
+  document.getElementById('kpiTotal').textContent=filtered.length;
   document.getElementById('kpiOut').textContent=outCt;
   document.getElementById('kpiLow').textContent=lowCt;
   document.getElementById('kpiVal').textContent=totalVal!=null?'$'+totalVal.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}):'—';
-  // Fetch open PO count async
-  fetch('/api/po?status=pending').then(function(r){return r.json();}).then(function(d){
-    var pend=(d.pos||[]).length;
-    return fetch('/api/po?status=partial').then(function(r2){return r2.json();}).then(function(d2){
-      var part=(d2.pos||[]).length;
-      document.getElementById('kpiPO').textContent=pend+part;
-    });
-  }).catch(function(){document.getElementById('kpiPO').textContent='?';});
+  // Dynamic labels
+  var valLbl=document.getElementById('kpiValLbl');
+  var totLbl=document.getElementById('kpiTotalLbl');
+  if(valLbl){
+    if(summaryFilter==='out')valLbl.textContent='Out of Stock Value';
+    else if(summaryFilter==='low')valLbl.textContent='Low Stock Value';
+    else if(activeCat!=='All')valLbl.textContent=activeCat+' Value';
+    else valLbl.textContent='Stock Value';
+  }
+  if(totLbl){
+    if(summaryFilter==='out')totLbl.textContent='Out of Stock';
+    else if(summaryFilter==='low')totLbl.textContent='Low Stock Items';
+    else if(activeCat!=='All')totLbl.textContent=activeCat+' SKUs';
+    else totLbl.textContent='Total SKUs';
+  }
+  // PO count (only refresh on full load, not every filter change)
+  if(!window._poCountLoaded){
+    window._poCountLoaded=true;
+    fetch('/api/po?status=pending').then(function(r){return r.json();}).then(function(d){
+      var pend=(d.pos||[]).length;
+      return fetch('/api/po?status=partial').then(function(r2){return r2.json();}).then(function(d2){
+        var part=(d2.pos||[]).length;
+        document.getElementById('kpiPO').textContent=pend+part;
+      });
+    }).catch(function(){document.getElementById('kpiPO').textContent='?';});
+  }
 }
 function openNewMatDocModal(){
   var errEl=document.getElementById('mdFormErr');
