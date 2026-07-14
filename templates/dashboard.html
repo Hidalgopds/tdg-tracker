@@ -873,7 +873,7 @@ function loadUnit(unit) {
     renderMeta(unit, meta, records);
     renderKPI(tradesMap, records, pcts);
     renderTradeBars(tradesMap);
-    renderInternalSubs(tradesMap);
+    renderInternalSubs(tradesMap,records);
     renderLog(records);
     show('metaBar'); show('kpiRow'); show('tradeRow'); show('chartCard');
   }
