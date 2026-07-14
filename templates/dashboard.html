@@ -133,11 +133,23 @@ main { padding: 18px 20px; max-width: 1080px; margin: 0 auto; display: flex; fle
 
 /* Internal sub grid */
 .sub-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 7px; }
-.sub-cell { background: #0d1117; border: 1px solid var(--border); border-radius: 8px; padding: 9px; display: flex; flex-direction: column; gap: 3px; }
-.sub-cell .sn { font-size: 9px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
+.sub-cell { background: #1a2f4a; border: 1px solid #2a4a6a; border-radius: 8px; padding: 9px; display: flex; flex-direction: column; gap: 3px; cursor: pointer; transition: background .15s, border-color .15s; }
+.sub-cell:hover { background: #1e3a5f; border-color: #3a6a9a; }
+.sub-cell.sc-active { background: #1e3a5f; border-color: #3b82f6; box-shadow: 0 0 0 2px #3b82f633; }
+.sub-cell .sn { font-size: 9px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
 .sub-cell .sp { font-size: 17px; font-weight: 800; }
-.sub-cell .sb { height: 3px; border-radius: 2px; background: #21262d; margin-top: 2px; }
+.sub-cell .sb { height: 3px; border-radius: 2px; background: #2a4a6a; margin-top: 2px; }
 .sub-cell .sbf { height: 3px; border-radius: 2px; }
+#subDetail { display:none; margin-top:10px; background:#1a2f4a; border:1px solid #2a4a6a; border-radius:8px; padding:12px 14px; }
+#subDetail .sd-row { display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start; }
+#subDetail .sd-item { flex:1; min-width:80px; }
+#subDetail .sd-lbl { font-size:9px; color:#64748b; font-weight:700; text-transform:uppercase; letter-spacing:.4px; margin-bottom:3px; }
+#subDetail .sd-val { font-size:20px; font-weight:800; }
+#subDetail .sd-name { font-size:12px; font-weight:700; color:#e2e8f0; }
+#subDetail .sd-reset { font-size:10px; color:#3b82f6; cursor:pointer; text-decoration:underline; margin-left:auto; padding-top:2px; white-space:nowrap; }
+.kpi-banner { display:flex; align-items:center; gap:8px; padding:6px 10px; background:#1a3a5f; border:1px solid #2a5a8a; border-radius:6px; margin-bottom:8px; font-size:11px; color:#93c5fd; }
+.kpi-banner span { font-weight:700; }
+.kpi-banner a { margin-left:auto; color:#60a5fa; cursor:pointer; text-decoration:underline; font-size:10px; white-space:nowrap; }
 
 /* Log table */
 .table-wrap { overflow-x: auto; }
@@ -650,6 +662,7 @@ footer{color:#64748b !important;border-top-color:#0f172a !important;}
         <div class="card">
           <h2>5. Internal Systems Breakdown</h2>
           <div class="sub-grid" id="subGrid"></div>
+          <div id="subDetail"></div>
         </div>
       </div>
 
@@ -871,6 +884,8 @@ function loadUnit(unit) {
     var overall = pcts.length ? sumAll8/8 : null;  // always divide by 8
     updateChiclet(unit, overall);
     renderMeta(unit, meta, records);
+    window._dashFullKPI={tm:tradesMap,rec:records,pcts:pcts};
+    window._dashFullDatasets=null;
     renderKPI(tradesMap, records, pcts);
     renderTradeBars(tradesMap);
     renderInternalSubs(tradesMap,records);
@@ -983,8 +998,41 @@ function renderTradeBars(tradesMap){
   });
 }
 
-function renderInternalSubs(tradesMap){
+function resetSubFilter(){
+  // restore full chart and KPIs
+  document.querySelectorAll('.sub-cell').forEach(function(x){x.classList.remove('sc-active');});
+  document.getElementById('subDetail').style.display='none';
+  var banner=document.getElementById('kpiBanner');if(banner)banner.remove();
+  if(window._laborChart && window._dashFullDatasets){
+    window._laborChart.data.datasets=window._dashFullDatasets;
+    window._laborChart.update('none');
+  }
+  if(window._dashFullKPI){
+    renderKPI(window._dashFullKPI.tm,window._dashFullKPI.rec,window._dashFullKPI.pcts);
+  }
+}
+
+function filterChartToSub(sub){
+  var idx=CHART_SERIES.indexOf(sub);
+  if(idx<0||!window._subTradeArrays||!window._laborChart)return;
+  var arr=window._subTradeArrays[idx];
+  var color=CHART_COLORS[idx]||'#3b82f6';
+  var newDs=[{
+    label:SUB_DISPLAY[sub]||sub,
+    data:arr,
+    borderColor:color,
+    backgroundColor:'transparent',
+    tension:0.3,spanGaps:false,
+    pointRadius:4,pointHoverRadius:7,borderWidth:2,borderDash:[]
+  }];
+  if(!window._dashFullDatasets) window._dashFullDatasets=window._laborChart.data.datasets.slice();
+  window._laborChart.data.datasets=newDs;
+  window._laborChart.update('none');
+}
+
+function renderInternalSubs(tradesMap,records){
   var grid=document.getElementById('subGrid');grid.innerHTML='';
+  var detail=document.getElementById('subDetail');detail.style.display='none';
   INTERNAL_SUBS.forEach(function(sub){
     var pct=subCatPct(sub,tradesMap);var color=pctColor(pct);var pctNum=pct!==null?Math.round(pct*100):null;
     var cell=document.createElement('div');cell.className='sub-cell';
@@ -992,6 +1040,41 @@ function renderInternalSubs(tradesMap){
     cell.innerHTML='<div class="sn">'+(SUB_DISPLAY[sub]||sub)+'</div>'+
       '<div class="sp" style="color:'+(pct!==null?color:'var(--muted)')+'">'+
       (pct!==null?pctNum+'%':'--')+'</div><div class="sb">'+bar+'</div>';
+    cell.onclick=(function(s,p,c,pn){return function(){
+      var wasActive=cell.classList.contains('sc-active');
+      grid.querySelectorAll('.sub-cell').forEach(function(x){x.classList.remove('sc-active');});
+      if(wasActive){resetSubFilter();return;}
+      cell.classList.add('sc-active');
+      // sub-trade man-hours + days
+      var recs=(records||[]).filter(function(r){return r.area_phase===s;});
+      var hrs=0;recs.forEach(function(r){if(r.workers)hrs+=r.workers*(r.period==='AM'?6:5);});
+      var days={};recs.forEach(function(r){if(r.date)days[r.date]=1;});
+      var dayCount=Object.keys(days).length;
+      var lastDate=recs.length?recs[recs.length-1].date:'--';
+      // update detail strip
+      detail.style.display='block';
+      detail.innerHTML='<div class="sd-row">'+
+        '<div class="sd-item"><div class="sd-lbl">Sub-trade</div><div class="sd-name">'+(SUB_DISPLAY[s]||s)+'</div></div>'+
+        '<div class="sd-item"><div class="sd-lbl">Progress</div><div class="sd-val" style="color:'+(p!==null?c:'#475569')+';">'+(p!==null?pn+'%':'--')+'</div></div>'+
+        '<div class="sd-item"><div class="sd-lbl">Man-Hours</div><div class="sd-val" style="color:'+(hrs?'#60a5fa':'#475569')+';">'+(hrs||'--')+'</div></div>'+
+        '<div class="sd-item"><div class="sd-lbl">Days Active</div><div class="sd-val" style="color:#e2e8f0;">'+dayCount+'</div></div>'+
+        '<div class="sd-item"><div class="sd-lbl">Last Activity</div><div class="sd-name" style="color:#94a3b8;">'+lastDate+'</div></div>'+
+        '<div class="sd-reset" onclick="resetSubFilter()">&#8592; Show all</div>'+
+        '</div>';
+      // banner above KPI
+      var oldB=document.getElementById('kpiBanner');if(oldB)oldB.remove();
+      var banner=document.createElement('div');banner.className='kpi-banner';banner.id='kpiBanner';
+      banner.innerHTML='Showing: <span>'+(SUB_DISPLAY[s]||s)+'</span><a onclick="resetSubFilter()">&#8592; Back to all trades</a>';
+      var kpiRow=document.getElementById('kpiRow');kpiRow.parentNode.insertBefore(banner,kpiRow);
+      // update KPI cards
+      var kpiRow2=document.getElementById('kpiRow');kpiRow2.innerHTML='';
+      kpiRow2.appendChild(makeKPI('Sub-Trade Progress',p!==null?p:null,SUB_DISPLAY[s]||s));
+      kpiRow2.appendChild(makeKPINum('Man-Hours',hrs||'--',hrs?'logged for this trade':'no data'));
+      kpiRow2.appendChild(makeKPINum('Days Active',dayCount||'--','with activity'));
+      kpiRow2.appendChild(makeKPINum('Last Activity',lastDate,'most recent log'));
+      // filter chart
+      filterChartToSub(s);
+    };})(sub,pct,color,pctNum);
     grid.appendChild(cell);
   });
 }
@@ -1202,6 +1285,8 @@ function renderLog(records){
 
   var ctx = document.getElementById('laborChart').getContext('2d');
   if(window._laborChart) { window._laborChart.destroy(); }
+  window._subTradeArrays = tradeDataArrays;
+  window._subLabels = labels;
   window._laborChart = new Chart(ctx, {
     type: 'line',
     data: { labels: labels, datasets: datasets },
