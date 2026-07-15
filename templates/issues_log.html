@@ -1030,15 +1030,18 @@ function sendEmail(){
   <div class="qc-header">
     <button class="qc-close" onclick="closeQCOverlay()">✕ Close</button>
     <span class="qc-title">🏗 TDG QC — Issue Map</span>
-    <span id="qcIssueCount" style="font-size:11px;color:#93c5fd;font-weight:600;"></span>
+    <select id="qcDrawingSel" style="height:30px;padding:0 8px;background:#1e293b;border:1px solid #475569;border-radius:7px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;" onchange="switchQCDrawing()">
+      <option value="plan">Drawing 1</option>
+      <option value="plan2">Drawing 2</option>
+    </select>
     <select id="qcUnitSel" style="height:30px;padding:0 8px;background:#1e3a5f;border:1px solid #3b82f6;border-radius:7px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;min-width:110px;" onchange="renderQCPins()">
       <option value="">All Units</option>
-      <optgroup label="A Series" style="color:#fff">
+      <optgroup label="A Series">
         <option>01A</option><option>02A</option><option>03A</option><option>04A</option>
         <option>05A</option><option>06A</option><option>07A</option><option>08A</option>
         <option>09A</option><option>10A</option>
       </optgroup>
-      <optgroup label="B Series" style="color:#fff">
+      <optgroup label="B Series">
         <option>01B</option><option>02B</option><option>03B</option><option>04B</option>
         <option>05B</option><option>06B</option><option>07B</option><option>08B</option>
         <option>09B</option><option>10B</option><option>11B</option><option>12B</option>
@@ -1049,7 +1052,6 @@ function sendEmail(){
       </optgroup>
     </select>
     <span style="font-size:11px;color:#93c5fd;">Tap drawing to log an issue</span>
-    <button id="qcUploadBtn" class="qc-upload-btn" onclick="openQCUploadModal()">⬆ Upload Drawing</button>
   </div>
   <div class="qc-body" id="qcBody">
     <div id="qcImgWrap">
@@ -1093,7 +1095,7 @@ function sendEmail(){
 </div>
 
 <!-- QC Drawing Upload Modal -->
-<div id="qcUploadModal">
+<div id="qcUploadModal" style="display:none!important">
   <div class="qc-um">
     <h3>📐 Upload Plan View Drawing</h3>
     <label>Image File (JPG or PNG)</label>
@@ -1107,7 +1109,7 @@ function sendEmail(){
 </div>
 
 <!-- QC Drawing Upload Modal -->
-<div id="qcUploadModal">
+<div id="qcUploadModal" style="display:none!important">
   <div class="qc-um">
     <h3>📐 Upload Structural Drawing</h3>
     <div class="qc-um-field">
@@ -1273,13 +1275,19 @@ function closeQCOverlay(){
   closeQCColorPicker();
 }
 
-async function fetchQCDrawing(){
-  try{
-    var r = await fetch('/api/qc/drawings');
-    var d = await r.json();
-    QC_URL = d['plan'] || null;
-  }catch(e){ QC_URL = null; }
-  loadQCImage();
+async var QC_DRAWINGS = {plan: '/static/qc-plan.png', plan2: '/static/qc-plan2.png'};
+function fetchQCDrawing(){
+  var sel = document.getElementById('qcDrawingSel');
+  var key = sel ? sel.value : 'plan';
+  var url = QC_DRAWINGS[key] || QC_DRAWINGS['plan'];
+  var img = document.getElementById('qcDrawingImg');
+  document.getElementById('qcNoImg').style.display = 'none';
+  img.style.display = 'block';
+  img.src = url;
+}
+function switchQCDrawing(){
+  fetchQCDrawing();
+  renderQCPins();
 }
 
 function loadQCImage(){

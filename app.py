@@ -1318,10 +1318,9 @@ def upload_qc_drawing():
 
 @app.route("/api/qc/drawings")
 def get_qc_drawings():
-    base = f"{SUPABASE_URL}/storage/v1/object/public/issue-photos"
     return jsonify({
-        "plan": f"{base}/qc-plan.jpg",
-        "3d":   f"{base}/qc-3d.jpg"
+        "plan":  "/static/qc-plan.png",
+        "plan2": "/static/qc-plan2.png"
     })
 
 @app.route("/api/test-storage")
