@@ -904,32 +904,39 @@ function closeCreateModal(){
   document.getElementById('createModal').classList.remove('open');
 }
 // Close on overlay click
-document.getElementById('createModal').addEventListener('click', function(e){
-  if(e.target === this) closeCreateModal();
+document.addEventListener('DOMContentLoaded', function(){
+  var cm = document.getElementById('createModal');
+  if(cm) cm.addEventListener('click', function(e){ if(e.target === this) closeCreateModal(); });
+  var em = document.getElementById('editModal');
+  if(em) em.addEventListener('click', function(e){ if(e.target === this) closeEditModal(); });
 });
 
 // Photo preview
-document.getElementById('ei-photos').addEventListener('change', function(){
-  var thumbs = document.getElementById('ei-new-thumbs');
-  thumbs.innerHTML = '';
-  Array.from(this.files).forEach(function(file){
-    var img = document.createElement('img');
-    img.style.cssText = 'width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1';
-    img.src = URL.createObjectURL(file);
-    thumbs.appendChild(img);
+document.addEventListener('DOMContentLoaded', function(){
+  var eiP = document.getElementById('ei-photos');
+  if(eiP) eiP.addEventListener('change', function(){
+    var thumbs = document.getElementById('ei-new-thumbs');
+    thumbs.innerHTML = '';
+    Array.from(this.files).forEach(function(file){
+      var img2 = document.createElement('img');
+      img2.style.cssText = 'width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1';
+      img2.src = URL.createObjectURL(file);
+      thumbs.appendChild(img2);
+    });
   });
-});
-
-document.getElementById('mi-photos').addEventListener('change', function(){
-  var thumbs = document.getElementById('mi-thumbs');
-  thumbs.innerHTML = '';
-  Array.from(this.files).forEach(function(file){
-    var img = document.createElement('img');
-    img.style.cssText = 'width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0';
-    img.src = URL.createObjectURL(file);
-    thumbs.appendChild(img);
+  var miP = document.getElementById('mi-photos');
+  if(miP) miP.addEventListener('change', function(){
+    var thumbs = document.getElementById('mi-thumbs');
+    if(!thumbs) return;
+    thumbs.innerHTML = '';
+    Array.from(this.files).forEach(function(file){
+      var img = document.createElement('img');
+      img.style.cssText = 'width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0';
+      img.src = URL.createObjectURL(file);
+      thumbs.appendChild(img);
+    });
   });
-});
+}); // end DOMContentLoaded photo listeners
 
 async function submitIssue(){
   var unit  = document.getElementById('mi-unit').value.trim();
@@ -1030,7 +1037,7 @@ function sendEmail(){
   <div class="qc-header">
     <button class="qc-close" onclick="closeQCOverlay()">✕ Close</button>
     <span class="qc-title">🏗 TDG QC — Issue Map</span>
-    <select id="qcDrawingSel" style="height:30px;padding:0 8px;background:#1e293b;border:1px solid #475569;border-radius:7px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;" onchange="switchQCDrawing()">
+    <select id="qcDrawingSel" style="height:30px;padding:0 8px;background:#1e293b;border:1px solid #475569;border-radius:7px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;appearance:none;-webkit-appearance:none;" onchange="switchQCDrawing()">
       <option value="plan">Drawing 1</option>
       <option value="plan2">Drawing 2</option>
     </select>
@@ -1262,11 +1269,8 @@ var _qcLvl  = {admin:5,boss:4,inventory:3,lead:2,worker:1}[_qcRole]||0;
 function openQCOverlay(){
   document.getElementById('qcOverlay').classList.add('qc-open');
   document.body.style.overflow = 'hidden';
-  if(_qcLvl >= 4){
-    document.getElementById('qcUploadBtn').style.display = 'block';
-    document.getElementById('qcNoImgUploadBtn').style.display = 'block';
-  }
   fetchQCDrawing();
+  fetchIssues();
 }
 function closeQCOverlay(){
   document.getElementById('qcOverlay').classList.remove('qc-open');
