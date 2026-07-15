@@ -144,34 +144,51 @@ body{padding-bottom:60px !important;}
 
 <style id="qc-style">
 /* TDG QC Overlay */
-#qcOverlay{display:none;position:fixed;inset:0;background:#060c18;z-index:600;flex-direction:column;}
+#qcOverlay{display:none;position:fixed;inset:0;background:#0a0f1a;z-index:600;flex-direction:column;}
 #qcOverlay.qc-open{display:flex;}
 .qc-header{background:#1e3a5f;padding:10px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap;}
-.qc-close{background:none;border:1px solid rgba(255,255,255,.2);border-radius:6px;color:#93c5fd;font-size:12px;font-weight:700;padding:4px 10px;cursor:pointer;}
-.qc-title{color:#fff;font-size:14px;font-weight:800;flex:1;}
-.qc-tab-btn{height:28px;padding:0 14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:20px;color:#94a3b8;font-size:12px;font-weight:700;cursor:pointer;transition:.15s;}
-.qc-tab-btn.qc-tab-active{background:#3b82f6;border-color:#3b82f6;color:#fff;}
+.qc-close{background:none;border:1px solid rgba(255,255,255,.2);border-radius:6px;color:#93c5fd;font-size:12px;font-weight:700;padding:5px 12px;cursor:pointer;}
+.qc-title{color:#fff;font-size:14px;font-weight:800;flex:1;min-width:120px;}
 .qc-upload-btn{height:28px;padding:0 12px;background:#7c3aed;border:none;border-radius:7px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;display:none;}
-.qc-body{flex:1;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;background:#060c18;}
-#qcImgWrap{position:relative;display:inline-block;cursor:crosshair;max-width:100%;max-height:calc(100vh - 110px);}
-#qcDrawingImg{display:block;max-width:100%;max-height:calc(100vh - 110px);object-fit:contain;user-select:none;}
-#qcPinCanvas{position:absolute;top:0;left:0;pointer-events:none;}
-#qcNoImg{text-align:center;color:#475569;padding:40px;}
-#qcNoImg .ni-icon{font-size:48px;margin-bottom:12px;}
-#qcNoImg .ni-title{font-size:15px;font-weight:700;color:#64748b;margin-bottom:6px;}
-#qcNoImg .ni-sub{font-size:13px;color:#475569;margin-bottom:20px;}
-.qc-legend{position:absolute;bottom:12px;right:12px;background:rgba(6,12,24,.88);border:1px solid #1e3a5f;border-radius:8px;padding:8px 12px;font-size:11px;color:#94a3b8;}
-.qc-legend strong{display:block;margin-bottom:4px;color:#cbd5e1;font-size:10px;letter-spacing:.5px;}
-.qc-legend-row{display:flex;gap:10px;flex-wrap:wrap;}
-#qcPinTooltip{position:absolute;pointer-events:none;background:#1e3a5f;border:1px solid #3b82f6;border-radius:8px;padding:8px 10px;font-size:12px;color:#e2e8f0;max-width:200px;z-index:10;display:none;box-shadow:0 4px 16px rgba(0,0,0,.4);}
-/* Admin upload modal */
-#qcUploadModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:700;align-items:center;justify-content:center;}
+.qc-body{flex:1;overflow:auto;position:relative;display:flex;align-items:flex-start;justify-content:center;background:#111827;padding:12px;}
+#qcImgWrap{position:relative;display:inline-block;cursor:crosshair;flex-shrink:0;}
+#qcDrawingImg{display:block;max-width:100%;height:auto;user-select:none;-webkit-user-drag:none;}
+#qcSvgOverlay{position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;pointer-events:none;}
+#qcSvgOverlay .qc-pin-hit{pointer-events:all;cursor:pointer;}
+#qcNoImg{text-align:center;color:#475569;padding:60px 20px;width:100%;}
+.qc-legend{background:#111827;border-top:1px solid #1e3a5f;padding:10px 14px;flex-shrink:0;max-height:140px;overflow-y:auto;}
+.qc-legend-title{font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.qc-legend-row{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #1a2535;}
+.qc-legend-row:last-child{border-bottom:none;}
+.qc-legend-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;border:2px solid rgba(255,255,255,.3);}
+.qc-legend-num{font-size:10px;font-weight:800;color:#94a3b8;width:18px;text-align:center;}
+.qc-legend-text{font-size:12px;color:#e2e8f0;flex:1;}
+.qc-legend-status{font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;flex-shrink:0;}
+/* Issue popup */
+#qcPopup{position:fixed;bottom:0;left:0;right:0;background:#f8fafc;border-top:3px solid #1e3a5f;z-index:700;padding:14px 16px;display:none;max-height:60vh;overflow-y:auto;}
+#qcPopup.open{display:block;}
+.qc-popup-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.qc-popup-dot{width:16px;height:16px;border-radius:50%;flex-shrink:0;}
+.qc-popup-title{font-size:15px;font-weight:800;color:#0f172a;flex:1;}
+.qc-popup-close{background:none;border:none;font-size:20px;color:#64748b;cursor:pointer;line-height:1;}
+.qc-popup-desc{font-size:13px;color:#475569;margin-bottom:10px;line-height:1.5;}
+.qc-popup-photos{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.qc-popup-photo{width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid #e2e8f0;cursor:pointer;}
+.qc-popup-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.qc-popup-btn{height:30px;padding:0 12px;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;}
+/* Color picker popup */
+#qcColorPicker{position:fixed;background:#1e293b;border:1px solid #334155;border-radius:12px;padding:10px;z-index:710;display:none;box-shadow:0 8px 32px rgba(0,0,0,.5);}
+#qcColorPicker.open{display:flex;gap:8px;align-items:center;}
+.qc-color-opt{width:32px;height:32px;border-radius:50%;cursor:pointer;border:2px solid rgba(255,255,255,.2);transition:transform .12s;}
+.qc-color-opt:hover{transform:scale(1.2);border-color:#fff;}
+.qc-color-cancel{background:none;border:1px solid #475569;border-radius:6px;color:#94a3b8;font-size:11px;padding:4px 8px;cursor:pointer;}
+/* Upload modal */
+#qcUploadModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:800;align-items:center;justify-content:center;}
 #qcUploadModal.open{display:flex;}
 .qc-um{background:#fff;border-radius:14px;padding:24px;width:90%;max-width:360px;}
 .qc-um h3{font-size:14px;font-weight:800;color:#0f172a;margin-bottom:16px;}
-.qc-um-field{margin-bottom:12px;}
-.qc-um-field label{display:block;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
-.qc-um-field select,.qc-um-field input{width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:13px;color:#0f172a;background:#f8fafc;}
+.qc-um label{display:block;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;margin-top:10px;}
+.qc-um input,.qc-um select{width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:13px;color:#0f172a;background:#f8fafc;}
 .qc-um-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;}
 </style>
 
@@ -866,11 +883,15 @@ function openCreateModal(pinData){
   document.getElementById('mi-desc').value = '';
   document.getElementById('mi-unit').value = '';
   _QC_PIN = pinData || null;
-  // Show pin badge if coming from drawing
   var pinBadge = document.getElementById('mi-pin-badge');
-  if(pinBadge) {
+  if(pinBadge){
     pinBadge.style.display = _QC_PIN ? 'flex' : 'none';
-    if(_QC_PIN) pinBadge.textContent = '📍 Pinned on ' + (_QC_PIN.drawing_type === 'plan' ? 'Plan View' : '3D View');
+    if(_QC_PIN) pinBadge.textContent = '📍 Pinned on Plan View';
+  }
+  // Pre-set status from color chosen on drawing
+  if(pinData && pinData.status){
+    var sel = document.getElementById('mi-status');
+    if(sel){ for(var oi=0;oi<sel.options.length;oi++){ if(sel.options[oi].value===pinData.status){sel.selectedIndex=oi;break;} } }
   }
   document.getElementById('createModal').classList.add('open');
 }
@@ -1003,32 +1024,61 @@ function sendEmail(){
 <div id="qcOverlay">
   <div class="qc-header">
     <button class="qc-close" onclick="closeQCOverlay()">✕ Close</button>
-    <span class="qc-title">🏗 TDG QC — Visual Issue Map</span>
-    <button id="qcTab3d" class="qc-tab-btn qc-tab-active" onclick="switchQCTab('3d')">📐 3D View</button>
-    <button id="qcTabPlan" class="qc-tab-btn" onclick="switchQCTab('plan')">🗺 Plan View</button>
+    <span class="qc-title">🏗 TDG QC — Issue Map</span>
+    <span id="qcIssueCount" style="font-size:11px;color:#93c5fd;font-weight:600;"></span>
     <button id="qcUploadBtn" class="qc-upload-btn" onclick="openQCUploadModal()">⬆ Upload Drawing</button>
   </div>
   <div class="qc-body" id="qcBody">
-    <div id="qcImgWrap" style="display:none;">
-      <img id="qcDrawingImg" src="" alt="TDG Drawing" onload="onQCImgLoad()" onclick="qcDrawingClick(event)">
-      <canvas id="qcPinCanvas"></canvas>
-      <div id="qcPinTooltip"></div>
+    <div id="qcImgWrap">
+      <img id="qcDrawingImg" src="" alt="TDG Plan View" onload="onQCImgLoad()" draggable="false">
+      <svg id="qcSvgOverlay"></svg>
     </div>
-    <div id="qcNoImg">
-      <div class="ni-icon">📐</div>
-      <div class="ni-title">No Drawing Uploaded</div>
-      <div class="ni-sub">An admin can upload the structural drawings using the ⬆ Upload Drawing button above.</div>
-      <button onclick="openQCUploadModal()" id="qcNoImgUploadBtn" style="display:none;height:36px;padding:0 18px;background:#7c3aed;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">⬆ Upload Now</button>
+    <div id="qcNoImg" style="display:none;">
+      <div style="font-size:48px;margin-bottom:12px;">📐</div>
+      <div style="font-size:15px;font-weight:700;color:#64748b;margin-bottom:6px;">No Drawing Uploaded</div>
+      <div style="font-size:13px;color:#475569;margin-bottom:20px;">Admin uploads the plan view drawing once — then everyone can log issues by tapping the drawing.</div>
+      <button id="qcNoImgUploadBtn" onclick="openQCUploadModal()" style="display:none;height:36px;padding:0 18px;background:#7c3aed;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">⬆ Upload Plan View Drawing</button>
     </div>
-    <div class="qc-legend" id="qcLegend" style="display:none;">
-      <strong>PINS</strong>
-      <div class="qc-legend-row">
-        <span style="color:#ef4444">● Open</span>
-        <span style="color:#f59e0b">● On Hold</span>
-        <span style="color:#60a5fa">● Monitoring</span>
-        <span style="color:#22c55e">● Resolved</span>
-      </div>
-      <div style="margin-top:4px;font-size:10px;color:#475569;">Tap drawing to log new issue</div>
+  </div>
+  <!-- Legend strip at bottom -->
+  <div class="qc-legend" id="qcLegend" style="display:none;">
+    <div class="qc-legend-title">ISSUES ON DRAWING</div>
+    <div id="qcLegendItems"></div>
+  </div>
+</div>
+
+<!-- QC Issue Popup (slide up from bottom) -->
+<div id="qcPopup">
+  <div class="qc-popup-hdr">
+    <div class="qc-popup-dot" id="qcPopupDot"></div>
+    <div class="qc-popup-title" id="qcPopupTitle"></div>
+    <button class="qc-popup-close" onclick="closeQCPopup()">✕</button>
+  </div>
+  <div id="qcPopupStatus" style="margin-bottom:8px;"></div>
+  <div class="qc-popup-desc" id="qcPopupDesc"></div>
+  <div class="qc-popup-photos" id="qcPopupPhotos"></div>
+  <div class="qc-popup-actions" id="qcPopupActions"></div>
+</div>
+
+<!-- Color Picker (appears at tap location) -->
+<div id="qcColorPicker">
+  <div class="qc-color-opt" style="background:#ef4444;" title="Open" onclick="qcColorPicked('#ef4444','Open')"></div>
+  <div class="qc-color-opt" style="background:#f59e0b;" title="On Hold" onclick="qcColorPicked('#f59e0b','On Hold')"></div>
+  <div class="qc-color-opt" style="background:#60a5fa;" title="Monitoring" onclick="qcColorPicked('#60a5fa','Monitoring')"></div>
+  <div class="qc-color-opt" style="background:#22c55e;" title="Resolved" onclick="qcColorPicked('#22c55e','Resolved')"></div>
+  <button class="qc-color-cancel" onclick="closeQCColorPicker()">✕</button>
+</div>
+
+<!-- QC Drawing Upload Modal -->
+<div id="qcUploadModal">
+  <div class="qc-um">
+    <h3>📐 Upload Plan View Drawing</h3>
+    <label>Image File (JPG or PNG)</label>
+    <input type="file" id="qcUpFile" accept="image/*">
+    <div id="qcUpErr" style="color:#ef4444;font-size:12px;min-height:16px;margin-top:6px;"></div>
+    <div class="qc-um-footer">
+      <button onclick="closeQCUploadModal()" style="height:34px;padding:0 14px;background:#e2e8f0;border:none;border-radius:7px;color:#64748b;font-size:13px;font-weight:700;cursor:pointer;">Cancel</button>
+      <button id="qcUpSubmit" onclick="submitQCDrawing()" style="height:34px;padding:0 16px;background:#7c3aed;border:none;border-radius:7px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">Upload</button>
     </div>
   </div>
 </div>
@@ -1176,195 +1226,257 @@ function sendEmail(){
 
 <script>
 // ── TDG QC Drawing View ─────────────────────────────────────────────
-var QC_CURRENT_TAB = '3d';
-var QC_URLS = {'3d': null, 'plan': null};
-var QC_IMG_LOADED = {'3d': false, 'plan': false};
-var QC_PENDING_PIN = null;
+var QC_URL = null;
+var QC_PENDING = null;   // {x, y} percentages of pending new pin
+var QC_CHOSEN_COLOR = '#ef4444';
+var QC_CHOSEN_STATUS = 'Open';
 
 var _qcRole = localStorage.getItem('mbrRole')||'';
 var _qcLvl  = {admin:5,boss:4,inventory:3,lead:2,worker:1}[_qcRole]||0;
 
 function openQCOverlay(){
   document.getElementById('qcOverlay').classList.add('qc-open');
-  document.body.style.overflow='hidden';
-  // Show admin upload button
+  document.body.style.overflow = 'hidden';
   if(_qcLvl >= 4){
-    document.getElementById('qcUploadBtn').style.display='block';
-    document.getElementById('qcNoImgUploadBtn').style.display='block';
+    document.getElementById('qcUploadBtn').style.display = 'block';
+    document.getElementById('qcNoImgUploadBtn').style.display = 'block';
   }
-  loadQCDrawings();
+  fetchQCDrawing();
 }
-
 function closeQCOverlay(){
   document.getElementById('qcOverlay').classList.remove('qc-open');
-  document.body.style.overflow='';
+  document.body.style.overflow = '';
+  closeQCPopup();
+  closeQCColorPicker();
 }
 
-function switchQCTab(tab){
-  QC_CURRENT_TAB = tab;
-  document.getElementById('qcTab3d').classList.toggle('qc-tab-active', tab==='3d');
-  document.getElementById('qcTabPlan').classList.toggle('qc-tab-active', tab==='plan');
-  loadQCDrawingTab(tab);
-}
-
-async function loadQCDrawings(){
+async function fetchQCDrawing(){
   try{
     var r = await fetch('/api/qc/drawings');
     var d = await r.json();
-    QC_URLS['3d']   = d['3d'];
-    QC_URLS['plan'] = d['plan'];
-  }catch(e){}
-  loadQCDrawingTab(QC_CURRENT_TAB);
+    QC_URL = d['plan'] || null;
+  }catch(e){ QC_URL = null; }
+  loadQCImage();
 }
 
-function loadQCDrawingTab(tab){
-  var url = QC_URLS[tab];
-  var wrap = document.getElementById('qcImgWrap');
+function loadQCImage(){
+  var wrap  = document.getElementById('qcImgWrap');
   var noImg = document.getElementById('qcNoImg');
-  var img = document.getElementById('qcDrawingImg');
-  if(!url){ wrap.style.display='none'; noImg.style.display='block'; return; }
-  // Attempt to load — use cache-busted URL to detect 404
-  var testImg = new Image();
-  testImg.onload = function(){
-    img.src = url + '?t=' + Date.now();
+  var img   = document.getElementById('qcDrawingImg');
+  if(!QC_URL){ wrap.style.display='none'; noImg.style.display='block'; return; }
+  var test = new Image();
+  test.onload = function(){
+    img.src = QC_URL + '?t=' + Date.now();
     wrap.style.display = 'inline-block';
     noImg.style.display = 'none';
-    document.getElementById('qcLegend').style.display = 'block';
-    QC_IMG_LOADED[tab] = true;
   };
-  testImg.onerror = function(){
-    wrap.style.display = 'none';
-    noImg.style.display = 'block';
-    document.getElementById('qcLegend').style.display = 'none';
-    QC_IMG_LOADED[tab] = false;
-  };
-  testImg.src = url + '?probe=' + Date.now();
+  test.onerror = function(){ wrap.style.display='none'; noImg.style.display='block'; };
+  test.src = QC_URL + '?probe=' + Date.now();
 }
 
 function onQCImgLoad(){
-  // Sync canvas size to image display size, then draw pins
-  setTimeout(renderQCPins, 80);
+  renderQCPins();
 }
 
+// ── PIN RENDERING (SVG overlay) ──────────────────────────────────────
+var PIN_COLORS = {'Open':'#ef4444','On Hold':'#f59e0b','Monitoring':'#60a5fa','Resolved':'#22c55e'};
+
 function renderQCPins(){
-  var img    = document.getElementById('qcDrawingImg');
-  var canvas = document.getElementById('qcPinCanvas');
-  var rect   = img.getBoundingClientRect();
-  var wrap   = document.getElementById('qcImgWrap');
-  var wRect  = wrap.getBoundingClientRect();
-  // Position canvas over image
-  canvas.width  = rect.width;
-  canvas.height = rect.height;
-  canvas.style.width  = rect.width + 'px';
-  canvas.style.height = rect.height + 'px';
-  canvas.style.left   = (rect.left - wRect.left) + 'px';
-  canvas.style.top    = (rect.top  - wRect.top)  + 'px';
+  var img = document.getElementById('qcDrawingImg');
+  var svg = document.getElementById('qcSvgOverlay');
+  svg.setAttribute('viewBox','0 0 '+img.naturalWidth+' '+img.naturalHeight);
+  svg.innerHTML = '';
 
-  var ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // Legend
+  var legendDiv = document.getElementById('qcLegend');
+  var legendItems = document.getElementById('qcLegendItems');
+  var legendHTML = '';
 
-  var pinColor = {'Open':'#ef4444','On Hold':'#f59e0b','Monitoring':'#60a5fa','Resolved':'#22c55e'};
-  var tab = QC_CURRENT_TAB;
-  var n = 0;
+  var pinned = ALL_ISSUES.filter(function(i){ return i.pin_x != null && i.pin_y != null; });
+  pinned.forEach(function(issue, idx){
+    var n = idx + 1;
+    var col = PIN_COLORS[issue.status] || '#94a3b8';
+    var cx = issue.pin_x / 100 * img.naturalWidth;
+    var cy = issue.pin_y / 100 * img.naturalHeight;
 
-  ALL_ISSUES.forEach(function(issue){
-    if(issue.pin_x == null || issue.pin_y == null) return;
-    if(issue.drawing_type !== tab) return;
-    n++;
-    var px = issue.pin_x / 100 * rect.width;
-    var py = issue.pin_y / 100 * rect.height;
-    var col = pinColor[issue.status] || '#94a3b8';
+    // Glow ring
+    var ring = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    ring.setAttribute('cx', cx); ring.setAttribute('cy', cy); ring.setAttribute('r', 18);
+    ring.setAttribute('fill', col); ring.setAttribute('fill-opacity','0.2');
+    svg.appendChild(ring);
 
-    // Glow
-    ctx.beginPath(); ctx.arc(px, py, 14, 0, Math.PI*2);
-    ctx.fillStyle = col + '30'; ctx.fill();
-    // Circle
-    ctx.beginPath(); ctx.arc(px, py, 10, 0, Math.PI*2);
-    ctx.fillStyle = col; ctx.fill();
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
-    // Number
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 9px system-ui,sans-serif';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(n, px, py);
+    // Hit target (larger, invisible) — so mobile tap is easy
+    var hit = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    hit.setAttribute('cx', cx); hit.setAttribute('cy', cy); hit.setAttribute('r', 22);
+    hit.setAttribute('fill','transparent');
+    hit.setAttribute('class','qc-pin-hit');
+    hit.setAttribute('data-id', issue.id);
+    hit.addEventListener('click', function(e){ e.stopPropagation(); showQCPopup(issue); });
+    svg.appendChild(hit);
+
+    // Filled circle
+    var circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('cx', cx); circle.setAttribute('cy', cy); circle.setAttribute('r', 12);
+    circle.setAttribute('fill', col);
+    circle.setAttribute('stroke','#fff'); circle.setAttribute('stroke-width','2');
+    svg.appendChild(circle);
+
+    // Number label
+    var txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+    txt.setAttribute('x', cx); txt.setAttribute('y', cy);
+    txt.setAttribute('text-anchor','middle'); txt.setAttribute('dominant-baseline','central');
+    txt.setAttribute('fill','#fff'); txt.setAttribute('font-size','10');
+    txt.setAttribute('font-weight','bold'); txt.setAttribute('font-family','system-ui,sans-serif');
+    txt.textContent = n;
+    svg.appendChild(txt);
+
+    // Issue title next to pin (short)
+    var label = document.createElementNS('http://www.w3.org/2000/svg','text');
+    label.setAttribute('x', cx + 16); label.setAttribute('y', cy);
+    label.setAttribute('dominant-baseline','central');
+    label.setAttribute('fill','#1e293b'); label.setAttribute('font-size','9');
+    label.setAttribute('font-weight','600'); label.setAttribute('font-family','system-ui,sans-serif');
+    var shortTitle = (issue.title||'').length > 22 ? (issue.title||'').slice(0,22)+'…' : (issue.title||'');
+    // White outline for legibility
+    var labelBg = label.cloneNode(true);
+    labelBg.setAttribute('stroke','#fff'); labelBg.setAttribute('stroke-width','3'); labelBg.setAttribute('fill','none');
+    labelBg.textContent = shortTitle;
+    svg.appendChild(labelBg);
+    label.textContent = shortTitle;
+    svg.appendChild(label);
+
+    // Legend row
+    legendHTML += '<div class="qc-legend-row">'
+      +'<span class="qc-legend-num">'+n+'</span>'
+      +'<div class="qc-legend-dot" style="background:'+col+'"></div>'
+      +'<span class="qc-legend-text">'+esc(issue.title||'')+'</span>'
+      +'<span class="qc-legend-status" style="background:'+col+'22;color:'+col+'">'+esc(issue.status||'')+'</span>'
+      +'</div>';
   });
 
-  // Pending (cursor) pin
-  if(QC_PENDING_PIN){
-    var px2 = QC_PENDING_PIN.x / 100 * rect.width;
-    var py2 = QC_PENDING_PIN.y / 100 * rect.height;
-    ctx.beginPath(); ctx.arc(px2, py2, 14, 0, Math.PI*2);
-    ctx.fillStyle = 'rgba(168,85,247,0.3)'; ctx.fill();
-    ctx.beginPath(); ctx.arc(px2, py2, 10, 0, Math.PI*2);
-    ctx.fillStyle = '#a855f7'; ctx.fill();
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 12px system-ui';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('+', px2, py2);
+  legendItems.innerHTML = legendHTML;
+  if(pinned.length > 0){
+    legendDiv.style.display = 'block';
+    document.getElementById('qcIssueCount').textContent = pinned.length + ' issue' + (pinned.length!==1?'s':'') + ' pinned';
+  } else {
+    legendDiv.style.display = 'none';
+    document.getElementById('qcIssueCount').textContent = 'Tap drawing to log an issue';
   }
 }
 
-function qcDrawingClick(e){
-  var img  = document.getElementById('qcDrawingImg');
-  var rect = img.getBoundingClientRect();
-  var x = Math.round((e.clientX - rect.left) / rect.width  * 1000) / 10;
-  var y = Math.round((e.clientY - rect.top)  / rect.height * 1000) / 10;
-  QC_PENDING_PIN = {x: x, y: y, drawing_type: QC_CURRENT_TAB};
-  renderQCPins();
-  // Open create issue modal from QC
-  closeQCOverlay();
-  openCreateModal(QC_PENDING_PIN);
-  QC_PENDING_PIN = null;
-}
-
-// Show/hide QC button based on role (min level 2)
+// ── CLICK ON DRAWING (empty area) ────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function(){
+  document.getElementById('qcDrawingImg').addEventListener('click', function(e){
+    var img  = document.getElementById('qcDrawingImg');
+    var rect = img.getBoundingClientRect();
+    var x = Math.round((e.clientX - rect.left) / rect.width  * 1000) / 10;
+    var y = Math.round((e.clientY - rect.top)  / rect.height * 1000) / 10;
+    QC_PENDING = {x: x, y: y};
+    // Show color picker near the tap
+    showQCColorPicker(e.clientX, e.clientY);
+  });
   if(_qcLvl >= 2) document.getElementById('tdgQCBtn').style.display = 'block';
 });
 
-// Resize: re-render pins when window resizes
-window.addEventListener('resize', function(){
-  if(document.getElementById('qcOverlay').classList.contains('qc-open')) renderQCPins();
-});
+// ── COLOR PICKER ─────────────────────────────────────────────────────
+function showQCColorPicker(cx, cy){
+  var picker = document.getElementById('qcColorPicker');
+  picker.classList.add('open');
+  var pw = 200, ph = 50;
+  var left = Math.min(cx, window.innerWidth  - pw - 10);
+  var top  = Math.max(cy - ph - 10, 10);
+  picker.style.left = left + 'px';
+  picker.style.top  = top  + 'px';
+}
+function closeQCColorPicker(){
+  document.getElementById('qcColorPicker').classList.remove('open');
+  QC_PENDING = null;
+}
+function qcColorPicked(color, status){
+  QC_CHOSEN_COLOR  = color;
+  QC_CHOSEN_STATUS = status;
+  closeQCColorPicker();
+  if(!QC_PENDING) return;
+  // Pass pin + color to create modal
+  closeQCOverlay();
+  openCreateModal({x: QC_PENDING.x, y: QC_PENDING.y, drawing_type:'plan', color: color, status: status});
+  QC_PENDING = null;
+}
 
-// ── QC Upload Modal ──────────────────────────────────────────────────
-function openQCUploadModal(){
-  document.getElementById('qcUploadModal').classList.add('open');
-  document.getElementById('qcUpErr').textContent = '';
-  document.getElementById('qcUpFile').value = '';
+// ── ISSUE POPUP ────────────────────────────────────────────────────────
+var QC_POPUP_ISSUE = null;
+function showQCPopup(issue){
+  QC_POPUP_ISSUE = issue;
+  var col = PIN_COLORS[issue.status] || '#94a3b8';
+  document.getElementById('qcPopupDot').style.background = col;
+  document.getElementById('qcPopupTitle').textContent = issue.title || '—';
+  document.getElementById('qcPopupStatus').innerHTML =
+    '<span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:700;background:'+col+'22;color:'+col+'">'+esc(issue.status||'')+'</span>'
+    + (issue.category ? '<span style="margin-left:6px;font-size:11px;color:#64748b;font-weight:600;">'+esc(issue.category)+'</span>' : '');
+  document.getElementById('qcPopupDesc').textContent = issue.description || '';
+  // Photos
+  var photosDiv = document.getElementById('qcPopupPhotos');
+  var photos = (issue.photos && Array.isArray(issue.photos)) ? issue.photos : [];
+  photosDiv.innerHTML = photos.map(function(url){
+    return '<a href="'+url+'" target="_blank"><img src="'+url+'" class="qc-popup-photo"></a>';
+  }).join('');
+  // Actions
+  var actDiv = document.getElementById('qcPopupActions');
+  var btnHTML = '';
+  if(issue.status !== 'Resolved'){
+    btnHTML += '<button class="qc-popup-btn" style="background:#14532d;color:#86efac;" onclick="qcSetStatus('Resolved')">✓ Resolve</button>';
+    btnHTML += '<button class="qc-popup-btn" style="background:#451a03;color:#fcd34d;" onclick="qcSetStatus('On Hold')">⏸ On Hold</button>';
+  } else {
+    btnHTML += '<button class="qc-popup-btn" style="background:#1e3a5f;color:#60a5fa;" onclick="qcSetStatus('Open')">↩ Reopen</button>';
+  }
+  if(_qcLvl >= 4){
+    btnHTML += '<button class="qc-popup-btn" style="background:#450a0a;color:#fca5a5;margin-left:auto;" onclick="qcDeletePin()">🗑 Delete</button>';
+  }
+  actDiv.innerHTML = btnHTML;
+  document.getElementById('qcPopup').classList.add('open');
 }
-function closeQCUploadModal(){
-  document.getElementById('qcUploadModal').classList.remove('open');
+function closeQCPopup(){ document.getElementById('qcPopup').classList.remove('open'); QC_POPUP_ISSUE=null; }
+async function qcSetStatus(status){
+  if(!QC_POPUP_ISSUE) return;
+  var r = await fetch('/api/issues/'+QC_POPUP_ISSUE.id+'/status',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:status,resolution:''})});
+  var d = await r.json();
+  if(d.ok){
+    ALL_ISSUES.forEach(function(i){if(i.id===QC_POPUP_ISSUE.id)i.status=status;});
+    closeQCPopup();
+    updateKPIs(ALL_ISSUES);
+    renderQCPins();
+  }
 }
+async function qcDeletePin(){
+  if(!QC_POPUP_ISSUE || !confirm('Delete this issue?')) return;
+  var r = await fetch('/api/issues/'+QC_POPUP_ISSUE.id,{method:'DELETE'});
+  var d = await r.json();
+  if(d.ok){
+    ALL_ISSUES = ALL_ISSUES.filter(function(i){return i.id!==QC_POPUP_ISSUE.id;});
+    closeQCPopup();
+    updateKPIs(ALL_ISSUES); applyFilters(); renderQCPins();
+  }
+}
+
+// ── QC UPLOAD MODAL ───────────────────────────────────────────────────
+function openQCUploadModal(){ document.getElementById('qcUploadModal').classList.add('open'); document.getElementById('qcUpErr').textContent=''; document.getElementById('qcUpFile').value=''; }
+function closeQCUploadModal(){ document.getElementById('qcUploadModal').classList.remove('open'); }
 document.addEventListener('DOMContentLoaded', function(){
-  document.getElementById('qcUploadModal').addEventListener('click', function(e){
-    if(e.target === this) closeQCUploadModal();
-  });
+  document.getElementById('qcUploadModal').addEventListener('click', function(e){ if(e.target===this) closeQCUploadModal(); });
 });
-
 async function submitQCDrawing(){
   var file = document.getElementById('qcUpFile').files[0];
-  var type = document.getElementById('qcUpType').value;
   var err  = document.getElementById('qcUpErr');
-  if(!file){ err.textContent='Select an image file.'; return; }
-  var btn = document.getElementById('qcUpSubmit');
-  btn.disabled=true; btn.textContent='Uploading…';
-  err.textContent='';
-  var fd = new FormData();
-  fd.append('drawing', file);
-  fd.append('type', type);
+  if(!file){ err.textContent='Select an image.'; return; }
+  var btn  = document.getElementById('qcUpSubmit');
+  btn.disabled=true; btn.textContent='Uploading…'; err.textContent='';
+  var fd = new FormData(); fd.append('drawing', file); fd.append('type','plan');
   try{
-    var r = await fetch('/api/qc/upload-drawing', {method:'POST', body:fd});
+    var r = await fetch('/api/qc/upload-drawing',{method:'POST',body:fd});
     var d = await r.json();
-    if(d.ok){
-      QC_URLS[type] = d.url;
-      QC_IMG_LOADED[type] = false;
-      closeQCUploadModal();
-      // Reload current tab
-      if(type === QC_CURRENT_TAB) loadQCDrawingTab(type);
-    } else { err.textContent = d.error || 'Upload failed.'; }
-  }catch(ex){ err.textContent='Network error: '+ex.message; }
+    if(d.ok){ QC_URL=d.url; closeQCUploadModal(); loadQCImage(); }
+    else { err.textContent = d.error||'Upload failed.'; }
+  }catch(ex){ err.textContent='Network error.'; }
   finally{ btn.disabled=false; btn.textContent='Upload'; }
 }
 </script>
