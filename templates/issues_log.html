@@ -38,13 +38,13 @@ body{background:#f0f4f8;color:#f0f4f8;font-family:'Segoe UI',system-ui,sans-seri
 /* Table */
 .table-wrap{padding:0 20px 40px;overflow-x:auto}
 table{width:100%;border-collapse:collapse;min-width:700px}
-thead th{background:#f1f5f9;color:#64748b;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;padding:9px 10px;text-align:left;border-bottom:2px solid #e2e8f0;white-space:nowrap}
+thead th{background:#e8f0fa;color:#1e3a5f;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;padding:9px 10px;text-align:left;border-bottom:2px solid #c3d4ea;white-space:nowrap}
 tbody tr{border-bottom:1px solid #ffffff;cursor:pointer}
 tbody tr:hover td{background:#f1f5f9}
-tbody td{padding:10px;font-size:13px;vertical-align:top;color:#64748b}
+tbody td{padding:10px;font-size:13px;vertical-align:top;color:#374151}
 tbody td.td-unit{font-weight:800;color:#4f8ef7;white-space:nowrap}
 tbody td.td-title{color:#0f172a;font-weight:700;max-width:280px}
-tbody td.td-desc{color:#64748b;font-size:12px;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+tbody td.td-desc{color:#475569;font-size:12px;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 tbody td.td-date{white-space:nowrap;font-size:12px}
 
 /* Status badge */
@@ -480,7 +480,7 @@ footer{color:#64748b !important;border-top-color:#0f172a !important;}
   <button class="create-btn" onclick="openCreateModal()" style="height:32px;padding:0 14px;background:#7f1d1d;border:1px solid #ef4444;border-radius:7px;color:#fca5a5;font-size:12px;font-weight:700;cursor:pointer">＋ Create Issue</button>
   <button class="email-btn" onclick="sendEmail()" style="height:32px;padding:0 14px;background:#1e3a5f;border:1px solid #3b82f6;border-radius:7px;color:#60a5fa;font-size:12px;font-weight:700;cursor:pointer">✉ Email Report</button>
   <button class="print-btn" onclick="window.print()">🖨 Print / PDF</button>
-  <button id="tdgQCBtn" onclick="openQCOverlay()" style="height:32px;padding:0 14px;background:#7c3aed;border:1px solid #a855f7;border-radius:7px;color:#e9d5ff;font-size:12px;font-weight:700;cursor:pointer;display:none;">🏗 TDG QC</button>
+  <button id="tdgQCBtn" onclick="openQCOverlay()" style="height:32px;padding:0 14px;background:#7c3aed;border:1px solid #a855f7;border-radius:7px;color:#e9d5ff;font-size:12px;font-weight:700;cursor:pointer;">🏗 TDG QC</button>
 </div>
 
 <!-- KPI strip -->
@@ -628,7 +628,7 @@ function renderTable(data) {
     html += '<td><span class="cbadge">'+esc(issue.category||'—')+'</span></td>';
     html += '<td><span class="sbadge '+sc+'">'+esc(issue.status||'—')+'</span></td>';
     html += '<td class="td-desc">'+esc(issue.description||'—')+'</td>';
-    html += '<td style="font-size:11px;color:#64748b">'+esc(issue.created_by||'—')+'</td>';
+    html += '<td style="font-size:11px;color:#374151;font-weight:600">'+esc(issue.created_by||'—')+'</td>';
     var photos = (issue.photos && Array.isArray(issue.photos)) ? issue.photos : [];
     if(photos.length > 0){
       html += '<td class="td-pics"><span class="pic-badge">📷 '+photos.length+'</span></td>';
@@ -1375,7 +1375,7 @@ document.addEventListener('DOMContentLoaded', function(){
     // Show color picker near the tap
     showQCColorPicker(e.clientX, e.clientY);
   });
-  if(_qcLvl >= 2) document.getElementById('tdgQCBtn').style.display = 'block';
+  // button always visible (page-level role check guards access)
 });
 
 // ── COLOR PICKER ─────────────────────────────────────────────────────
