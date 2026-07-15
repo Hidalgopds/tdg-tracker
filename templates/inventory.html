@@ -397,6 +397,7 @@ footer{color:#94a3b8 !important;border-top-color:#e2e8f0 !important;}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
@@ -3898,21 +3899,62 @@ document.addEventListener('DOMContentLoaded',function(){
       showOcrStatus('OCR engine failed to load. Check your connection.','error');return;
     }
     var self=this;self.disabled=true;
-    showOcrStatus('Reading invoice... 0%','');
-    Tesseract.recognize(file,'spa+eng',{
-      logger:function(m){
-        if(m.status==='recognizing text')
-          showOcrStatus('Reading invoice... '+Math.round(m.progress*100)+'%','');
-      }
-    }).then(function(r){
-      var texto=(r.data.text||'').trim();
-      var ocrTxt=document.getElementById('factOcrText');if(ocrTxt)ocrTxt.value=texto;
-      var ocrFld=document.getElementById('factOcrField');if(ocrFld)ocrFld.style.display='block';
-      if(texto){autofillFact(texto);showOcrStatus('✅ Texto leído. Revisa y edita los campos.','done');}
-      else showOcrStatus('⚠ No se detectó texto. Try a clearer photo.','error');
-    }).catch(function(){
-      showOcrStatus('Error reading image. Try again.','error');
-    }).finally(function(){self.disabled=false;});
+    function _runTesseract(src){
+      showOcrStatus('Reading image... 0%','');
+      Tesseract.recognize(src,'spa+eng',{
+        logger:function(m){
+          if(m.status==='recognizing text')
+            showOcrStatus('Reading image... '+Math.round(m.progress*100)+'%','');
+        }
+      }).then(function(r){
+        var texto=(r.data.text||'').trim();
+        var ocrTxt=document.getElementById('factOcrText');if(ocrTxt)ocrTxt.value=texto;
+        var ocrFld=document.getElementById('factOcrField');if(ocrFld)ocrFld.style.display='block';
+        if(texto){autofillFact(texto);showOcrStatus('✅ Text read. Review fields.','done');}
+        else showOcrStatus('⚠ No text detected. Try a clearer photo.','error');
+      }).catch(function(){
+        showOcrStatus('Error reading image. Try again.','error');
+      }).finally(function(){self.disabled=false;});
+    }
+    var isPDF=(file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf'));
+    if(isPDF){
+      if(typeof pdfjsLib==='undefined'){showOcrStatus('PDF reader not loaded.','error');self.disabled=false;return;}
+      pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      showOcrStatus('📄 Reading PDF text...','');
+      var fr=new FileReader();
+      fr.onload=function(ev){
+        pdfjsLib.getDocument({data:new Uint8Array(ev.target.result)}).promise.then(function(pdf){
+          var chunks=[];var pages=[];
+          for(var p=1;p<=Math.min(pdf.numPages,4);p++){
+            (function(pn){pages.push(pdf.getPage(pn).then(function(pg){
+              return pg.getTextContent().then(function(tc){
+                chunks.push(tc.items.map(function(i){return i.str;}).join(' '));
+              });
+            }));})(p);
+          }
+          Promise.all(pages).then(function(){
+            var texto=chunks.join('\n').trim();
+            var ocrTxt=document.getElementById('factOcrText');if(ocrTxt)ocrTxt.value=texto;
+            var ocrFld=document.getElementById('factOcrField');if(ocrFld)ocrFld.style.display='block';
+            if(texto){autofillFact(texto);showOcrStatus('✅ PDF text extracted. Review fields.','done');}
+            else{
+              showOcrStatus('No text layer — trying image OCR...','');
+              pdf.getPage(1).then(function(pg){
+                var vp=pg.getViewport({scale:2});
+                var cv=document.createElement('canvas');cv.width=vp.width;cv.height=vp.height;
+                pg.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise.then(function(){_runTesseract(cv);});
+              });
+              return;
+            }
+            self.disabled=false;
+          });
+        }).catch(function(){showOcrStatus('Error reading PDF. Try again.','error');self.disabled=false;});
+      };
+      fr.readAsArrayBuffer(file);
+    } else {
+      if(typeof Tesseract==='undefined'){showOcrStatus('OCR engine failed to load.','error');self.disabled=false;return;}
+      _runTesseract(file);
+    }
   });
 
   var factForm=document.getElementById('factForm');
