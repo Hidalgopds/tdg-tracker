@@ -1272,36 +1272,56 @@ def create_issue():
 @app.route("/api/qc/upload-drawing", methods=["POST"])
 def upload_qc_drawing():
     file = request.files.get("drawing")
-    drawing_type = request.form.get("type", "3d")  # '3d' or 'plan'
+    drawing_type = request.form.get("type", "plan")  # 'plan' or '3d'
     if not file:
         return jsonify({"ok": False, "error": "No file"}), 400
     ext = (file.filename or "img").rsplit(".", 1)[-1].lower()
     if ext not in ("jpg","jpeg","png","webp"):
         ext = "jpg"
-    filename = f"qc-drawings/tdg-{drawing_type}.{ext}"
+    # No subfolder — use flat path like issue photos (avoids RLS issues)
+    filename = f"qc-{drawing_type}.{ext}"
     content_type = file.content_type or "image/jpeg"
-    resp = requests.put(
+    file_data = file.read()
+    pub_url = f"{SUPABASE_URL}/storage/v1/object/public/issue-photos/{filename}"
+    # Try POST (create)
+    resp = requests.post(
         f"{SUPABASE_URL}/storage/v1/object/issue-photos/{filename}",
-        data=file.read(),
+        data=file_data,
         headers={
             "apikey": SUPABASE_KEY,
             "Authorization": f"Bearer {SUPABASE_KEY}",
             "Content-Type": content_type,
-            "Cache-Control": "3600",
-            "x-upsert": "true"
+            "Cache-Control": "3600"
         }
     )
     if resp.ok:
-        url = f"{SUPABASE_URL}/storage/v1/object/public/issue-photos/{filename}"
-        return jsonify({"ok": True, "url": url})
-    return jsonify({"ok": False, "error": resp.text}), 500
+        return jsonify({"ok": True, "url": pub_url})
+    # 409 = already exists → delete then re-upload
+    if resp.status_code == 409:
+        requests.delete(
+            f"{SUPABASE_URL}/storage/v1/object/issue-photos/{filename}",
+            headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
+        )
+        resp2 = requests.post(
+            f"{SUPABASE_URL}/storage/v1/object/issue-photos/{filename}",
+            data=file_data,
+            headers={
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+                "Content-Type": content_type,
+                "Cache-Control": "3600"
+            }
+        )
+        if resp2.ok:
+            return jsonify({"ok": True, "url": pub_url})
+    return jsonify({"ok": False, "error": f"Upload error ({resp.status_code}). Check Supabase Storage bucket permissions."}), 500
 
 @app.route("/api/qc/drawings")
 def get_qc_drawings():
     base = f"{SUPABASE_URL}/storage/v1/object/public/issue-photos"
     return jsonify({
-        "3d":   f"{base}/qc-drawings/tdg-3d.jpg",
-        "plan": f"{base}/qc-drawings/tdg-plan.jpg"
+        "plan": f"{base}/qc-plan.jpg",
+        "3d":   f"{base}/qc-3d.jpg"
     })
 
 @app.route("/api/test-storage")
