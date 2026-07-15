@@ -553,13 +553,19 @@ function timeAgo(iso){
     </a>
 
     <a class="card card-issues" href="/issues-log" style="border-color:#7c3aed">
-      <div class="card-icon" style="background:#7c3aed;color:#fff">🔍</div>
       <div class="card-body">
-        <h3>QC — Quality Control</h3>
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;">
+          <div class="card-icon" style="background:#ede9fe;color:#7c3aed;width:60px;height:60px;font-size:30px;flex-shrink:0;">🔍</div>
+          <div>
+            <h3 style="font-size:26px;margin:0;line-height:1;">QC</h3>
+            <div style="font-size:12px;color:#64748b;font-weight:600;margin-top:2px;letter-spacing:0.3px;">Quality Control</div>
+          </div>
+        </div>
         <p>All open issues across every unit. Filter by unit, status, or category. Printable for site meetings.</p>
       </div>
       <div class="card-footer">
-        <span class="card-link">View QC Log →</span>
+        <span class="tag" style="background:#ede9fe;color:#7c3aed;border-color:#c4b5fd;">All Roles</span>
+        <span class="card-arrow">→</span>
       </div>
     </a>
 
