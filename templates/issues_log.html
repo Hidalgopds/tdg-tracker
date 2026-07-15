@@ -141,6 +141,40 @@ body{padding-bottom:60px !important;}
 .dp-photo-thumb{width:96px;height:96px;object-fit:cover;border-radius:8px;border:2px solid #e2e8f0;cursor:pointer;transition:transform .15s;}
 .dp-photo-thumb:hover{transform:scale(1.05);}
 </style>
+
+<style id="qc-style">
+/* TDG QC Overlay */
+#qcOverlay{display:none;position:fixed;inset:0;background:#060c18;z-index:600;flex-direction:column;}
+#qcOverlay.qc-open{display:flex;}
+.qc-header{background:#1e3a5f;padding:10px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap;}
+.qc-close{background:none;border:1px solid rgba(255,255,255,.2);border-radius:6px;color:#93c5fd;font-size:12px;font-weight:700;padding:4px 10px;cursor:pointer;}
+.qc-title{color:#fff;font-size:14px;font-weight:800;flex:1;}
+.qc-tab-btn{height:28px;padding:0 14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:20px;color:#94a3b8;font-size:12px;font-weight:700;cursor:pointer;transition:.15s;}
+.qc-tab-btn.qc-tab-active{background:#3b82f6;border-color:#3b82f6;color:#fff;}
+.qc-upload-btn{height:28px;padding:0 12px;background:#7c3aed;border:none;border-radius:7px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;display:none;}
+.qc-body{flex:1;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;background:#060c18;}
+#qcImgWrap{position:relative;display:inline-block;cursor:crosshair;max-width:100%;max-height:calc(100vh - 110px);}
+#qcDrawingImg{display:block;max-width:100%;max-height:calc(100vh - 110px);object-fit:contain;user-select:none;}
+#qcPinCanvas{position:absolute;top:0;left:0;pointer-events:none;}
+#qcNoImg{text-align:center;color:#475569;padding:40px;}
+#qcNoImg .ni-icon{font-size:48px;margin-bottom:12px;}
+#qcNoImg .ni-title{font-size:15px;font-weight:700;color:#64748b;margin-bottom:6px;}
+#qcNoImg .ni-sub{font-size:13px;color:#475569;margin-bottom:20px;}
+.qc-legend{position:absolute;bottom:12px;right:12px;background:rgba(6,12,24,.88);border:1px solid #1e3a5f;border-radius:8px;padding:8px 12px;font-size:11px;color:#94a3b8;}
+.qc-legend strong{display:block;margin-bottom:4px;color:#cbd5e1;font-size:10px;letter-spacing:.5px;}
+.qc-legend-row{display:flex;gap:10px;flex-wrap:wrap;}
+#qcPinTooltip{position:absolute;pointer-events:none;background:#1e3a5f;border:1px solid #3b82f6;border-radius:8px;padding:8px 10px;font-size:12px;color:#e2e8f0;max-width:200px;z-index:10;display:none;box-shadow:0 4px 16px rgba(0,0,0,.4);}
+/* Admin upload modal */
+#qcUploadModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:700;align-items:center;justify-content:center;}
+#qcUploadModal.open{display:flex;}
+.qc-um{background:#fff;border-radius:14px;padding:24px;width:90%;max-width:360px;}
+.qc-um h3{font-size:14px;font-weight:800;color:#0f172a;margin-bottom:16px;}
+.qc-um-field{margin-bottom:12px;}
+.qc-um-field label{display:block;font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
+.qc-um-field select,.qc-um-field input{width:100%;padding:8px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:13px;color:#0f172a;background:#f8fafc;}
+.qc-um-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;}
+</style>
+
 <!-- LIGHT-THEME -->
 
 <style id="light-theme">
@@ -429,6 +463,7 @@ footer{color:#64748b !important;border-top-color:#0f172a !important;}
   <button class="create-btn" onclick="openCreateModal()" style="height:32px;padding:0 14px;background:#7f1d1d;border:1px solid #ef4444;border-radius:7px;color:#fca5a5;font-size:12px;font-weight:700;cursor:pointer">＋ Create Issue</button>
   <button class="email-btn" onclick="sendEmail()" style="height:32px;padding:0 14px;background:#1e3a5f;border:1px solid #3b82f6;border-radius:7px;color:#60a5fa;font-size:12px;font-weight:700;cursor:pointer">✉ Email Report</button>
   <button class="print-btn" onclick="window.print()">🖨 Print / PDF</button>
+  <button id="tdgQCBtn" onclick="openQCOverlay()" style="height:32px;padding:0 14px;background:#7c3aed;border:1px solid #a855f7;border-radius:7px;color:#e9d5ff;font-size:12px;font-weight:700;cursor:pointer;display:none;">🏗 TDG QC</button>
 </div>
 
 <!-- KPI strip -->
@@ -820,7 +855,9 @@ async function submitEdit(){
 }
 
 // ── Create Issue Modal ────────────────────────────────────────────
-function openCreateModal(){
+var _QC_PIN = null; // {x, y, drawing_type} set when creating from drawing
+
+function openCreateModal(pinData){
   document.getElementById('mi-date').value = todayISO();
   document.getElementById('mi-err').textContent = '';
   document.getElementById('mi-thumbs').innerHTML = '';
@@ -828,6 +865,13 @@ function openCreateModal(){
   document.getElementById('mi-title').value = '';
   document.getElementById('mi-desc').value = '';
   document.getElementById('mi-unit').value = '';
+  _QC_PIN = pinData || null;
+  // Show pin badge if coming from drawing
+  var pinBadge = document.getElementById('mi-pin-badge');
+  if(pinBadge) {
+    pinBadge.style.display = _QC_PIN ? 'flex' : 'none';
+    if(_QC_PIN) pinBadge.textContent = '📍 Pinned on ' + (_QC_PIN.drawing_type === 'plan' ? 'Plan View' : '3D View');
+  }
   document.getElementById('createModal').classList.add('open');
 }
 function closeCreateModal(){
@@ -895,6 +939,7 @@ async function submitIssue(){
     photos: photoUrls,
     created_by: localStorage.getItem('mbrAuth') || ''
   };
+  if(_QC_PIN){ payload.pin_x = _QC_PIN.x; payload.pin_y = _QC_PIN.y; payload.drawing_type = _QC_PIN.drawing_type; }
 
   try{
     var r = await fetch('/api/issues', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
@@ -953,6 +998,64 @@ function sendEmail(){
 </script>
 
 <!-- Edit Issue Modal -->
+
+<!-- TDG QC Visual Drawing Overlay -->
+<div id="qcOverlay">
+  <div class="qc-header">
+    <button class="qc-close" onclick="closeQCOverlay()">✕ Close</button>
+    <span class="qc-title">🏗 TDG QC — Visual Issue Map</span>
+    <button id="qcTab3d" class="qc-tab-btn qc-tab-active" onclick="switchQCTab('3d')">📐 3D View</button>
+    <button id="qcTabPlan" class="qc-tab-btn" onclick="switchQCTab('plan')">🗺 Plan View</button>
+    <button id="qcUploadBtn" class="qc-upload-btn" onclick="openQCUploadModal()">⬆ Upload Drawing</button>
+  </div>
+  <div class="qc-body" id="qcBody">
+    <div id="qcImgWrap" style="display:none;">
+      <img id="qcDrawingImg" src="" alt="TDG Drawing" onload="onQCImgLoad()" onclick="qcDrawingClick(event)">
+      <canvas id="qcPinCanvas"></canvas>
+      <div id="qcPinTooltip"></div>
+    </div>
+    <div id="qcNoImg">
+      <div class="ni-icon">📐</div>
+      <div class="ni-title">No Drawing Uploaded</div>
+      <div class="ni-sub">An admin can upload the structural drawings using the ⬆ Upload Drawing button above.</div>
+      <button onclick="openQCUploadModal()" id="qcNoImgUploadBtn" style="display:none;height:36px;padding:0 18px;background:#7c3aed;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">⬆ Upload Now</button>
+    </div>
+    <div class="qc-legend" id="qcLegend" style="display:none;">
+      <strong>PINS</strong>
+      <div class="qc-legend-row">
+        <span style="color:#ef4444">● Open</span>
+        <span style="color:#f59e0b">● On Hold</span>
+        <span style="color:#60a5fa">● Monitoring</span>
+        <span style="color:#22c55e">● Resolved</span>
+      </div>
+      <div style="margin-top:4px;font-size:10px;color:#475569;">Tap drawing to log new issue</div>
+    </div>
+  </div>
+</div>
+
+<!-- QC Drawing Upload Modal -->
+<div id="qcUploadModal">
+  <div class="qc-um">
+    <h3>📐 Upload Structural Drawing</h3>
+    <div class="qc-um-field">
+      <label>Drawing Type</label>
+      <select id="qcUpType">
+        <option value="3d">3D Isometric View</option>
+        <option value="plan">Plan View (Floor Plan)</option>
+      </select>
+    </div>
+    <div class="qc-um-field">
+      <label>Image File (JPG, PNG)</label>
+      <input type="file" id="qcUpFile" accept="image/*">
+    </div>
+    <div id="qcUpErr" style="color:#ef4444;font-size:12px;min-height:16px;"></div>
+    <div class="qc-um-footer">
+      <button onclick="closeQCUploadModal()" style="height:34px;padding:0 14px;background:#e2e8f0;border:1px solid #cbd5e1;border-radius:7px;color:#64748b;font-size:13px;font-weight:700;cursor:pointer;">Cancel</button>
+      <button id="qcUpSubmit" onclick="submitQCDrawing()" style="height:34px;padding:0 16px;background:#7c3aed;border:none;border-radius:7px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">Upload</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="editModal">
   <div class="modal">
     <button class="close-btn" onclick="closeEditModal()">✕</button>
@@ -1052,6 +1155,7 @@ function sendEmail(){
         </select>
       </div>
     </div>
+    <div id="mi-pin-badge" style="display:none;align-items:center;gap:6px;padding:6px 10px;background:#ede9fe;border:1px solid #c4b5fd;border-radius:7px;font-size:12px;font-weight:700;color:#7c3aed;margin-bottom:8px;"></div>
     <div class="mfield">
       <label>Description</label>
       <textarea id="mi-desc" placeholder="What happened? Where? What is the impact?"></textarea>
@@ -1068,6 +1172,202 @@ function sendEmail(){
     </div>
   </div>
 </div>
+
+
+<script>
+// ── TDG QC Drawing View ─────────────────────────────────────────────
+var QC_CURRENT_TAB = '3d';
+var QC_URLS = {'3d': null, 'plan': null};
+var QC_IMG_LOADED = {'3d': false, 'plan': false};
+var QC_PENDING_PIN = null;
+
+var _qcRole = localStorage.getItem('mbrRole')||'';
+var _qcLvl  = {admin:5,boss:4,inventory:3,lead:2,worker:1}[_qcRole]||0;
+
+function openQCOverlay(){
+  document.getElementById('qcOverlay').classList.add('qc-open');
+  document.body.style.overflow='hidden';
+  // Show admin upload button
+  if(_qcLvl >= 4){
+    document.getElementById('qcUploadBtn').style.display='block';
+    document.getElementById('qcNoImgUploadBtn').style.display='block';
+  }
+  loadQCDrawings();
+}
+
+function closeQCOverlay(){
+  document.getElementById('qcOverlay').classList.remove('qc-open');
+  document.body.style.overflow='';
+}
+
+function switchQCTab(tab){
+  QC_CURRENT_TAB = tab;
+  document.getElementById('qcTab3d').classList.toggle('qc-tab-active', tab==='3d');
+  document.getElementById('qcTabPlan').classList.toggle('qc-tab-active', tab==='plan');
+  loadQCDrawingTab(tab);
+}
+
+async function loadQCDrawings(){
+  try{
+    var r = await fetch('/api/qc/drawings');
+    var d = await r.json();
+    QC_URLS['3d']   = d['3d'];
+    QC_URLS['plan'] = d['plan'];
+  }catch(e){}
+  loadQCDrawingTab(QC_CURRENT_TAB);
+}
+
+function loadQCDrawingTab(tab){
+  var url = QC_URLS[tab];
+  var wrap = document.getElementById('qcImgWrap');
+  var noImg = document.getElementById('qcNoImg');
+  var img = document.getElementById('qcDrawingImg');
+  if(!url){ wrap.style.display='none'; noImg.style.display='block'; return; }
+  // Attempt to load — use cache-busted URL to detect 404
+  var testImg = new Image();
+  testImg.onload = function(){
+    img.src = url + '?t=' + Date.now();
+    wrap.style.display = 'inline-block';
+    noImg.style.display = 'none';
+    document.getElementById('qcLegend').style.display = 'block';
+    QC_IMG_LOADED[tab] = true;
+  };
+  testImg.onerror = function(){
+    wrap.style.display = 'none';
+    noImg.style.display = 'block';
+    document.getElementById('qcLegend').style.display = 'none';
+    QC_IMG_LOADED[tab] = false;
+  };
+  testImg.src = url + '?probe=' + Date.now();
+}
+
+function onQCImgLoad(){
+  // Sync canvas size to image display size, then draw pins
+  setTimeout(renderQCPins, 80);
+}
+
+function renderQCPins(){
+  var img    = document.getElementById('qcDrawingImg');
+  var canvas = document.getElementById('qcPinCanvas');
+  var rect   = img.getBoundingClientRect();
+  var wrap   = document.getElementById('qcImgWrap');
+  var wRect  = wrap.getBoundingClientRect();
+  // Position canvas over image
+  canvas.width  = rect.width;
+  canvas.height = rect.height;
+  canvas.style.width  = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+  canvas.style.left   = (rect.left - wRect.left) + 'px';
+  canvas.style.top    = (rect.top  - wRect.top)  + 'px';
+
+  var ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  var pinColor = {'Open':'#ef4444','On Hold':'#f59e0b','Monitoring':'#60a5fa','Resolved':'#22c55e'};
+  var tab = QC_CURRENT_TAB;
+  var n = 0;
+
+  ALL_ISSUES.forEach(function(issue){
+    if(issue.pin_x == null || issue.pin_y == null) return;
+    if(issue.drawing_type !== tab) return;
+    n++;
+    var px = issue.pin_x / 100 * rect.width;
+    var py = issue.pin_y / 100 * rect.height;
+    var col = pinColor[issue.status] || '#94a3b8';
+
+    // Glow
+    ctx.beginPath(); ctx.arc(px, py, 14, 0, Math.PI*2);
+    ctx.fillStyle = col + '30'; ctx.fill();
+    // Circle
+    ctx.beginPath(); ctx.arc(px, py, 10, 0, Math.PI*2);
+    ctx.fillStyle = col; ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+    // Number
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 9px system-ui,sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(n, px, py);
+  });
+
+  // Pending (cursor) pin
+  if(QC_PENDING_PIN){
+    var px2 = QC_PENDING_PIN.x / 100 * rect.width;
+    var py2 = QC_PENDING_PIN.y / 100 * rect.height;
+    ctx.beginPath(); ctx.arc(px2, py2, 14, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(168,85,247,0.3)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(px2, py2, 10, 0, Math.PI*2);
+    ctx.fillStyle = '#a855f7'; ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 12px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('+', px2, py2);
+  }
+}
+
+function qcDrawingClick(e){
+  var img  = document.getElementById('qcDrawingImg');
+  var rect = img.getBoundingClientRect();
+  var x = Math.round((e.clientX - rect.left) / rect.width  * 1000) / 10;
+  var y = Math.round((e.clientY - rect.top)  / rect.height * 1000) / 10;
+  QC_PENDING_PIN = {x: x, y: y, drawing_type: QC_CURRENT_TAB};
+  renderQCPins();
+  // Open create issue modal from QC
+  closeQCOverlay();
+  openCreateModal(QC_PENDING_PIN);
+  QC_PENDING_PIN = null;
+}
+
+// Show/hide QC button based on role (min level 2)
+document.addEventListener('DOMContentLoaded', function(){
+  if(_qcLvl >= 2) document.getElementById('tdgQCBtn').style.display = 'block';
+});
+
+// Resize: re-render pins when window resizes
+window.addEventListener('resize', function(){
+  if(document.getElementById('qcOverlay').classList.contains('qc-open')) renderQCPins();
+});
+
+// ── QC Upload Modal ──────────────────────────────────────────────────
+function openQCUploadModal(){
+  document.getElementById('qcUploadModal').classList.add('open');
+  document.getElementById('qcUpErr').textContent = '';
+  document.getElementById('qcUpFile').value = '';
+}
+function closeQCUploadModal(){
+  document.getElementById('qcUploadModal').classList.remove('open');
+}
+document.addEventListener('DOMContentLoaded', function(){
+  document.getElementById('qcUploadModal').addEventListener('click', function(e){
+    if(e.target === this) closeQCUploadModal();
+  });
+});
+
+async function submitQCDrawing(){
+  var file = document.getElementById('qcUpFile').files[0];
+  var type = document.getElementById('qcUpType').value;
+  var err  = document.getElementById('qcUpErr');
+  if(!file){ err.textContent='Select an image file.'; return; }
+  var btn = document.getElementById('qcUpSubmit');
+  btn.disabled=true; btn.textContent='Uploading…';
+  err.textContent='';
+  var fd = new FormData();
+  fd.append('drawing', file);
+  fd.append('type', type);
+  try{
+    var r = await fetch('/api/qc/upload-drawing', {method:'POST', body:fd});
+    var d = await r.json();
+    if(d.ok){
+      QC_URLS[type] = d.url;
+      QC_IMG_LOADED[type] = false;
+      closeQCUploadModal();
+      // Reload current tab
+      if(type === QC_CURRENT_TAB) loadQCDrawingTab(type);
+    } else { err.textContent = d.error || 'Upload failed.'; }
+  }catch(ex){ err.textContent='Network error: '+ex.message; }
+  finally{ btn.disabled=false; btn.textContent='Upload'; }
+}
+</script>
 
 <script>
 // ── Auth gate (cross-page via localStorage) ──────────────────────

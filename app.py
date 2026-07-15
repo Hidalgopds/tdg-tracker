@@ -1246,16 +1246,20 @@ def create_issue():
     if not data or not data.get("unit") or not data.get("title"):
         return jsonify({"ok": False, "error": "unit and title required"}), 400
     row = {
-        "unit":        data["unit"],
-        "date":        data.get("date", date.today().isoformat()),
-        "title":       data["title"],
-        "status":      data.get("status", "Open"),
-        "category":    data.get("category", "Other"),
-        "description": data.get("description", ""),
-        "resolution":  data.get("resolution", ""),
-        "photos":      data.get("photos", []),
-        "created_by":  data.get("created_by", "")
+        "unit":         data["unit"],
+        "date":         data.get("date", date.today().isoformat()),
+        "title":        data["title"],
+        "status":       data.get("status", "Open"),
+        "category":     data.get("category", "Other"),
+        "description":  data.get("description", ""),
+        "resolution":   data.get("resolution", ""),
+        "photos":       data.get("photos", []),
+        "created_by":   data.get("created_by", "")
     }
+    if data.get("pin_x") is not None:
+        row["pin_x"]        = data["pin_x"]
+        row["pin_y"]        = data.get("pin_y")
+        row["drawing_type"] = data.get("drawing_type", "3d")
     resp = requests.post(
         f"{SUPABASE_URL}/rest/v1/unit_issues",
         json=row,
@@ -1264,6 +1268,41 @@ def create_issue():
     if resp.status_code in (200, 201):
         return jsonify({"ok": True})
     return jsonify({"ok": False, "error": resp.text}), 500
+
+@app.route("/api/qc/upload-drawing", methods=["POST"])
+def upload_qc_drawing():
+    file = request.files.get("drawing")
+    drawing_type = request.form.get("type", "3d")  # '3d' or 'plan'
+    if not file:
+        return jsonify({"ok": False, "error": "No file"}), 400
+    ext = (file.filename or "img").rsplit(".", 1)[-1].lower()
+    if ext not in ("jpg","jpeg","png","webp"):
+        ext = "jpg"
+    filename = f"qc-drawings/tdg-{drawing_type}.{ext}"
+    content_type = file.content_type or "image/jpeg"
+    resp = requests.put(
+        f"{SUPABASE_URL}/storage/v1/object/issue-photos/{filename}",
+        data=file.read(),
+        headers={
+            "apikey": SUPABASE_KEY,
+            "Authorization": f"Bearer {SUPABASE_KEY}",
+            "Content-Type": content_type,
+            "Cache-Control": "3600",
+            "x-upsert": "true"
+        }
+    )
+    if resp.ok:
+        url = f"{SUPABASE_URL}/storage/v1/object/public/issue-photos/{filename}"
+        return jsonify({"ok": True, "url": url})
+    return jsonify({"ok": False, "error": resp.text}), 500
+
+@app.route("/api/qc/drawings")
+def get_qc_drawings():
+    base = f"{SUPABASE_URL}/storage/v1/object/public/issue-photos"
+    return jsonify({
+        "3d":   f"{base}/qc-drawings/tdg-3d.jpg",
+        "plan": f"{base}/qc-drawings/tdg-plan.jpg"
+    })
 
 @app.route("/api/test-storage")
 def test_storage():
