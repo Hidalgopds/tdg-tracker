@@ -87,7 +87,7 @@ tbody td.td-date{white-space:nowrap;font-size:12px}
 }
 
 /* Modal */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:900;align-items:center;justify-content:center}
 .modal-overlay.open{display:flex}
 .modal{background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;padding:24px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;position:relative}
 .modal h2{font-size:15px;font-weight:800;margin-bottom:18px;color:#0f172a}
@@ -893,6 +893,11 @@ function openCreateModal(pinData){
     var sel = document.getElementById('mi-status');
     if(sel){ for(var oi=0;oi<sel.options.length;oi++){ if(sel.options[oi].value===pinData.status){sel.selectedIndex=oi;break;} } }
   }
+  // Pre-set unit from QC unit selector
+  if(pinData && pinData.unit){
+    var uSel = document.getElementById('mi-unit');
+    if(uSel){ for(var ui=0;ui<uSel.options.length;ui++){ if(uSel.options[ui].value===pinData.unit){uSel.selectedIndex=ui;break;} } }
+  }
   document.getElementById('createModal').classList.add('open');
 }
 function closeCreateModal(){
@@ -1026,6 +1031,24 @@ function sendEmail(){
     <button class="qc-close" onclick="closeQCOverlay()">✕ Close</button>
     <span class="qc-title">🏗 TDG QC — Issue Map</span>
     <span id="qcIssueCount" style="font-size:11px;color:#93c5fd;font-weight:600;"></span>
+    <select id="qcUnitSel" style="height:30px;padding:0 8px;background:#1e3a5f;border:1px solid #3b82f6;border-radius:7px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;min-width:110px;" onchange="renderQCPins()">
+      <option value="">All Units</option>
+      <optgroup label="A Series" style="color:#fff">
+        <option>01A</option><option>02A</option><option>03A</option><option>04A</option>
+        <option>05A</option><option>06A</option><option>07A</option><option>08A</option>
+        <option>09A</option><option>10A</option>
+      </optgroup>
+      <optgroup label="B Series" style="color:#fff">
+        <option>01B</option><option>02B</option><option>03B</option><option>04B</option>
+        <option>05B</option><option>06B</option><option>07B</option><option>08B</option>
+        <option>09B</option><option>10B</option><option>11B</option><option>12B</option>
+        <option>13B</option><option>14B</option><option>15B</option><option>16B</option>
+        <option>17B</option><option>18B</option><option>19B</option><option>20B</option>
+        <option>21B</option><option>22B</option><option>23B</option><option>24B</option>
+        <option>25B</option><option>26B</option><option>27B</option><option>28B</option>
+      </optgroup>
+    </select>
+    <span style="font-size:11px;color:#93c5fd;">Tap drawing to log an issue</span>
     <button id="qcUploadBtn" class="qc-upload-btn" onclick="openQCUploadModal()">⬆ Upload Drawing</button>
   </div>
   <div class="qc-body" id="qcBody">
@@ -1284,15 +1307,18 @@ var PIN_COLORS = {'Open':'#ef4444','On Hold':'#f59e0b','Monitoring':'#60a5fa','R
 function renderQCPins(){
   var img = document.getElementById('qcDrawingImg');
   var svg = document.getElementById('qcSvgOverlay');
+  if(!img || !svg) return;
   svg.setAttribute('viewBox','0 0 '+img.naturalWidth+' '+img.naturalHeight);
   svg.innerHTML = '';
+
+  var filterUnit = (document.getElementById('qcUnitSel')||{}).value || '';
 
   // Legend
   var legendDiv = document.getElementById('qcLegend');
   var legendItems = document.getElementById('qcLegendItems');
   var legendHTML = '';
 
-  var pinned = ALL_ISSUES.filter(function(i){ return i.pin_x != null && i.pin_y != null; });
+  var pinned = ALL_ISSUES.filter(function(i){ return i.pin_x != null && i.pin_y != null && (!filterUnit || i.unit_id === filterUnit); });
   pinned.forEach(function(issue, idx){
     var n = idx + 1;
     var col = PIN_COLORS[issue.status] || '#94a3b8';
