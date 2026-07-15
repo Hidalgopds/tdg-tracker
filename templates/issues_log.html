@@ -1424,10 +1424,10 @@ function showQCPopup(issue){
   var actDiv = document.getElementById('qcPopupActions');
   var btnHTML = '';
   if(issue.status !== 'Resolved'){
-    btnHTML += '<button class="qc-popup-btn" style="background:#14532d;color:#86efac;" onclick="qcSetStatus('Resolved')">✓ Resolve</button>';
-    btnHTML += '<button class="qc-popup-btn" style="background:#451a03;color:#fcd34d;" onclick="qcSetStatus('On Hold')">⏸ On Hold</button>';
+    btnHTML += '<button class="qc-popup-btn" style="background:#14532d;color:#86efac;" onclick="qcSetStatus(&apos;Resolved&apos;)">✓ Resolve</button>';
+    btnHTML += '<button class="qc-popup-btn" style="background:#451a03;color:#fcd34d;" onclick="qcSetStatus(&apos;On Hold&apos;)">⏸ On Hold</button>';
   } else {
-    btnHTML += '<button class="qc-popup-btn" style="background:#1e3a5f;color:#60a5fa;" onclick="qcSetStatus('Open')">↩ Reopen</button>';
+    btnHTML += '<button class="qc-popup-btn" style="background:#1e3a5f;color:#60a5fa;" onclick="qcSetStatus(&apos;Open&apos;)">↩ Reopen</button>';
   }
   if(_qcLvl >= 4){
     btnHTML += '<button class="qc-popup-btn" style="background:#450a0a;color:#fca5a5;margin-left:auto;" onclick="qcDeletePin()">🗑 Delete</button>';
