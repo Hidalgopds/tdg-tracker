@@ -147,6 +147,8 @@ body{padding-bottom:60px !important;}
 #qcOverlay{display:none;position:fixed;inset:0;background:#0a0f1a;z-index:600;flex-direction:column;}
 #qcOverlay.qc-open{display:flex;}
 .qc-header{background:#1e3a5f;padding:10px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap;}
+.qc-sel{height:30px;padding:0 24px 0 10px;background:#0f1e35;border:1px solid #3b82f6;border-radius:7px;color:#e2e8f0;font-size:12px;font-weight:700;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2393c5fd'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;}
+.qc-sel option,.qc-sel optgroup{background:#0f1e35;color:#e2e8f0;}
 .qc-close{background:none;border:1px solid rgba(255,255,255,.2);border-radius:6px;color:#93c5fd;font-size:12px;font-weight:700;padding:5px 12px;cursor:pointer;}
 .qc-title{color:#fff;font-size:14px;font-weight:800;flex:1;min-width:120px;}
 .qc-upload-btn{height:28px;padding:0 12px;background:#7c3aed;border:none;border-radius:7px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;display:none;}
@@ -1037,11 +1039,11 @@ function sendEmail(){
   <div class="qc-header">
     <button class="qc-close" onclick="closeQCOverlay()">✕ Close</button>
     <span class="qc-title">🏗 TDG QC — Issue Map</span>
-    <select id="qcDrawingSel" style="height:30px;padding:0 8px;background:#1e293b;border:1px solid #475569;border-radius:7px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;appearance:none;-webkit-appearance:none;" onchange="switchQCDrawing()">
+    <select id="qcDrawingSel" class="qc-sel" onchange="switchQCDrawing()">
       <option value="plan">Drawing 1</option>
       <option value="plan2">Drawing 2</option>
     </select>
-    <select id="qcUnitSel" style="height:30px;padding:0 8px;background:#1e3a5f;border:1px solid #3b82f6;border-radius:7px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;min-width:110px;" onchange="renderQCPins()">
+    <select id="qcUnitSel" class="qc-sel" style="min-width:110px;" onchange="renderQCPins()">
       <option value="">All Units</option>
       <optgroup label="A Series">
         <option>01A</option><option>02A</option><option>03A</option><option>04A</option>
