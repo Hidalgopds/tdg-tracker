@@ -2521,9 +2521,14 @@ function confirmXlsxImport(){
       closeModal('xlsxPreviewModal');loadInv();return;
     }
     var _key=(_xlsxParsed[i].name||'').toLowerCase().trim();
-    var _existId=(function(){for(var j=0;j<ITEMS.length;j++){if((ITEMS[j].name||'').toLowerCase().trim()===_key)return ITEMS[j].id;}return null;})();
+    var _existId=null,_existItem=null;
+    for(var j=0;j<ITEMS.length;j++){if((ITEMS[j].name||'').toLowerCase().trim()===_key){_existId=ITEMS[j].id;_existItem=ITEMS[j];break;}}
     var payload=Object.assign({},_xlsxParsed[i],{editor:editor,created_by:createdBy,updated_by:editor});
     if(_existId){
+      // ADD incoming qty to existing stock instead of replacing
+      if(payload.qty_on_hand!==undefined&&payload.qty_on_hand!==null&&_existItem){
+        payload.qty_on_hand=(_existItem.qty_on_hand||0)+(+payload.qty_on_hand||0);
+      }
       fetch('/api/inventory/'+_existId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
       .then(function(r){return r.json();}).then(function(d){d.ok?done++:errs++;next(i+1);})
       .catch(function(){errs++;next(i+1);});
