@@ -1275,7 +1275,7 @@ function closeQCOverlay(){
   closeQCColorPicker();
 }
 
-async var QC_DRAWINGS = {plan: '/static/qc-plan.png', plan2: '/static/qc-plan2.png'};
+var QC_DRAWINGS = {plan: '/static/qc-plan.png', plan2: '/static/qc-plan2.png'};
 function fetchQCDrawing(){
   var sel = document.getElementById('qcDrawingSel');
   var key = sel ? sel.value : 'plan';
