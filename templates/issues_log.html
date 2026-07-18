@@ -488,6 +488,7 @@ footer{color:#64748b !important;border-top-color:#0f172a !important;}
   <span id="lastRefresh" style="font-size:11px;color:#0f172a"></span>
   <button class="create-btn" onclick="openCreateModal()" style="height:32px;padding:0 14px;background:#7f1d1d;border:1px solid #ef4444;border-radius:7px;color:#fca5a5;font-size:12px;font-weight:700;cursor:pointer">＋ Create Issue</button>
   <button onclick="openPunchListModal()" style="height:32px;padding:0 14px;background:#14532d;border:1px solid #22c55e;border-radius:7px;color:#86efac;font-size:12px;font-weight:700;cursor:pointer">✅ Punch List</button>
+  <button id="tdgQCBtn" onclick="openQCOverlay()" style="height:32px;padding:0 14px;background:#7c3aed;border:1px solid #a855f7;border-radius:7px;color:#e9d5ff;font-size:12px;font-weight:700;cursor:pointer;">🏗 TDG QC</button>
   <button class="email-btn" onclick="sendEmail()" style="height:32px;padding:0 14px;background:#1e3a5f;border:1px solid #3b82f6;border-radius:7px;color:#60a5fa;font-size:12px;font-weight:700;cursor:pointer">✉ Email Report</button>
   <button class="print-btn" onclick="window.print()">🖨 Print / PDF</button>
 </div>
@@ -1077,8 +1078,8 @@ function sendEmail(){
     <button class="qc-close" onclick="closeQCOverlay()">✕ Close</button>
     <span class="qc-title">🏗 TDG QC — Issue Map</span>
     <select id="qcDrawingSel" class="qc-sel" onchange="switchQCDrawing()">
-      <option value="plan">Drawing 1</option>
-      <option value="plan2">Drawing 2</option>
+      <option value="plan">Unit Plan</option>
+      <option value="plan2">Strut Plan</option>
     </select>
     <select id="qcUnitSel" class="qc-sel" style="min-width:110px;" onchange="renderQCPins()">
       <option value="">All Units</option>
@@ -1373,7 +1374,8 @@ function renderQCPins(){
   var legendItems = document.getElementById('qcLegendItems');
   var legendHTML = '';
 
-  var pinned = ALL_ISSUES.filter(function(i){ return i.pin_x != null && i.pin_y != null && (!filterUnit || i.unit_id === filterUnit); });
+  var filterDrawing = (document.getElementById('qcDrawingSel')||{}).value || 'plan';
+  var pinned = ALL_ISSUES.filter(function(i){ return i.pin_x != null && i.pin_y != null && (!filterUnit || i.unit_id === filterUnit) && (i.drawing_type === filterDrawing || (!i.drawing_type && filterDrawing === 'plan')); });
   pinned.forEach(function(issue, idx){
     var n = idx + 1;
     var col = PIN_COLORS[issue.status] || '#94a3b8';
@@ -1480,7 +1482,7 @@ function qcColorPicked(color, status){
   if(!QC_PENDING) return;
   // Pass pin + color to create modal
   closeQCOverlay();
-  openCreateModal({x: QC_PENDING.x, y: QC_PENDING.y, drawing_type:'plan', color: color, status: status});
+  openCreateModal({x: QC_PENDING.x, y: QC_PENDING.y, drawing_type: (document.getElementById('qcDrawingSel') ? document.getElementById('qcDrawingSel').value : 'plan'), color: color, status: status});
   QC_PENDING = null;
 }
 
