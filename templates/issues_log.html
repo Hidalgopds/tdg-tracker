@@ -96,7 +96,7 @@ tbody td.td-date{white-space:nowrap;font-size:12px}
 .modal .close-btn:hover{color:#0f172a}
 .mfield{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
 .mfield label{font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.6px}
-.mfield input,.mfield textarea,.mfield select{background:#060c18;border:1px solid #e2e8f0;border-radius:7px;color:#0f172a;font-size:13px;padding:8px 10px;outline:none;font-family:inherit}
+.mfield input,.mfield textarea,.mfield select{background:#f1f5f9;border:1px solid #cbd5e1;border-radius:7px;color:#1e293b;font-size:13px;padding:8px 10px;outline:none;font-family:inherit}
 .mfield input:focus,.mfield textarea:focus,.mfield select:focus{border-color:#3b82f6}
 .mfield textarea{resize:vertical;min-height:70px}
 .mrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -622,6 +622,14 @@ function statusClass(s) {
   return s.replace(/\s+/g,'-');
 }
 
+function viewOnQCMap(e, issueId){
+  e.stopPropagation();
+  var issue = ALL_ISSUES.find(function(i){return i.id==issueId;});
+  if(!issue || issue.pin_x==null) return;
+  var drawSel = document.getElementById('qcDrawingSel');
+  if(drawSel) drawSel.value = issue.drawing_type || 'plan';
+  openQCOverlay();
+}
 function renderTable(data) {
   var body = document.getElementById('issueBody');
   if (!data.length) {
@@ -634,7 +642,7 @@ function renderTable(data) {
     html += '<tr class="issue-row" onclick="toggleDetail(this,\''+esc(issue.id)+'\')" data-id="'+esc(issue.id)+'">';
     html += '<td class="td-unit">'+esc(issue.unit)+'</td>';
     html += '<td class="td-date">'+fmtDate(issue.date)+'</td>';
-    html += '<td class="td-title">'+esc(issue.title)+'</td>';
+    html += '<td class="td-title">'+(issue.pin_x!=null?'<span title="Pinned on drawing" style="color:#a78bfa;margin-right:4px;">📍</span>':'')+esc(issue.title)+'</td>';
     html += '<td><span class="cbadge">'+esc(issue.category||'—')+'</span></td>';
     html += '<td><span class="sbadge '+sc+'">'+esc(issue.status||'—')+'</span></td>';
     html += '<td class="td-desc">'+esc(issue.description||'—')+'</td>';
@@ -671,6 +679,7 @@ function renderTable(data) {
       html += '<button class="status-btn sb-reopen" onclick="setStatus(event,\''+esc(issue.id)+'\',\'Open\')">↩ Reopen</button>';
     }
     html += '<a href="/issues/'+esc(issue.unit)+'" style="display:inline-flex;align-items:center;height:28px;padding:0 12px;background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;font-weight:700;color:#4f8ef7">↗ Open Unit</a>';
+    if(issue.pin_x!=null){ html += '<button onclick="viewOnQCMap(event,\'' +esc(issue.id)+ '\')" style="height:28px;padding:0 12px;background:#2e1065;border:1px solid #a78bfa;border-radius:6px;font-size:11px;font-weight:700;color:#c4b5fd;cursor:pointer;margin-left:6px">📍 View on Map</button>'; }
     html += '<button onclick="printIssue(event,\''+esc(issue.id)+'\')" style="height:28px;padding:0 12px;background:#e2e8f0;border:1px solid #475569;border-radius:6px;font-size:11px;font-weight:700;color:#64748b;cursor:pointer;margin-left:auto">🖨 Print</button>';
     html += '<button onclick="openEditModal(event,\''+esc(issue.id)+'\')" style="height:28px;padding:0 12px;background:#1e3a5f;border:1px solid #3b82f6;border-radius:6px;font-size:11px;font-weight:700;color:#60a5fa;cursor:pointer;margin-left:6px">✎ Edit Issue</button>';
     html += '<button onclick="deleteIssue(event,\''+esc(issue.id)+'\')" style="height:28px;padding:0 12px;background:#450a0a;border:1px solid #ef4444;border-radius:6px;font-size:11px;font-weight:700;color:#fca5a5;cursor:pointer;margin-left:6px">🗑 Delete</button>';
@@ -896,7 +905,7 @@ function openCreateModal(pinData){
   var pinBadge = document.getElementById('mi-pin-badge');
   if(pinBadge){
     pinBadge.style.display = _QC_PIN ? 'flex' : 'none';
-    if(_QC_PIN) pinBadge.textContent = '📍 Pinned on Plan View';
+    if(_QC_PIN){ var dname = _QC_PIN.drawing_type==='plan2' ? 'Strut Plan' : 'Unit Plan'; pinBadge.textContent = '📍 Pinned on '+dname; }
   }
   // Pre-set status from color chosen on drawing
   if(pinData && pinData.status){
@@ -1375,7 +1384,7 @@ function renderQCPins(){
   var legendHTML = '';
 
   var filterDrawing = (document.getElementById('qcDrawingSel')||{}).value || 'plan';
-  var pinned = ALL_ISSUES.filter(function(i){ return i.pin_x != null && i.pin_y != null && (!filterUnit || i.unit_id === filterUnit) && (i.drawing_type === filterDrawing || (!i.drawing_type && filterDrawing === 'plan')); });
+  var pinned = ALL_ISSUES.filter(function(i){ return i.pin_x != null && i.pin_y != null && (!filterUnit || i.unit === filterUnit) && (i.drawing_type === filterDrawing || (!i.drawing_type && filterDrawing === 'plan')); });
   pinned.forEach(function(issue, idx){
     var n = idx + 1;
     var col = PIN_COLORS[issue.status] || '#94a3b8';
