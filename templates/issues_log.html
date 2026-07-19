@@ -30,8 +30,8 @@ body{background:#f0f4f8;color:#f0f4f8;font-family:'Segoe UI',system-ui,sans-seri
 
 /* Filter bar */
 .filter-bar{padding:0 20px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.filter-bar select,.filter-bar input{background:#ffffff !important;border:1px solid #e2e8f0;border-radius:7px;color:#0f172a !important;font-size:12px;padding:6px 10px;outline:none;height:32px;-webkit-appearance:none;appearance:none;}
-.filter-bar select option{background:#ffffff !important;color:#0f172a !important;}
+.filter-bar select,.filter-bar input{background:#ffffff !important;border:1px solid #cbd5e1;border-radius:7px;color:#000 !important;font-size:12px;font-weight:700;padding:6px 10px;outline:none;height:32px;-webkit-appearance:none;appearance:none;}
+.filter-bar select option{background:#ffffff !important;color:#000 !important;}
 .filter-bar select:focus,.filter-bar input:focus{border-color:#3b82f6}
 .filter-bar input{min-width:200px}
 .fbadge{font-size:11px;color:#0f172a;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
@@ -510,22 +510,17 @@ footer{color:#64748b !important;border-top-color:#0f172a !important;}
 <!-- Filters -->
 <div class="filter-bar">
   <span class="fbadge">Filter:</span>
+  <select id="fPhase" onchange="onFilterPhaseChange()">
+    <option value="">All Phases</option>
+    <option value="1">Phase 1</option><option value="2">Phase 2</option>
+    <option value="3">Phase 3</option><option value="4">Phase 4</option>
+    <option value="5">Phase 5</option><option value="6">Phase 6</option>
+    <option value="7">Phase 7</option><option value="8">Phase 8</option>
+    <option value="9">Phase 9</option><option value="10">Phase 10</option>
+    <option value="11">Phase 11</option>
+  </select>
   <select id="fUnit" onchange="applyFilters()">
     <option value="">All Units</option>
-    <optgroup label="A Series">
-      <option>01A</option><option>02A</option><option>03A</option><option>04A</option>
-      <option>05A</option><option>06A</option><option>07A</option><option>08A</option>
-      <option>09A</option><option>10A</option>
-    </optgroup>
-    <optgroup label="B Series">
-      <option>01B</option><option>02B</option><option>03B</option><option>04B</option>
-      <option>05B</option><option>06B</option><option>07B</option><option>08B</option>
-      <option>09B</option><option>10B</option><option>11B</option><option>12B</option>
-      <option>13B</option><option>14B</option><option>15B</option><option>16B</option>
-      <option>17B</option><option>18B</option><option>19B</option><option>20B</option>
-      <option>21B</option><option>22B</option><option>23B</option><option>24B</option>
-      <option>25B</option><option>26B</option><option>27B</option><option>28B</option>
-    </optgroup>
   </select>
   <select id="fStatus" onchange="applyFilters()">
     <option value="">All Statuses</option>
