@@ -1227,6 +1227,40 @@ def delete_issue(issue_id):
     )
     return jsonify({"ok": resp.ok, "error": resp.text if not resp.ok else None})
 
+
+@app.route("/api/issues/<source_id>/merge-into/<target_id>", methods=["POST"])
+def merge_issues(source_id, target_id):
+    """Combine source issue's pins into target, then delete source."""
+    h = sb_headers()
+    # Fetch both issues
+    r_src = requests.get(f"{SUPABASE_URL}/rest/v1/unit_issues?id=eq.{source_id}&select=id,pins,pin_x,pin_y,drawing_type", headers=h)
+    r_tgt = requests.get(f"{SUPABASE_URL}/rest/v1/unit_issues?id=eq.{target_id}&select=id,pins,pin_x,pin_y,drawing_type", headers=h)
+    src_rows = r_src.json() if r_src.ok else []
+    tgt_rows = r_tgt.json() if r_tgt.ok else []
+    if not src_rows or not tgt_rows:
+        return jsonify({"ok": False, "error": "Issue not found"}), 404
+    src, tgt = src_rows[0], tgt_rows[0]
+
+    def issue_pins(issue):
+        if issue.get("pins"):
+            return list(issue["pins"])
+        if issue.get("pin_x") is not None:
+            return [{"x": issue["pin_x"], "y": issue["pin_y"], "drawing_type": issue.get("drawing_type","plan")}]
+        return []
+
+    combined = issue_pins(tgt) + issue_pins(src)
+    # Update target with combined pins
+    r2 = requests.patch(
+        f"{SUPABASE_URL}/rest/v1/unit_issues?id=eq.{target_id}",
+        json={"pins": combined},
+        headers=h
+    )
+    if not r2.ok:
+        return jsonify({"ok": False, "error": r2.text}), 500
+    # Delete source
+    requests.delete(f"{SUPABASE_URL}/rest/v1/unit_issues?id=eq.{source_id}", headers=h)
+    return jsonify({"ok": True, "pins": combined})
+
 @app.route("/issues/<unit>")
 def issues_page(unit):
     return render_template("issues.html", unit=unit)

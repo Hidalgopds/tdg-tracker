@@ -625,6 +625,47 @@ function statusClass(s) {
   return s.replace(/\s+/g,'-');
 }
 
+
+// ── MERGE ISSUES ─────────────────────────────────────────────────────
+var MERGE_SOURCE_ID = null;
+function openMergeModal(e, issueId, unit, title){
+  e.stopPropagation();
+  MERGE_SOURCE_ID = issueId;
+  document.getElementById('mergeErr').textContent = '';
+  // Populate target select with other issues in same unit
+  var sel = document.getElementById('mergeTarget');
+  sel.innerHTML = '<option value="">— Select issue to merge into —</option>';
+  ALL_ISSUES.filter(function(i){ return i.unit === unit && i.id !== issueId; })
+    .forEach(function(i){
+      var opt = document.createElement('option');
+      opt.value = i.id;
+      opt.textContent = (i.title||'(no title)').slice(0,50) + ' [' + i.status + ']';
+      sel.appendChild(opt);
+    });
+  document.getElementById('mergeModal').classList.add('open');
+}
+function closeMergeModal(){
+  document.getElementById('mergeModal').classList.remove('open');
+  MERGE_SOURCE_ID = null;
+}
+async function submitMerge(){
+  var targetId = document.getElementById('mergeTarget').value;
+  var err = document.getElementById('mergeErr');
+  if(!targetId){ err.textContent = 'Select an issue to merge into.'; return; }
+  var btn = document.getElementById('mergeSubmit');
+  btn.disabled = true; btn.textContent = 'Merging…';
+  try{
+    var r = await fetch('/api/issues/'+MERGE_SOURCE_ID+'/merge-into/'+targetId, {method:'POST'});
+    var d = await r.json();
+    if(d.ok){
+      closeMergeModal();
+      await loadIssues();
+      updateKPIs(ALL_ISSUES); applyFilters();
+    } else { err.textContent = d.error || 'Merge failed.'; }
+  } catch(ex){ err.textContent = 'Network error.'; }
+  finally{ btn.disabled=false; btn.textContent='🔗 Merge'; }
+}
+
 function viewOnQCMap(e, issueId){
   e.stopPropagation();
   var issue = ALL_ISSUES.find(function(i){return i.id==issueId;});
@@ -684,6 +725,7 @@ function renderTable(data) {
     }
     html += '<a href="/issues/'+esc(issue.unit)+'" style="display:inline-flex;align-items:center;height:28px;padding:0 12px;background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;font-weight:700;color:#4f8ef7">↗ Open Unit</a>';
     if(issue.pin_x!=null){ html += '<button onclick="viewOnQCMap(event,\'' +esc(issue.id)+ '\')" style="height:28px;padding:0 12px;background:#2e1065;border:1px solid #a78bfa;border-radius:6px;font-size:11px;font-weight:700;color:#c4b5fd;cursor:pointer;margin-left:6px">📍 View on Map</button>'; }
+    html += '<button onclick="openMergeModal(event,\'' +esc(issue.id)+ '\',\'' +esc(issue.unit)+ '\',\'' +esc(issue.title||'')+ '\')" style="height:28px;padding:0 12px;background:#1e293b;border:1px solid #475569;border-radius:6px;font-size:11px;font-weight:700;color:#94a3b8;cursor:pointer;margin-left:6px">🔗 Merge</button>';
     html += '<button onclick="printIssue(event,\''+esc(issue.id)+'\')" style="height:28px;padding:0 12px;background:#e2e8f0;border:1px solid #475569;border-radius:6px;font-size:11px;font-weight:700;color:#64748b;cursor:pointer;margin-left:auto">🖨 Print</button>';
     html += '<button onclick="openEditModal(event,\''+esc(issue.id)+'\')" style="height:28px;padding:0 12px;background:#1e3a5f;border:1px solid #3b82f6;border-radius:6px;font-size:11px;font-weight:700;color:#60a5fa;cursor:pointer;margin-left:6px">✎ Edit Issue</button>';
     html += '<button onclick="deleteIssue(event,\''+esc(issue.id)+'\')" style="height:28px;padding:0 12px;background:#450a0a;border:1px solid #ef4444;border-radius:6px;font-size:11px;font-weight:700;color:#fca5a5;cursor:pointer;margin-left:6px">🗑 Delete</button>';
@@ -784,7 +826,25 @@ function printIssue(evt, id){
     + '<p style="margin:0 0 16px;line-height:1.6">'+(issue.resolution||'Not yet resolved.')+'</p>'
     + photoHtml
     + '<footer>TDG / BSynch — Issue Tracking System &nbsp;|&nbsp; ID: '+issue.id+'</footer>'
-    + '</body></html>';
+    + '
+<!-- Merge Issues Modal -->
+<div class="modal-overlay" id="mergeModal">
+  <div class="modal" style="max-width:400px;">
+    <button class="close-btn" onclick="closeMergeModal()">✕</button>
+    <h2>🔗 Merge into another issue</h2>
+    <p style="font-size:12px;color:#475569;margin-bottom:14px;">The pins from this issue will be added to the selected issue. This issue will be deleted.</p>
+    <div class="mfield">
+      <label>Merge into</label>
+      <select id="mergeTarget" style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:7px;color:#000;font-size:13px;padding:8px 10px;width:100%;"></select>
+    </div>
+    <div id="mergeErr" style="color:#ef4444;font-size:12px;min-height:16px;"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeMergeModal()">Cancel</button>
+      <button class="btn-submit" id="mergeSubmit" onclick="submitMerge()" style="background:#7c3aed;">🔗 Merge</button>
+    </div>
+  </div>
+</div>
+</body></html>';
   var w = window.open('','_blank','width=780,height=900');
   w.document.write(html);
   w.document.close();
@@ -1721,5 +1781,23 @@ function agProc(){
 (function(){var p=location.pathname;document.querySelectorAll('.gnav-link').forEach(function(a){var h=a.getAttribute('href');if(h==='/'?p===h:p===h||p.startsWith(h))a.classList.add('gna');});})();
 (function(){var r=localStorage.getItem('mbrRole')||'worker';var lv={admin:5,boss:4,inventory:3,lead:2,worker:1}[r]||1;var rules={'/log':2,'/dashboard':4,'/inventory':2,'/issues-log':2,'/settings':4};document.querySelectorAll('.gnav-link').forEach(function(a){var h=a.getAttribute('href');if(rules[h]&&lv<rules[h]){a.href='/home';a.style.opacity='0.45';}});})();
 </script>
+
+<!-- Merge Issues Modal -->
+<div class="modal-overlay" id="mergeModal">
+  <div class="modal" style="max-width:400px;">
+    <button class="close-btn" onclick="closeMergeModal()">✕</button>
+    <h2>🔗 Merge into another issue</h2>
+    <p style="font-size:12px;color:#475569;margin-bottom:14px;">The pins from this issue will be added to the selected issue. This issue will be deleted.</p>
+    <div class="mfield">
+      <label>Merge into</label>
+      <select id="mergeTarget" style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:7px;color:#000;font-size:13px;padding:8px 10px;width:100%;"></select>
+    </div>
+    <div id="mergeErr" style="color:#ef4444;font-size:12px;min-height:16px;"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeMergeModal()">Cancel</button>
+      <button class="btn-submit" id="mergeSubmit" onclick="submitMerge()" style="background:#7c3aed;">🔗 Merge</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
