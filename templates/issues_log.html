@@ -955,6 +955,58 @@ async function submitEdit(){
 }
 
 // ── Create Issue Modal ────────────────────────────────────────────
+// ── TDG Phase/Unit config ─────────────────────────────────────────────
+// Plan numbers per phase — update as new plans become available
+var TDG_PLANS = {
+  1:null, 2:null, 3:null, 4:'1949-TX', 5:null,
+  6:null, 7:null, 8:null, 9:null, 10:null, 11:null
+};
+function getQCUnit(){
+  var ph = (document.getElementById('qcPhaseSel')||{}).value||'';
+  var un = (document.getElementById('qcUnitNum')||{}).value||'';
+  return (ph && un) ? 'P'+ph+'-'+un : '';
+}
+function getTDGSerial(ph, un){
+  if(!ph||!un) return '—';
+  var plan = TDG_PLANS[parseInt(ph)];
+  return plan ? plan+'-'+un : '—';
+}
+function onQCPhaseChange(){
+  var ph = (document.getElementById('qcPhaseSel')||{}).value||'';
+  var sel = document.getElementById('qcUnitNum');
+  sel.innerHTML = '<option value="">— Unit —</option>';
+  if(ph){ for(var i=1;i<=26;i++){ var o=document.createElement('option'); o.value=i; o.textContent='Unit '+i; sel.appendChild(o); } }
+  updateQCTDGNo(); renderQCPins();
+}
+function onQCUnitChange(){ updateQCTDGNo(); renderQCPins(); }
+function updateQCTDGNo(){
+  var ph=(document.getElementById('qcPhaseSel')||{}).value||'';
+  var un=(document.getElementById('qcUnitNum')||{}).value||'';
+  var el=document.getElementById('qcTDGNo');
+  if(el) el.textContent = getTDGSerial(ph, un);
+}
+function onFilterPhaseChange(){
+  var ph = document.getElementById('fPhase').value;
+  var sel = document.getElementById('fUnit');
+  sel.innerHTML = '<option value="">All Units</option>';
+  if(ph){ for(var i=1;i<=26;i++){ var o=document.createElement('option'); o.value='P'+ph+'-'+i; o.textContent='Unit '+i; sel.appendChild(o); } }
+  applyFilters();
+}
+function onCreatePhaseChange(){
+  var ph = (document.getElementById('mi-phase')||{}).value||'';
+  var sel = document.getElementById('mi-unit-num');
+  if(!sel) return;
+  sel.innerHTML = '<option value="">— Unit —</option>';
+  if(ph){ for(var i=1;i<=26;i++){ var o=document.createElement('option'); o.value=i; o.textContent='Unit '+i; sel.appendChild(o); } }
+  onCreateUnitChange();
+}
+function onCreateUnitChange(){
+  var ph = (document.getElementById('mi-phase')||{}).value||'';
+  var un = (document.getElementById('mi-unit-num')||{}).value||'';
+  var hidden = document.getElementById('mi-unit');
+  if(hidden) hidden.value = (ph && un) ? 'P'+ph+'-'+un : '';
+}
+// ── End TDG Phase/Unit config ─────────────────────────────────────────
 var _QC_PIN = null; // {x, y, drawing_type} set when creating from drawing
 
 function openCreateModal(pinData){
@@ -965,6 +1017,11 @@ function openCreateModal(pinData){
   document.getElementById('mi-title').value = '';
   document.getElementById('mi-desc').value = '';
   document.getElementById('mi-unit').value = '';
+  // Reset phase/unit pickers
+  var _mph = document.getElementById('mi-phase');
+  var _mun = document.getElementById('mi-unit-num');
+  if(_mph) _mph.value = '';
+  if(_mun){ _mun.innerHTML = '<option value="">— Unit —</option>'; }
   _QC_PIN = pinData || null;
   var pinBadge = document.getElementById('mi-pin-badge');
   if(pinBadge){
@@ -976,10 +1033,14 @@ function openCreateModal(pinData){
     var sel = document.getElementById('mi-status');
     if(sel){ for(var oi=0;oi<sel.options.length;oi++){ if(sel.options[oi].value===pinData.status){sel.selectedIndex=oi;break;} } }
   }
-  // Pre-set unit from QC unit selector
-  if(pinData && pinData.unit){
-    var uSel = document.getElementById('mi-unit');
-    if(uSel){ for(var ui=0;ui<uSel.options.length;ui++){ if(uSel.options[ui].value===pinData.unit){uSel.selectedIndex=ui;break;} } }
+  // Pre-set phase+unit from QC selectors
+  if(pinData && pinData.phase && pinData.unitNum){
+    var _ph2 = document.getElementById('mi-phase');
+    if(_ph2){ _ph2.value = pinData.phase; onCreatePhaseChange(); }
+    setTimeout(function(){
+      var _un2 = document.getElementById('mi-unit-num');
+      if(_un2){ _un2.value = pinData.unitNum; onCreateUnitChange(); }
+    }, 10);
   }
   document.getElementById('createModal').classList.add('open');
 }
@@ -1309,23 +1370,45 @@ function sendEmail(){
     <div class="mrow">
       <div class="mfield">
         <label>Unit *</label>
-        <select id="mi-unit">
-          <option value="">— Select —</option>
-          <optgroup label="A Series">
-            <option>01A</option><option>02A</option><option>03A</option><option>04A</option>
-            <option>05A</option><option>06A</option><option>07A</option><option>08A</option>
-            <option>09A</option><option>10A</option>
-          </optgroup>
-          <optgroup label="B Series">
-            <option>01B</option><option>02B</option><option>03B</option><option>04B</option>
-            <option>05B</option><option>06B</option><option>07B</option><option>08B</option>
-            <option>09B</option><option>10B</option><option>11B</option><option>12B</option>
-            <option>13B</option><option>14B</option><option>15B</option><option>16B</option>
-            <option>17B</option><option>18B</option><option>19B</option><option>20B</option>
-            <option>21B</option><option>22B</option><option>23B</option><option>24B</option>
-            <option>25B</option><option>26B</option><option>27B</option><option>28B</option>
-          </optgroup>
-        </select>
+        <input type="hidden" id="mi-unit">
+        <div style="display:flex;gap:6px;">
+          <select id="mi-phase" onchange="onCreatePhaseChange()" style="flex:1;height:36px;padding:0 8px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:7px;color:#000;font-size:13px;">
+            <option value="">— Phase —</option>
+            <option value="1">Phase 1</option><option value="2">Phase 2</option><option value="3">Phase 3</option>
+            <option value="4">Phase 4</option><option value="5">Phase 5</option><option value="6">Phase 6</option>
+            <option value="7">Phase 7</option><option value="8">Phase 8</option><option value="9">Phase 9</option>
+            <option value="10">Phase 10</option><option value="11">Phase 11</option>
+          </select>
+          <select id="mi-unit-num" onchange="onCreateUnitChange()" style="flex:1;height:36px;padding:0 8px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:7px;color:#000;font-size:13px;">
+            <option value="">— Unit —</option>
+            <option value="1">Unit 1</option>
+            <option value="2">Unit 2</option>
+            <option value="3">Unit 3</option>
+            <option value="4">Unit 4</option>
+            <option value="5">Unit 5</option>
+            <option value="6">Unit 6</option>
+            <option value="7">Unit 7</option>
+            <option value="8">Unit 8</option>
+            <option value="9">Unit 9</option>
+            <option value="10">Unit 10</option>
+            <option value="11">Unit 11</option>
+            <option value="12">Unit 12</option>
+            <option value="13">Unit 13</option>
+            <option value="14">Unit 14</option>
+            <option value="15">Unit 15</option>
+            <option value="16">Unit 16</option>
+            <option value="17">Unit 17</option>
+            <option value="18">Unit 18</option>
+            <option value="19">Unit 19</option>
+            <option value="20">Unit 20</option>
+            <option value="21">Unit 21</option>
+            <option value="22">Unit 22</option>
+            <option value="23">Unit 23</option>
+            <option value="24">Unit 24</option>
+            <option value="25">Unit 25</option>
+            <option value="26">Unit 26</option>
+          </select>
+        </div>
       </div>
       <div class="mfield">
         <label>Date *</label>
@@ -1442,7 +1525,7 @@ function renderQCPins(){
   svg.setAttribute('viewBox','0 0 '+img.naturalWidth+' '+img.naturalHeight);
   svg.innerHTML = '';
 
-  var filterUnit = (document.getElementById('qcUnitSel')||{}).value || '';
+  var filterUnit = getQCUnit();
   var hideClosed = document.getElementById('qcHideClosed') ? document.getElementById('qcHideClosed').checked : true;
 
   // If no unit selected, show prompt and bail
@@ -1568,7 +1651,7 @@ document.addEventListener('DOMContentLoaded', function(){
     }
     // Straight to Create Issue modal — no intermediate color picker
     closeQCOverlay();
-    openCreateModal({x: x, y: y, drawing_type: drawingKey, color: '#ef4444', status: 'Open'});
+    openCreateModal({x: x, y: y, drawing_type: drawingKey, color: '#ef4444', status: 'Open', unit: getQCUnit(), phase: (document.getElementById('qcPhaseSel')||{}).value||'', unitNum: (document.getElementById('qcUnitNum')||{}).value||''});
   });
   // button always visible (page-level role check guards access)
 });
