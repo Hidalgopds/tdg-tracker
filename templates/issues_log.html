@@ -1222,23 +1222,19 @@ function sendEmail(){
       <option value="plan">Unit Plan</option>
       <option value="plan2">Strut Plan</option>
     </select>
-    <select id="qcUnitSel" class="qc-sel" style="min-width:110px;" onchange="renderQCPins()">
-      <option value="">— Select Unit —</option>
-      <optgroup label="A Series">
-        <option>01A</option><option>02A</option><option>03A</option><option>04A</option>
-        <option>05A</option><option>06A</option><option>07A</option><option>08A</option>
-        <option>09A</option><option>10A</option>
-      </optgroup>
-      <optgroup label="B Series">
-        <option>01B</option><option>02B</option><option>03B</option><option>04B</option>
-        <option>05B</option><option>06B</option><option>07B</option><option>08B</option>
-        <option>09B</option><option>10B</option><option>11B</option><option>12B</option>
-        <option>13B</option><option>14B</option><option>15B</option><option>16B</option>
-        <option>17B</option><option>18B</option><option>19B</option><option>20B</option>
-        <option>21B</option><option>22B</option><option>23B</option><option>24B</option>
-        <option>25B</option><option>26B</option><option>27B</option><option>28B</option>
-      </optgroup>
+    <select id="qcPhaseSel" class="qc-sel" onchange="onQCPhaseChange()">
+      <option value="">— Phase —</option>
+      <option value="1">Phase 1</option><option value="2">Phase 2</option>
+      <option value="3">Phase 3</option><option value="4">Phase 4</option>
+      <option value="5">Phase 5</option><option value="6">Phase 6</option>
+      <option value="7">Phase 7</option><option value="8">Phase 8</option>
+      <option value="9">Phase 9</option><option value="10">Phase 10</option>
+      <option value="11">Phase 11</option>
     </select>
+    <select id="qcUnitNum" class="qc-sel" onchange="onQCUnitChange()">
+      <option value="">— Unit —</option>
+    </select>
+    <span style="font-size:11px;color:#fff;white-space:nowrap;">TDG No: <span id="qcTDGNo" style="color:#7dd3fc;font-weight:700;">—</span></span>
     <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:#000;background:#fff;border-radius:6px;padding:3px 8px;white-space:nowrap;cursor:pointer;margin-left:auto;border:1px solid #cbd5e1;" title="Hide issues already closed">
       <input type="checkbox" id="qcHideClosed" checked onchange="renderQCPins()" style="accent-color:#7c3aed;width:13px;height:13px;">
       Hide Closed
