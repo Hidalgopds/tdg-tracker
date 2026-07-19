@@ -1162,7 +1162,7 @@ function sendEmail(){
       <option value="plan2">Strut Plan</option>
     </select>
     <select id="qcUnitSel" class="qc-sel" style="min-width:110px;" onchange="renderQCPins()">
-      <option value="">All Units</option>
+      <option value="">— Select Unit —</option>
       <optgroup label="A Series">
         <option>01A</option><option>02A</option><option>03A</option><option>04A</option>
         <option>05A</option><option>06A</option><option>07A</option><option>08A</option>
@@ -1178,7 +1178,11 @@ function sendEmail(){
         <option>25B</option><option>26B</option><option>27B</option><option>28B</option>
       </optgroup>
     </select>
-    <span id="qcIssueCount" style="font-size:11px;color:#93c5fd;white-space:nowrap;margin-left:auto;">Tap to log</span>
+    <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:#93c5fd;white-space:nowrap;cursor:pointer;margin-left:auto;" title="Hide issues already closed">
+      <input type="checkbox" id="qcHideClosed" checked onchange="renderQCPins()" style="accent-color:#7c3aed;width:13px;height:13px;">
+      Hide Closed
+    </label>
+    <span id="qcIssueCount" style="font-size:11px;color:#93c5fd;white-space:nowrap;">Tap to log</span>
   </div>
   <div class="qc-body" id="qcBody">
     <div id="qcToast">✓ Issue logged — tap drawing to add another</div>
@@ -1439,6 +1443,23 @@ function renderQCPins(){
   svg.innerHTML = '';
 
   var filterUnit = (document.getElementById('qcUnitSel')||{}).value || '';
+  var hideClosed = document.getElementById('qcHideClosed') ? document.getElementById('qcHideClosed').checked : true;
+
+  // If no unit selected, show prompt and bail
+  if(!filterUnit){
+    var legendDiv2 = document.getElementById('qcLegend');
+    if(legendDiv2) legendDiv2.style.display='none';
+    document.getElementById('qcIssueCount').textContent = 'Select a unit above';
+    // Draw prompt text on SVG
+    var prompt = document.createElementNS('http://www.w3.org/2000/svg','text');
+    prompt.setAttribute('x', img.naturalWidth/2); prompt.setAttribute('y', img.naturalHeight/2);
+    prompt.setAttribute('text-anchor','middle'); prompt.setAttribute('dominant-baseline','central');
+    prompt.setAttribute('fill','#94a3b8'); prompt.setAttribute('font-size','20');
+    prompt.setAttribute('font-family','system-ui,sans-serif'); prompt.setAttribute('font-weight','600');
+    prompt.textContent = '← Select a unit to view its issues';
+    svg.appendChild(prompt);
+    return;
+  }
 
   // Legend
   var legendDiv = document.getElementById('qcLegend');
@@ -1446,9 +1467,11 @@ function renderQCPins(){
   var legendHTML = '';
 
   var filterDrawing = (document.getElementById('qcDrawingSel')||{}).value || 'plan';
+  var CLOSED_STATUSES = ['Closed','Resolved'];
   // Collect all issues that have at least one pin on this drawing
   var pinned = ALL_ISSUES.filter(function(i){
-    if(!filterUnit || i.unit === filterUnit){
+    if(i.unit === filterUnit){
+      if(hideClosed && CLOSED_STATUSES.indexOf(i.status)>=0) return false;
       var pinsArr = (i.pins && i.pins.length > 0) ? i.pins : (i.pin_x!=null ? [{x:i.pin_x,y:i.pin_y,drawing_type:i.drawing_type||'plan'}] : []);
       return pinsArr.some(function(p){ return (p.drawing_type||'plan')===filterDrawing; });
     }
