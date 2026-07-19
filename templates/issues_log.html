@@ -637,14 +637,17 @@ function openMergeModal(e, issueId, unit, title){
   e.stopPropagation();
   MERGE_SOURCE_ID = issueId;
   document.getElementById('mergeErr').textContent = '';
+  // Show which issue gets deleted
+  var srcEl = document.getElementById('mergeSourceTitle');
+  if(srcEl) srcEl.textContent = (title||'(no title)').slice(0,60);
   // Populate target select with other issues in same unit
   var sel = document.getElementById('mergeTarget');
-  sel.innerHTML = '<option value="">— Select issue to merge into —</option>';
+  sel.innerHTML = '<option value="">— Select issue to KEEP —</option>';
   ALL_ISSUES.filter(function(i){ return i.unit === unit && i.id !== issueId; })
     .forEach(function(i){
       var opt = document.createElement('option');
       opt.value = i.id;
-      opt.textContent = (i.title||'(no title)').slice(0,50) + ' [' + i.status + ']';
+      opt.textContent = (i.title||'(no title)').slice(0,46) + ' [' + i.status + ']';
       sel.appendChild(opt);
     });
   document.getElementById('mergeModal').classList.add('open');
@@ -1610,7 +1613,6 @@ function showQCPopup(issue){
     if(_qcLvl>=4){ btnHTML += '<button class="qc-popup-btn" style="background:#1e3a5f;color:#60a5fa;" onclick="qcSetStatus(&apos;Open&apos;)">↩ Reopen</button>'; }
     else { btnHTML += '<span style="font-size:11px;color:#10b981;font-weight:700;">✓ Closed</span>'; }
   }
-  btnHTML += '<button class="qc-popup-btn" style="background:#2e1065;color:#c4b5fd;border:1px solid #7c3aed;" onclick="startAddPinMode(QC_POPUP_ISSUE)">📍 Add Location</button>';
   btnHTML += '<button class="qc-popup-btn" style="background:#1a1f35;color:#a78bfa;border:1px solid #4c1d95;" onclick="openMergeModal(event,QC_POPUP_ISSUE.id,QC_POPUP_ISSUE.unit||\'\'\,QC_POPUP_ISSUE.title||\'\'\)">🔗 Merge</button>';
   if(_qcLvl >= 4){
     btnHTML += '<button class="qc-popup-btn" style="background:#450a0a;color:#fca5a5;margin-left:auto;" onclick="qcDeletePin()">🗑 Delete</button>';
@@ -1779,12 +1781,15 @@ function agProc(){
 
 <!-- Merge Issues Modal -->
 <div class="modal-overlay" id="mergeModal">
-  <div class="modal" style="max-width:400px;">
+  <div class="modal" style="max-width:420px;">
     <button class="close-btn" onclick="closeMergeModal()">✕</button>
-    <h2>🔗 Merge into another issue</h2>
-    <p style="font-size:12px;color:#475569;margin-bottom:14px;">The pins from this issue will be added to the selected issue. This issue will be deleted.</p>
+    <h2>🔗 Merge Issues</h2>
+    <div style="background:#450a0a;border:1px solid #ef4444;border-radius:8px;padding:10px 14px;margin-bottom:14px;">
+      <div style="font-size:10px;font-weight:800;color:#fca5a5;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">🗑 Will be DELETED:</div>
+      <div id="mergeSourceTitle" style="font-size:13px;font-weight:700;color:#fecaca;"></div>
+    </div>
     <div class="mfield">
-      <label>Merge into</label>
+      <label style="color:#10b981;">✓ Select issue to KEEP (pins will be transferred here)</label>
       <select id="mergeTarget" style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:7px;color:#000;font-size:13px;padding:8px 10px;width:100%;"></select>
     </div>
     <div id="mergeErr" style="color:#ef4444;font-size:12px;min-height:16px;"></div>
