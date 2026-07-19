@@ -1257,17 +1257,48 @@ def create_issue():
         "created_by":   data.get("created_by", "")
     }
     if data.get("pin_x") is not None:
+        first_pin = {"x": data["pin_x"], "y": data.get("pin_y"), "drawing_type": data.get("drawing_type", "plan")}
         row["pin_x"]        = data["pin_x"]
         row["pin_y"]        = data.get("pin_y")
-        row["drawing_type"] = data.get("drawing_type", "3d")
+        row["drawing_type"] = data.get("drawing_type", "plan")
+        row["pins"]         = [first_pin]
+    h = sb_headers()
+    h["Prefer"] = "return=representation"
     resp = requests.post(
         f"{SUPABASE_URL}/rest/v1/unit_issues",
         json=row,
-        headers=sb_headers()
+        headers=h
     )
     if resp.status_code in (200, 201):
-        return jsonify({"ok": True})
+        rows = resp.json() if resp.text else []
+        new_id = rows[0]["id"] if rows else None
+        return jsonify({"ok": True, "id": new_id})
     return jsonify({"ok": False, "error": resp.text}), 500
+
+@app.route("/api/issues/<issue_id>/add-pin", methods=["PATCH"])
+def add_pin_to_issue(issue_id):
+    data = request.get_json() or {}
+    x, y = data.get("x"), data.get("y")
+    drawing_type = data.get("drawing_type", "plan")
+    if x is None or y is None:
+        return jsonify({"ok": False, "error": "x and y required"}), 400
+    resp = requests.get(
+        f"{SUPABASE_URL}/rest/v1/unit_issues?id=eq.{issue_id}&select=id,pins",
+        headers=sb_headers()
+    )
+    rows = resp.json() if resp.ok else []
+    if not rows:
+        return jsonify({"ok": False, "error": "Issue not found"}), 404
+    pins = rows[0].get("pins") or []
+    pins.append({"x": x, "y": y, "drawing_type": drawing_type})
+    resp2 = requests.patch(
+        f"{SUPABASE_URL}/rest/v1/unit_issues?id=eq.{issue_id}",
+        json={"pins": pins},
+        headers=sb_headers()
+    )
+    if resp2.status_code in (200, 204):
+        return jsonify({"ok": True, "pins": pins})
+    return jsonify({"ok": False, "error": resp2.text}), 500
 
 @app.route("/api/qc/upload-drawing", methods=["POST"])
 def upload_qc_drawing():

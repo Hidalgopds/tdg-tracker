@@ -645,7 +645,8 @@ function renderTable(data) {
     html += '<tr class="issue-row" onclick="toggleDetail(this,\''+esc(issue.id)+'\')" data-id="'+esc(issue.id)+'">';
     html += '<td class="td-unit">'+esc(issue.unit)+'</td>';
     html += '<td class="td-date">'+fmtDate(issue.date)+'</td>';
-    html += '<td class="td-title">'+(issue.pin_x!=null?'<span title="Pinned on drawing" style="color:#a78bfa;margin-right:4px;">📍</span>':'')+esc(issue.title)+'</td>';
+    var _pinCount=(issue.pins&&issue.pins.length>0)?issue.pins.length:(issue.pin_x!=null?1:0);
+    html += '<td class="td-title">'+(_pinCount>0?'<span title="Pinned on drawing" style="color:#a78bfa;margin-right:4px;">📍</span>':'')+esc(issue.title)+(_pinCount>1?' <span style="font-size:9px;background:#2e1065;color:#c4b5fd;border:1px solid #7c3aed;border-radius:8px;padding:1px 5px;font-weight:700;">'+_pinCount+' loc</span>':'')+' </td>';
     html += '<td><span class="cbadge">'+esc(issue.category||'—')+'</span></td>';
     html += '<td><span class="sbadge '+sc+'">'+esc(issue.status||'—')+'</span></td>';
     html += '<td class="td-desc">'+esc(issue.description||'—')+'</td>';
@@ -1030,8 +1031,17 @@ async function submitIssue(){
     var r = await fetch('/api/issues', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
     var d = await r.json();
     if(d.ok){
+      var wasQC = !!_QC_PIN;
+      var newId = d.id;
       closeCreateModal();
       await loadIssues(); // refresh
+      if(wasQC && newId){
+        var newIssue = ALL_ISSUES.find(function(i){ return i.id === newId; });
+        if(newIssue){
+          openQCOverlay();
+          startAddPinMode(newIssue);
+        }
+      }
     } else { err.textContent = d.error || 'Error saving issue.'; }
   }catch(e){ err.textContent = 'Network error.'; }
   finally{ btn.disabled=false; btn.textContent='Submit Issue'; }
@@ -1113,6 +1123,10 @@ function sendEmail(){
     <span id="qcIssueCount" style="font-size:11px;color:#93c5fd;white-space:nowrap;margin-left:auto;">Tap to log</span>
   </div>
   <div class="qc-body" id="qcBody">
+    <div id="qcAddPinBanner" style="display:none;position:absolute;top:10px;left:50%;transform:translateX(-50%);background:#1e293b;border:1px solid #a78bfa;border-radius:10px;padding:8px 14px;z-index:650;align-items:center;gap:10px;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.6);">
+      <span style="color:#c4b5fd;font-size:12px;font-weight:700;">📍 Tap drawing to add location for: <span id="qcAddPinTitle" style="color:#fff;"></span></span>
+      <button onclick="cancelAddPinMode()" style="background:none;border:1px solid #475569;border-radius:5px;color:#94a3b8;font-size:11px;padding:2px 8px;cursor:pointer;">✕ Cancel</button>
+    </div>
     <div id="qcImgWrap">
       <img id="qcDrawingImg" src="" alt="TDG Plan View" onload="onQCImgLoad()" draggable="false">
       <svg id="qcSvgOverlay"></svg>
@@ -1315,6 +1329,7 @@ function sendEmail(){
 <script>
 // ── TDG QC Drawing View ─────────────────────────────────────────────
 var QC_URL = null;
+var QC_ADD_PIN_ISSUE = null; // issue we are adding extra pins to
 var QC_PENDING = null;   // {x, y} percentages of pending new pin
 var QC_CHOSEN_COLOR = '#ef4444';
 var QC_CHOSEN_STATUS = 'Open';
@@ -1387,12 +1402,23 @@ function renderQCPins(){
   var legendHTML = '';
 
   var filterDrawing = (document.getElementById('qcDrawingSel')||{}).value || 'plan';
-  var pinned = ALL_ISSUES.filter(function(i){ return i.pin_x != null && i.pin_y != null && (!filterUnit || i.unit === filterUnit) && (i.drawing_type === filterDrawing || (!i.drawing_type && filterDrawing === 'plan')); });
+  // Collect all issues that have at least one pin on this drawing
+  var pinned = ALL_ISSUES.filter(function(i){
+    if(!filterUnit || i.unit === filterUnit){
+      var pinsArr = (i.pins && i.pins.length > 0) ? i.pins : (i.pin_x!=null ? [{x:i.pin_x,y:i.pin_y,drawing_type:i.drawing_type||'plan'}] : []);
+      return pinsArr.some(function(p){ return (p.drawing_type||'plan')===filterDrawing; });
+    }
+    return false;
+  });
   pinned.forEach(function(issue, idx){
     var n = idx + 1;
     var col = PIN_COLORS[issue.status] || '#94a3b8';
-    var cx = issue.pin_x / 100 * img.naturalWidth;
-    var cy = issue.pin_y / 100 * img.naturalHeight;
+    // Get all pins for this issue on the current drawing
+    var pinsArr = (issue.pins && issue.pins.length > 0) ? issue.pins : (issue.pin_x!=null ? [{x:issue.pin_x,y:issue.pin_y,drawing_type:issue.drawing_type||'plan'}] : []);
+    var drawingPins = pinsArr.filter(function(p){ return (p.drawing_type||'plan')===filterDrawing; });
+    drawingPins.forEach(function(pin, pinIdx){
+    var cx = pin.x / 100 * img.naturalWidth;
+    var cy = pin.y / 100 * img.naturalHeight;
 
     // Glow ring
     var ring = document.createElementNS('http://www.w3.org/2000/svg','circle');
@@ -1439,6 +1465,7 @@ function renderQCPins(){
     svg.appendChild(labelBg);
     label.textContent = shortTitle;
     svg.appendChild(label);
+    }); // end drawingPins.forEach
 
     // Legend row
     legendHTML += '<div class="qc-legend-row">'
@@ -1467,6 +1494,10 @@ document.addEventListener('DOMContentLoaded', function(){
     var x = Math.round((e.clientX - rect.left) / rect.width  * 1000) / 10;
     var y = Math.round((e.clientY - rect.top)  / rect.height * 1000) / 10;
     var drawingKey = (document.getElementById('qcDrawingSel')||{}).value || 'plan';
+    if(QC_ADD_PIN_ISSUE){
+      addPinToIssue(QC_ADD_PIN_ISSUE, x, y, drawingKey);
+      return;
+    }
     // Straight to Create Issue modal — no intermediate color picker
     closeQCOverlay();
     openCreateModal({x: x, y: y, drawing_type: drawingKey, color: '#ef4444', status: 'Open'});
@@ -1525,6 +1556,7 @@ function showQCPopup(issue){
   } else {
     btnHTML += '<button class="qc-popup-btn" style="background:#1e3a5f;color:#60a5fa;" onclick="qcSetStatus(&apos;Open&apos;)">↩ Reopen</button>';
   }
+  btnHTML += '<button class="qc-popup-btn" style="background:#2e1065;color:#c4b5fd;border:1px solid #7c3aed;" onclick="startAddPinMode(QC_POPUP_ISSUE)">📍 Add Location</button>';
   if(_qcLvl >= 4){
     btnHTML += '<button class="qc-popup-btn" style="background:#450a0a;color:#fca5a5;margin-left:auto;" onclick="qcDeletePin()">🗑 Delete</button>';
   }
@@ -1551,6 +1583,32 @@ async function qcDeletePin(){
     ALL_ISSUES = ALL_ISSUES.filter(function(i){return i.id!==QC_POPUP_ISSUE.id;});
     closeQCPopup();
     updateKPIs(ALL_ISSUES); applyFilters(); renderQCPins();
+  }
+}
+
+
+// ── MULTI-PIN MODE ────────────────────────────────────────────────────
+function startAddPinMode(issue){
+  QC_ADD_PIN_ISSUE = issue;
+  closeQCPopup();
+  var banner = document.getElementById('qcAddPinBanner');
+  document.getElementById('qcAddPinTitle').textContent = '"'+(issue.title||'').slice(0,28)+(issue.title&&issue.title.length>28?'\u2026':'')+'"';
+  banner.style.display = 'flex';
+}
+function cancelAddPinMode(){
+  QC_ADD_PIN_ISSUE = null;
+  document.getElementById('qcAddPinBanner').style.display = 'none';
+}
+async function addPinToIssue(issue, x, y, drawingType){
+  var r = await fetch('/api/issues/'+issue.id+'/add-pin',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({x:x,y:y,drawing_type:drawingType})});
+  var d = await r.json();
+  if(d.ok){
+    ALL_ISSUES.forEach(function(i){ if(i.id===issue.id) i.pins = d.pins; });
+    renderQCPins();
+    var titleEl = document.getElementById('qcAddPinTitle');
+    var prev = titleEl.textContent;
+    titleEl.textContent = '\u2713 Location added! Tap for another';
+    setTimeout(function(){ titleEl.textContent = prev; }, 2000);
   }
 }
 
