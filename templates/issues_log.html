@@ -159,8 +159,8 @@ select optgroup option { color: #e2e8f0; background: #0f172a; }
 #qcOverlay{display:none;position:fixed;inset:0;background:#0a0f1a;z-index:600;flex-direction:column;}
 #qcOverlay.qc-open{display:flex;}
 .qc-header{background:#1e3a5f;padding:7px 10px;display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:nowrap;overflow-x:auto;}
-.qc-sel{height:30px;padding:0 20px 0 8px;background:#0f1e35;border:1px solid #3b82f6;border-radius:7px;color:#e2e8f0;font-size:12px;font-weight:700;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2393c5fd'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;}
-.qc-sel option,.qc-sel optgroup{background:#0f1e35;color:#e2e8f0;}
+.qc-sel{height:30px;padding:0 20px 0 8px;background:#fff;border:1px solid #3b82f6;border-radius:7px;color:#0f172a;font-size:12px;font-weight:700;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%231e3a5f'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;}
+.qc-sel option,.qc-sel optgroup{background:#fff;color:#0f172a;}
 .qc-close{background:none;border:1px solid rgba(255,255,255,.2);border-radius:6px;color:#93c5fd;font-size:12px;font-weight:700;padding:5px 12px;cursor:pointer;}
 .qc-title{color:#fff;font-size:13px;font-weight:800;white-space:nowrap;}
 .qc-upload-btn{height:28px;padding:0 12px;background:#7c3aed;border:none;border-radius:7px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;display:none;}
@@ -493,7 +493,7 @@ footer{color:#64748b !important;border-top-color:#0f172a !important;}
   <h1>⚠ Issues Log &nbsp;<span>TDG / BSynch</span></h1>
   <span id="lastRefresh" style="font-size:11px;color:#0f172a"></span>
   <button class="create-btn" onclick="openCreateModal()" style="height:32px;padding:0 14px;background:#7f1d1d;border:1px solid #ef4444;border-radius:7px;color:#fca5a5;font-size:12px;font-weight:700;cursor:pointer">＋ Create Issue</button>
-  <button onclick="openPunchListModal()" style="height:32px;padding:0 14px;background:#14532d;border:1px solid #22c55e;border-radius:7px;color:#86efac;font-size:12px;font-weight:700;cursor:pointer">✅ Punch List</button>
+
   <button id="tdgQCBtn" onclick="openQCOverlay()" style="height:32px;padding:0 14px;background:#7c3aed;border:1px solid #a855f7;border-radius:7px;color:#e9d5ff;font-size:12px;font-weight:700;cursor:pointer;">🏗 TDG QC</button>
   <button class="email-btn" onclick="sendEmail()" style="height:32px;padding:0 14px;background:#1e3a5f;border:1px solid #3b82f6;border-radius:7px;color:#60a5fa;font-size:12px;font-weight:700;cursor:pointer">✉ Email Report</button>
   <button class="print-btn" onclick="window.print()">🖨 Print / PDF</button>
@@ -1178,11 +1178,11 @@ function sendEmail(){
         <option>25B</option><option>26B</option><option>27B</option><option>28B</option>
       </optgroup>
     </select>
-    <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:#93c5fd;white-space:nowrap;cursor:pointer;margin-left:auto;" title="Hide issues already closed">
+    <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:#000;background:#fff;border-radius:6px;padding:3px 8px;white-space:nowrap;cursor:pointer;margin-left:auto;border:1px solid #cbd5e1;" title="Hide issues already closed">
       <input type="checkbox" id="qcHideClosed" checked onchange="renderQCPins()" style="accent-color:#7c3aed;width:13px;height:13px;">
       Hide Closed
     </label>
-    <span id="qcIssueCount" style="font-size:11px;color:#93c5fd;white-space:nowrap;">Tap to log</span>
+    <span id="qcIssueCount" style="font-size:11px;color:#fff;white-space:nowrap;">Tap to log</span>
   </div>
   <div class="qc-body" id="qcBody">
     <div id="qcToast">✓ Issue logged — tap drawing to add another</div>
