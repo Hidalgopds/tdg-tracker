@@ -826,25 +826,7 @@ function printIssue(evt, id){
     + '<p style="margin:0 0 16px;line-height:1.6">'+(issue.resolution||'Not yet resolved.')+'</p>'
     + photoHtml
     + '<footer>TDG / BSynch — Issue Tracking System &nbsp;|&nbsp; ID: '+issue.id+'</footer>'
-    + '
-<!-- Merge Issues Modal -->
-<div class="modal-overlay" id="mergeModal">
-  <div class="modal" style="max-width:400px;">
-    <button class="close-btn" onclick="closeMergeModal()">✕</button>
-    <h2>🔗 Merge into another issue</h2>
-    <p style="font-size:12px;color:#475569;margin-bottom:14px;">The pins from this issue will be added to the selected issue. This issue will be deleted.</p>
-    <div class="mfield">
-      <label>Merge into</label>
-      <select id="mergeTarget" style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:7px;color:#000;font-size:13px;padding:8px 10px;width:100%;"></select>
-    </div>
-    <div id="mergeErr" style="color:#ef4444;font-size:12px;min-height:16px;"></div>
-    <div class="modal-footer">
-      <button class="btn-cancel" onclick="closeMergeModal()">Cancel</button>
-      <button class="btn-submit" id="mergeSubmit" onclick="submitMerge()" style="background:#7c3aed;">🔗 Merge</button>
-    </div>
-  </div>
-</div>
-</body></html>';
+    + '</body></html>';
   var w = window.open('','_blank','width=780,height=900');
   w.document.write(html);
   w.document.close();
