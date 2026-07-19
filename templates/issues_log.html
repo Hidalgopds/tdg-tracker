@@ -54,6 +54,8 @@ tbody td.td-date{white-space:nowrap;font-size:12px}
 .sbadge.On-Hold{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#f59e0b}
 .sbadge.Resolved{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);color:#22c55e}
 .sbadge.Monitoring{background:rgba(79,142,247,.12);border:1px solid rgba(79,142,247,.3);color:#4f8ef7}
+.sbadge.Fixed{background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.3);color:#8b5cf6}
+.sbadge.Closed{background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);color:#10b981}
 
 /* Category badge */
 .cbadge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;background:#e2e8f0;color:#64748b}
@@ -501,8 +503,8 @@ footer{color:#64748b !important;border-top-color:#0f172a !important;}
 <div class="kpi-strip">
   <div class="kpi total"><div class="num" id="kTotal">—</div><div class="lbl">Total</div></div>
   <div class="kpi open"><div class="num" id="kOpen">—</div><div class="lbl">Open</div></div>
-  <div class="kpi hold"><div class="num" id="kHold">—</div><div class="lbl">On Hold</div></div>
-  <div class="kpi resolved"><div class="num" id="kRes">—</div><div class="lbl">Resolved</div></div>
+  <div class="kpi hold"><div class="num" id="kHold">—</div><div class="lbl">Fixed</div></div>
+  <div class="kpi resolved"><div class="num" id="kRes">—</div><div class="lbl">Closed</div></div>
 </div>
 
 <!-- Filters -->
@@ -530,6 +532,8 @@ footer{color:#64748b !important;border-top-color:#0f172a !important;}
     <option>Open</option>
     <option>On Hold</option>
     <option>Monitoring</option>
+    <option>Fixed</option>
+    <option>Closed</option>
     <option>Resolved</option>
   </select>
   <select id="fCat" onchange="applyFilters()">
@@ -586,8 +590,8 @@ async function loadIssues() {
 function updateKPIs(data) {
   document.getElementById('kTotal').textContent = data.length;
   document.getElementById('kOpen').textContent  = data.filter(function(i){ return i.status==='Open'; }).length;
-  document.getElementById('kHold').textContent  = data.filter(function(i){ return i.status==='On Hold'; }).length;
-  document.getElementById('kRes').textContent   = data.filter(function(i){ return i.status==='Resolved'; }).length;
+  document.getElementById('kHold').textContent  = data.filter(function(i){ return i.status==='Fixed'; }).length;
+  document.getElementById('kRes').textContent   = data.filter(function(i){ return i.status==='Closed'||i.status==='Resolved'; }).length;
 }
 
 function applyFilters() {
@@ -715,14 +719,24 @@ function renderTable(data) {
       html += '</div></div>';
     }
     html += '</div>';
-    // Action buttons
+    // Action buttons (role-aware: Fixed → QC approval flow)
     html += '<div class="dp-actions">';
-    if (issue.status !== 'Resolved') {
-      html += '<button class="status-btn sb-resolve" onclick="setStatus(event,\''+esc(issue.id)+'\',\'Resolved\')">✓ Mark Resolved</button>';
-      html += '<button class="status-btn sb-hold" onclick="setStatus(event,\''+esc(issue.id)+'\',\'On Hold\')">⏸ On Hold</button>';
-      html += '<button class="status-btn sb-hold" style="background:#1a2035;color:#64748b" onclick="setStatus(event,\''+esc(issue.id)+'\',\'Monitoring\')">👁 Monitoring</button>';
-    } else {
-      html += '<button class="status-btn sb-reopen" onclick="setStatus(event,\''+esc(issue.id)+'\',\'Open\')">↩ Reopen</button>';
+    var _rlvl = {admin:5,boss:4,inventory:3,lead:2,worker:1}[localStorage.getItem('mbrRole')||'']||0;
+    var _st = issue.status;
+    if(_st==='Open'||_st==='On Hold'||_st==='Monitoring'){
+      html += '<button class="status-btn sb-resolve" style="background:#2e1065;border-color:#7c3aed;color:#c4b5fd;" onclick="setStatus(event,\''+esc(issue.id)+'\',\'Fixed\')">🔧 Mark Fixed</button>';
+      if(_rlvl>=4){ html += '<button class="status-btn sb-hold" onclick="setStatus(event,\''+esc(issue.id)+'\',\'On Hold\')">⏸ On Hold</button>'; }
+      if(_rlvl>=4){ html += '<button class="status-btn sb-hold" style="background:#1a2035;color:#64748b" onclick="setStatus(event,\''+esc(issue.id)+'\',\'Monitoring\')">👁 Monitoring</button>'; }
+    } else if(_st==='Fixed'){
+      if(_rlvl>=4){
+        html += '<button class="status-btn sb-resolve" style="background:#064e3b;color:#6ee7b7;border:1px solid #10b981;" onclick="setStatus(event,\''+esc(issue.id)+'\',\'Closed\')">✓ QC Approved — Close</button>';
+        html += '<button class="status-btn sb-hold" style="background:#450a0a;color:#fca5a5;border-color:#ef4444;" onclick="setStatus(event,\''+esc(issue.id)+'\',\'Open\')">✗ Reject — Reopen</button>';
+      } else {
+        html += '<span style="font-size:11px;color:#8b5cf6;font-weight:700;padding:4px 8px;background:rgba(139,92,246,.1);border-radius:6px;border:1px solid rgba(139,92,246,.3);">⏳ Awaiting QC Approval</span>';
+      }
+    } else if(_st==='Closed'||_st==='Resolved'){
+      if(_rlvl>=4){ html += '<button class="status-btn sb-reopen" onclick="setStatus(event,\''+esc(issue.id)+'\',\'Open\')">↩ Reopen</button>'; }
+      else { html += '<span style="font-size:11px;color:#10b981;font-weight:700;padding:4px 8px;background:rgba(16,185,129,.1);border-radius:6px;border:1px solid rgba(16,185,129,.3);">✓ Closed</span>'; }
     }
     html += '<a href="/issues/'+esc(issue.unit)+'" style="display:inline-flex;align-items:center;height:28px;padding:0 12px;background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;font-weight:700;color:#4f8ef7">↗ Open Unit</a>';
     if(issue.pin_x!=null){ html += '<button onclick="viewOnQCMap(event,\'' +esc(issue.id)+ '\')" style="height:28px;padding:0 12px;background:#2e1065;border:1px solid #a78bfa;border-radius:6px;font-size:11px;font-weight:700;color:#c4b5fd;cursor:pointer;margin-left:6px">📍 View on Map</button>'; }
@@ -1112,7 +1126,7 @@ function sendEmail(){
   body += '================================================================%0D%0A%0D%0A';
 
   // Group by status: Open first, then On Hold, then Monitoring, then Resolved
-  var order = ['Open','On Hold','Monitoring','Resolved'];
+  var order = ['Open','On Hold','Monitoring','Fixed','Closed','Resolved'];
   order.forEach(function(st){
     var group = filtered.filter(function(i){ return i.status===st; });
     if(!group.length) return;
@@ -1243,7 +1257,7 @@ function sendEmail(){
       <div class="mfield">
         <label>Status</label>
         <select id="ei-status">
-          <option>Open</option><option>Monitoring</option><option>On Hold</option><option>Resolved</option>
+          <option>Open</option><option>Monitoring</option><option>On Hold</option><option>Fixed</option><option>Closed</option><option>Resolved</option>
         </select>
       </div>
     </div>
@@ -1412,7 +1426,7 @@ function onQCImgLoad(){
 }
 
 // ── PIN RENDERING (SVG overlay) ──────────────────────────────────────
-var PIN_COLORS = {'Open':'#ef4444','On Hold':'#f59e0b','Monitoring':'#60a5fa','Resolved':'#22c55e'};
+var PIN_COLORS = {'Open':'#ef4444','On Hold':'#f59e0b','Monitoring':'#60a5fa','Resolved':'#22c55e','Fixed':'#8b5cf6','Closed':'#10b981'};
 
 function renderQCPins(){
   var img = document.getElementById('qcDrawingImg');
@@ -1581,11 +1595,20 @@ function showQCPopup(issue){
   // Actions
   var actDiv = document.getElementById('qcPopupActions');
   var btnHTML = '';
-  if(issue.status !== 'Resolved'){
-    btnHTML += '<button class="qc-popup-btn" style="background:#14532d;color:#86efac;" onclick="qcSetStatus(&apos;Resolved&apos;)">✓ Resolve</button>';
-    btnHTML += '<button class="qc-popup-btn" style="background:#451a03;color:#fcd34d;" onclick="qcSetStatus(&apos;On Hold&apos;)">⏸ On Hold</button>';
-  } else {
-    btnHTML += '<button class="qc-popup-btn" style="background:#1e3a5f;color:#60a5fa;" onclick="qcSetStatus(&apos;Open&apos;)">↩ Reopen</button>';
+  var _pst = issue.status;
+  if(_pst==='Open'||_pst==='On Hold'||_pst==='Monitoring'){
+    btnHTML += '<button class="qc-popup-btn" style="background:#2e1065;color:#c4b5fd;border:1px solid #7c3aed;" onclick="qcSetStatus(&apos;Fixed&apos;)">🔧 Mark Fixed</button>';
+    if(_qcLvl>=4){ btnHTML += '<button class="qc-popup-btn" style="background:#451a03;color:#fcd34d;" onclick="qcSetStatus(&apos;On Hold&apos;)">⏸ On Hold</button>'; }
+  } else if(_pst==='Fixed'){
+    if(_qcLvl>=4){
+      btnHTML += '<button class="qc-popup-btn" style="background:#064e3b;color:#6ee7b7;border:1px solid #10b981;" onclick="qcSetStatus(&apos;Closed&apos;)">✓ QC Close</button>';
+      btnHTML += '<button class="qc-popup-btn" style="background:#450a0a;color:#fca5a5;" onclick="qcSetStatus(&apos;Open&apos;)">✗ Reject</button>';
+    } else {
+      btnHTML += '<span style="font-size:11px;color:#8b5cf6;font-weight:700;padding:3px 8px;background:rgba(139,92,246,.1);border-radius:6px;border:1px solid rgba(139,92,246,.3);">⏳ Awaiting QC Approval</span>';
+    }
+  } else if(_pst==='Closed'||_pst==='Resolved'){
+    if(_qcLvl>=4){ btnHTML += '<button class="qc-popup-btn" style="background:#1e3a5f;color:#60a5fa;" onclick="qcSetStatus(&apos;Open&apos;)">↩ Reopen</button>'; }
+    else { btnHTML += '<span style="font-size:11px;color:#10b981;font-weight:700;">✓ Closed</span>'; }
   }
   btnHTML += '<button class="qc-popup-btn" style="background:#2e1065;color:#c4b5fd;border:1px solid #7c3aed;" onclick="startAddPinMode(QC_POPUP_ISSUE)">📍 Add Location</button>';
   btnHTML += '<button class="qc-popup-btn" style="background:#1a1f35;color:#a78bfa;border:1px solid #4c1d95;" onclick="openMergeModal(event,QC_POPUP_ISSUE.id,QC_POPUP_ISSUE.unit||\'\'\,QC_POPUP_ISSUE.title||\'\'\)">🔗 Merge</button>';
