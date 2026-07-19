@@ -153,15 +153,15 @@ select optgroup option { color: #e2e8f0; background: #0f172a; }
 /* TDG QC Overlay */
 #qcOverlay{display:none;position:fixed;inset:0;background:#0a0f1a;z-index:600;flex-direction:column;}
 #qcOverlay.qc-open{display:flex;}
-.qc-header{background:#1e3a5f;padding:10px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap;}
-.qc-sel{height:30px;padding:0 24px 0 10px;background:#0f1e35;border:1px solid #3b82f6;border-radius:7px;color:#e2e8f0;font-size:12px;font-weight:700;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2393c5fd'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;}
+.qc-header{background:#1e3a5f;padding:7px 10px;display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:nowrap;overflow-x:auto;}
+.qc-sel{height:30px;padding:0 20px 0 8px;background:#0f1e35;border:1px solid #3b82f6;border-radius:7px;color:#e2e8f0;font-size:12px;font-weight:700;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2393c5fd'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;}
 .qc-sel option,.qc-sel optgroup{background:#0f1e35;color:#e2e8f0;}
 .qc-close{background:none;border:1px solid rgba(255,255,255,.2);border-radius:6px;color:#93c5fd;font-size:12px;font-weight:700;padding:5px 12px;cursor:pointer;}
-.qc-title{color:#fff;font-size:14px;font-weight:800;flex:1;min-width:120px;}
+.qc-title{color:#fff;font-size:13px;font-weight:800;white-space:nowrap;}
 .qc-upload-btn{height:28px;padding:0 12px;background:#7c3aed;border:none;border-radius:7px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;display:none;}
-.qc-body{flex:1;overflow:auto;position:relative;display:flex;align-items:flex-start;justify-content:center;background:#111827;padding:12px;}
-#qcImgWrap{position:relative;display:inline-block;cursor:crosshair;flex-shrink:0;}
-#qcDrawingImg{display:block;max-width:100%;height:auto;user-select:none;-webkit-user-drag:none;}
+.qc-body{flex:1;overflow:auto;position:relative;display:flex;align-items:center;justify-content:center;background:#111827;padding:12px;min-height:0;}
+#qcImgWrap{position:relative;display:inline-flex;align-items:center;cursor:crosshair;flex-shrink:0;max-height:calc(100vh - 58px);}
+#qcDrawingImg{display:block;max-width:calc(100vw - 24px);max-height:calc(100vh - 82px);width:auto;height:auto;user-select:none;-webkit-user-drag:none;}
 #qcSvgOverlay{position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;pointer-events:none;}
 #qcSvgOverlay .qc-pin-hit{pointer-events:all;cursor:pointer;}
 #qcNoImg{text-align:center;color:#475569;padding:60px 20px;width:100%;}
@@ -1098,7 +1098,7 @@ function sendEmail(){
         <option>25B</option><option>26B</option><option>27B</option><option>28B</option>
       </optgroup>
     </select>
-    <span style="font-size:11px;color:#93c5fd;">Tap drawing to log an issue</span>
+    <span id="qcIssueCount" style="font-size:11px;color:#93c5fd;white-space:nowrap;margin-left:auto;">Tap to log</span>
   </div>
   <div class="qc-body" id="qcBody">
     <div id="qcImgWrap">
@@ -1454,9 +1454,10 @@ document.addEventListener('DOMContentLoaded', function(){
     var rect = img.getBoundingClientRect();
     var x = Math.round((e.clientX - rect.left) / rect.width  * 1000) / 10;
     var y = Math.round((e.clientY - rect.top)  / rect.height * 1000) / 10;
-    QC_PENDING = {x: x, y: y};
-    // Show color picker near the tap
-    showQCColorPicker(e.clientX, e.clientY);
+    var drawingKey = (document.getElementById('qcDrawingSel')||{}).value || 'plan';
+    // Straight to Create Issue modal — no intermediate color picker
+    closeQCOverlay();
+    openCreateModal({x: x, y: y, drawing_type: drawingKey, color: '#ef4444', status: 'Open'});
   });
   // button always visible (page-level role check guards access)
 });
